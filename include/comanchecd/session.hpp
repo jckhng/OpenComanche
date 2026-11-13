@@ -75,7 +75,10 @@ private:
     void start_menu_audio(MusicPlaylist playlist);
     void release_flight();
     void finish_flight();
+    void handle_frontend_request(FrontendRequest request);
+    void apply_frontend_settings(FrontendRequest request);
     void start_frontend();
+    void begin_startup();
     void finish_startup();
     void begin_fanfare_movie();
     void poll_input();

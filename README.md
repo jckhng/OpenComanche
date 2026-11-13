@@ -86,6 +86,8 @@ The source tree builds directly from this repository with CMake 3.16+, a C++17
 compiler and SDL2 development files. Build outputs stay in `build/`.
 [Windows and Linux build instructions](BUILDING.md)
 
+[Runtime ownership and maintenance plan](ARCHITECTURE.md)
+
 ## RC10 scope
 
 The Windows physical playtest covers pilot/menu input, flight controls, audio,

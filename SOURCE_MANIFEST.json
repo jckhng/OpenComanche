@@ -19,14 +19,19 @@
       "sha256": "51be043c656b2891ca98290af95f99e4a98e682f474dfe3ced8f8e46e3dba35c"
     },
     {
+      "path": "ARCHITECTURE.md",
+      "bytes": 4190,
+      "sha256": "31f21c429d5079d6a2454a883321432c39572e3cccbb9bbff8f37ac40ddbe38b"
+    },
+    {
       "path": "BUILDING.md",
       "bytes": 3860,
       "sha256": "ddf97fdf7cc7bd8d8aaf2f00b18a6e4f200fc6a33bd9ea41f29fefed7f105711"
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 3019,
-      "sha256": "2a6d63e348daff7d4087313caa4776a18ab67e90bda96672cc58cf4099326937"
+      "bytes": 3158,
+      "sha256": "a2edfd4258a2f7769d01c79abbb378cc9183938ec1958ba3c088d3687923ff84"
     },
     {
       "path": "cmake/Diagnostics.cmake",
@@ -40,13 +45,13 @@
     },
     {
       "path": "cmake/Runtime.cmake",
-      "bytes": 1286,
-      "sha256": "4569d0111d1ab8bc689394edd04f944c6e2eeb54fd022bf7a4565fec5573cd87"
+      "bytes": 1348,
+      "sha256": "7553debff4314f74e714dbf987ee30a2472e7dc66c19befc000aa101bb435fac"
     },
     {
       "path": "cmake/SdlHost.cmake",
-      "bytes": 4821,
-      "sha256": "db65b5892ec1a9d84a7ff33e7152b5786bd29a8c1399ac22681a5e2030b522fe"
+      "bytes": 4837,
+      "sha256": "d8fd3238d96e3749deb7391c68d064c9e942a81c3bd51a2d9475b9c8d4431cee"
     },
     {
       "path": "cmake/Tests.cmake",
@@ -285,8 +290,8 @@
     },
     {
       "path": "include/comanchecd/session.hpp",
-      "bytes": 3611,
-      "sha256": "9ad991bb222001a20f0755b0544f55dd403d25555f98af6c514af7a5514d6a51"
+      "bytes": 3758,
+      "sha256": "293768affa06de068112d335c37c1cb58ae2e8719535a2251ca351e182c6691e"
     },
     {
       "path": "include/comanchecd/sound_device.hpp",
@@ -330,8 +335,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 5217,
-      "sha256": "56c470f7dd0370a41e982346a5626d67541694e782b988d93d275bc421c7d2a4"
+      "bytes": 5276,
+      "sha256": "4f401b7f3ae390d3bfbd0d6fd75659312ac1cb9e54e810d1711194d6b5453e99"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -605,8 +610,18 @@
     },
     {
       "path": "src/session.cpp",
-      "bytes": 25482,
-      "sha256": "64467d25300276582a2c7bf7616f0a6c06f66c0ce939c9043df618bec7ae5b4e"
+      "bytes": 10022,
+      "sha256": "d6419cf02fde1a05fdfe17fc95d5e05c68cf661e6b3531b2a383c64a5b503835"
+    },
+    {
+      "path": "src/session_cinematics.cpp",
+      "bytes": 8852,
+      "sha256": "a1813d59678458c2163993b819dd133fdb782ce674d7c506db2c3e06f017d25b"
+    },
+    {
+      "path": "src/session_frontend.cpp",
+      "bytes": 6960,
+      "sha256": "a3d3dea07e41d9e8206cbfa34a68bcc1a9cb9f4f4c62a7ee3c44f60317d4aa15"
     },
     {
       "path": "src/sound_device.cpp",

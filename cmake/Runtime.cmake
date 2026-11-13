@@ -19,6 +19,8 @@ add_library(comanchecd_renderer
     src/cockpit.cpp
     src/debrief.cpp
     src/session.cpp
+    src/session_frontend.cpp
+    src/session_cinematics.cpp
     src/options.cpp
     src/playback.cpp
     src/effects.cpp

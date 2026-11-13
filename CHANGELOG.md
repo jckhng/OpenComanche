@@ -2,6 +2,9 @@
 
 ## Enhanced SDL2 development
 
+- Separate session core, frontend/settings and cinematic lifecycle operations,
+  with private ownership and baseline-equivalent behavior.
+
 - Configurable controller deadzone, sensitivity and pitch inversion, with
   keyboard precedence and neutral rearming on context/focus changes.
 - Buffered keyboard fire/target taps with pause/context cancellation.

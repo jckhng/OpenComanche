@@ -20,6 +20,7 @@ CameraVector operator-(CameraVector a, CameraVector b);
 CameraVector operator*(CameraVector value, double scale);
 CameraQuaternion camera_orientation(double yaw, double pitch, double roll);
 CameraFrustum camera_frustum(CameraFov angles, double near_clip, double far_clip);
+CameraPose relative_pose(const CameraPose& origin, const CameraPose& pose);
 
 // The caller supplies the game-to-metre scale for a tracked reference-space pose.
 CameraView eye_view(const CameraView& base, const CameraPose& relative_metres,

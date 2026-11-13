@@ -31,14 +31,27 @@ void terrain(SpatialImage& image, const SpatialFrame& frame, const CameraView& v
     const auto maximum_step = std::max(1, int(std::ceil(view.frustum.far_clip / ring_cells)));
     for (int step = 1; step < maximum_step * 2; step *= 2) {
         const int outer = step * ring_cells, inner = step == 1 ? 0 : outer / 2;
+        constexpr unsigned row_vertices = ring_cells * 2 + 1;
+        std::array<spatial_raster::Vertex, row_vertices> preceding{}, following{};
+        const auto row = [&](auto& output, int z) {
+            for (unsigned index = 0; index < output.size(); ++index) {
+                output[index] = vertex(-outer + int(index) * step, z);
+            }
+        };
+        row(preceding, -outer);
         for (int z = -outer; z < outer; z += step) {
+            row(following, z + step);
             for (int x = -outer; x < outer; x += step) {
                 if (inner && x >= -inner && x + step <= inner && z >= -inner && z + step <= inner) { continue; }
                 const bool top = inner && z == inner && x >= -inner && x + step <= inner;
                 const bool right = inner && x + step == -inner && z >= -inner && z + step <= inner;
                 const bool bottom = inner && z + step == -inner && x >= -inner && x + step <= inner;
                 const bool left = inner && x == inner && z >= -inner && z + step <= inner;
-                const auto a = vertex(x, z), b = vertex(x + step, z), c = vertex(x + step, z + step), d = vertex(x, z + step);
+                const auto index = unsigned((x + outer) / step);
+                const auto& a = preceding[index];
+                const auto& b = preceding[index + 1];
+                const auto& c = following[index + 1];
+                const auto& d = following[index];
                 if (!(top || right || bottom || left)) {
                     spatial_raster::triangle(image, projection, view.frustum, a, b, c, sample);
                     spatial_raster::triangle(image, projection, view.frustum, a, c, d, sample);
@@ -60,6 +73,7 @@ void terrain(SpatialImage& image, const SpatialFrame& frame, const CameraView& v
                     spatial_raster::triangle(image, projection, view.frustum, center, edge[index], edge[(index + 1) % count], sample);
                 }
             }
+            preceding.swap(following);
         }
     }
 }

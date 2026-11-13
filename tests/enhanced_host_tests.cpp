@@ -157,6 +157,19 @@ int main() {
         require(input.scan_bytes == std::vector<std::uint8_t>{0x9c} && !input.controls.cycle_target,
                 "Adding Alt after an ordinary Enter must preserve its canonical release");
 
+        key(SDL_KEYDOWN, SDL_SCANCODE_LEFT);
+        host.poll();
+        host.set_focus(HostFocus::inactive);
+        input = host.poll();
+        require(input.pause == PauseAction::pause && input.controls.horizontal == 0 &&
+                input.scan_bytes == std::vector<std::uint8_t>{0xe0, 0xcb},
+                "XR focus loss must release native keys before pausing");
+        key(SDL_KEYDOWN, SDL_SCANCODE_SPACE);
+        require(!host.poll().pressed.fire, "Unfocused headset input must suppress new keyboard presses");
+        host.set_focus(HostFocus::active);
+        input = host.poll();
+        require(!input.controls.fire && input.controls.horizontal == 0, "Focus recovery must retain released controls");
+
         auto resources = std::make_shared<comanchecd::SpatialResources>();
         resources->assets.terrain.height.assign(comanchecd::terrain_side * comanchecd::terrain_side, 0);
         resources->assets.terrain.color.assign(comanchecd::terrain_side * comanchecd::terrain_side, 1);

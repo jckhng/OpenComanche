@@ -5,6 +5,7 @@
 #include <string>
 
 namespace comanchecd::host {
+class OpenXrSession;
 class SdlOpenXrLoader {
 public:
     explicit SdlOpenXrLoader(const std::string& path = {});
@@ -26,6 +27,7 @@ public:
     explicit OpenXrRuntime(PFN_xrGetInstanceProcAddr loader);
     ~OpenXrRuntime();
     const OpenXrCapabilities& capabilities() const;
+    std::unique_ptr<OpenXrSession> create_session(const XrBaseInStructure& graphics_binding, double render_scale) const;
 private:
     class Impl;
     std::unique_ptr<Impl> impl_;

@@ -28,11 +28,13 @@ SDL_Texture* create_texture(SDL_Renderer* renderer, ImageScaling scaling) {
 
 class SdlPresenter::Impl {
 public:
-    Impl(SDL_Window* window, ImageScaling selected) : scaling(selected) {
+    Impl(SDL_Window* window, ImageScaling selected, DisplayPacing pacing) : scaling(selected) {
         if (scaling == ImageScaling::profile_default) {
             throw std::invalid_argument("Resolve the presentation profile before creating its backend");
         }
-        renderer.reset(SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC));
+        const auto flags = SDL_RENDERER_ACCELERATED |
+            (pacing == DisplayPacing::vertical_sync ? SDL_RENDERER_PRESENTVSYNC : 0);
+        renderer.reset(SDL_CreateRenderer(window, -1, flags));
         if (!renderer) { renderer.reset(SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE)); }
         if (!renderer || SDL_RenderSetLogicalSize(renderer.get(), cockpit_width, cockpit_height) != 0) {
             throw sdl_error("SDL2 renderer creation failed");
@@ -106,7 +108,8 @@ private:
     std::array<std::uint32_t, cockpit_width * cockpit_height> pixels{};
 };
 
-SdlPresenter::SdlPresenter(SDL_Window* window, ImageScaling scaling) : impl_(std::make_unique<Impl>(window, scaling)) {}
+SdlPresenter::SdlPresenter(SDL_Window* window, ImageScaling scaling, DisplayPacing pacing)
+    : impl_(std::make_unique<Impl>(window, scaling, pacing)) {}
 SdlPresenter::~SdlPresenter() = default;
 void SdlPresenter::present(const CockpitImage& image) { impl_->present(image); }
 std::pair<unsigned, unsigned> SdlPresenter::spatial_size() const { return impl_->spatial_size(); }

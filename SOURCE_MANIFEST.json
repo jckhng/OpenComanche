@@ -20,8 +20,8 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "bytes": 10538,
-      "sha256": "af645a4c077bb3b8f81600c6b247f195a2ec0e1861b9202f18240714fdfc1bf6"
+      "bytes": 12091,
+      "sha256": "e42ba7a571dc41f863b2df72e6bb043a05939cdaf823a0209d771e3b5c7245e4"
     },
     {
       "path": "BUILDING.md",
@@ -30,8 +30,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 4076,
-      "sha256": "91d76275e1a4d25a8f35b83b985a25851707796dafaeb458657456e6b396241f"
+      "bytes": 4299,
+      "sha256": "aa56256fea0570b18fd46f8cae428e27b33a7a7290cd0251823160a5e09e7123"
     },
     {
       "path": "cmake/Diagnostics.cmake",
@@ -40,8 +40,8 @@
     },
     {
       "path": "cmake/OpenXr.cmake",
-      "bytes": 873,
-      "sha256": "078a2f6b4c02519585795baa708a43362d81b6eb35cd04a9311d3c5bfe3b812a"
+      "bytes": 1822,
+      "sha256": "c7c8f3aa5562b2caeba7540d04ac631916afd342c59a67fa24efcb6251567fbf"
     },
     {
       "path": "cmake/Runtime.cmake",
@@ -50,8 +50,8 @@
     },
     {
       "path": "cmake/SdlHost.cmake",
-      "bytes": 5500,
-      "sha256": "7e456f8fdcdb4129318408cf4b05e123a0eff847f34c154f94aa7e73f995f4d6"
+      "bytes": 5581,
+      "sha256": "38f24bc7e0e6b931b708b8f58f6e721c0a4d06fc67b8582c948748f2d4ed865a"
     },
     {
       "path": "cmake/Tests.cmake",
@@ -60,8 +60,8 @@
     },
     {
       "path": "CMakeLists.txt",
-      "bytes": 868,
-      "sha256": "3787e10aca50b7fe1f603c0c3d9c352a3245040742b54ba21cf3d61fec0833ea"
+      "bytes": 863,
+      "sha256": "2213c904c30212b3a7bd6fc24719f7a66d2500cd872a3a5fe6914edc4b3c3428"
     },
     {
       "path": "COPYING",
@@ -70,13 +70,13 @@
     },
     {
       "path": "host/camera_view.cpp",
-      "bytes": 5674,
-      "sha256": "a9c0c7b0c7f2a319a7cc0d73bf31c627ef553563b38faf67c8e18b431ad0055e"
+      "bytes": 6088,
+      "sha256": "33638e9fe0abf0ebd121366be957f5c2ef5ad08cc73ddafdfbeaa69414d0a201"
     },
     {
       "path": "host/camera_view.hpp",
-      "bytes": 1766,
-      "sha256": "57d23cf2ba32c2768b6128f134ba4d5725f00555b1bcf01595f00ca39bd49fe8"
+      "bytes": 1843,
+      "sha256": "b017c3ee027ad344012b485c32234a1f6153b0dc13ae939f77db14cdf1229c44"
     },
     {
       "path": "host/cockpit_scaling.cpp",
@@ -124,14 +124,54 @@
       "sha256": "c705a12dfd6690fe488cc351f1fdf21bbfad1384b48f1f733d471e0e70ed39f4"
     },
     {
+      "path": "host/openxr_graphics.cpp",
+      "bytes": 8128,
+      "sha256": "293b52c4035abbeac8b97ff932bc065b34ea375959570f60b91be8a77a8ae4a0"
+    },
+    {
+      "path": "host/openxr_graphics.hpp",
+      "bytes": 632,
+      "sha256": "9ee9d2c2f8f3b92d2a9dfba5754467a935b749af9ee8a43c34ae59c91bc7ee05"
+    },
+    {
+      "path": "host/openxr_host.cpp",
+      "bytes": 8102,
+      "sha256": "d7d4a44694e4315995a6365380616a00fb184da1754187b69e164303a409819d"
+    },
+    {
+      "path": "host/openxr_host.hpp",
+      "bytes": 1056,
+      "sha256": "e7a6e0a87d9b4b34f849c238e384c2630b2b31218ea3cae49195db04f2680062"
+    },
+    {
+      "path": "host/openxr_options.cpp",
+      "bytes": 2081,
+      "sha256": "eddfdd374b461f434439e191d51f73ad98b11453d69ee0e3d733b0fa47060a04"
+    },
+    {
+      "path": "host/openxr_options.hpp",
+      "bytes": 373,
+      "sha256": "43973d9f4f4c720ee6ee5a8365b25352a1c14eb76b74269ba3a12436a4056452"
+    },
+    {
       "path": "host/openxr_runtime.cpp",
-      "bytes": 5545,
-      "sha256": "5b0ba8ebeb780a5bd21721990b5e1dbdc19f1d83014c15e0a1f8a474145db666"
+      "bytes": 5966,
+      "sha256": "22629c17cd83803a64324779163c43256799304b290864ab4628491838e11e01"
     },
     {
       "path": "host/openxr_runtime.hpp",
-      "bytes": 878,
-      "sha256": "159381888c5aa7546b746f3aaffa7ff23a9023bccfd8b724ec9852c1bf9110e1"
+      "bytes": 1020,
+      "sha256": "19f30d3177eb5210a08954d375f5baea05f95b04b155a52273bce6236fde060e"
+    },
+    {
+      "path": "host/openxr_session.cpp",
+      "bytes": 20619,
+      "sha256": "ec277fe885047796681ccb9d6d771f30de9130d2d899b3c0fd31ac402a936d5e"
+    },
+    {
+      "path": "host/openxr_session.hpp",
+      "bytes": 1256,
+      "sha256": "dcc8e73e2338310ca6068174b46403d2e24bff00578b7a2f2d14999772904cfe"
     },
     {
       "path": "host/pending_input.hpp",
@@ -175,13 +215,13 @@
     },
     {
       "path": "host/sdl_host.cpp",
-      "bytes": 17590,
-      "sha256": "f8749fb72dde24d53a21fb68a94a08cd33659b0b08d0e3132702a9bfb6319707"
+      "bytes": 18429,
+      "sha256": "eabdf4ad706da0aa2854b237a0c59b6cc842d3fe7c9d98d2a96ed1b0868641f2"
     },
     {
       "path": "host/sdl_host.hpp",
-      "bytes": 1692,
-      "sha256": "0eeec8dd473857561a9587a23c7ae1ab6c096970fb0ff0259a88913953dd2b0c"
+      "bytes": 1829,
+      "sha256": "d56b8040630974e881b1fe712e21e723e7a1b76ad052422bc2ddc2bb33a40304"
     },
     {
       "path": "host/sdl_options.cpp",
@@ -195,18 +235,18 @@
     },
     {
       "path": "host/sdl_presenter.cpp",
-      "bytes": 6127,
-      "sha256": "e5b6f66867cf6e3cc705d4d799c177cd957ab46c7b13b82afb5153b0926cfd56"
+      "bytes": 6276,
+      "sha256": "b6ee93f1c8090dfcd6f5826472a9d04fd38d811f9b3126a6db79d595e631fe40"
     },
     {
       "path": "host/sdl_presenter.hpp",
-      "bytes": 669,
-      "sha256": "115cb7ecc05651959429842f71f3b60bd0518b4158f974787fc82a9bbb2c6bcc"
+      "bytes": 777,
+      "sha256": "19bc86b5574fd86f22df694c511345bc3daca8beed0dd6f105ddc8f23f8a176f"
     },
     {
       "path": "host/session_main.cpp",
-      "bytes": 3730,
-      "sha256": "ef03d56c9331ac90a968f6811629a6a85478498b93a3cebad8257764f8af3547"
+      "bytes": 4674,
+      "sha256": "660cba4bc88a7387eededa7325cf4248207af24d9492a5832d1764c09abf133b"
     },
     {
       "path": "host/settings_profile.hpp",
@@ -230,8 +270,8 @@
     },
     {
       "path": "host/spatial_raster.hpp",
-      "bytes": 4135,
-      "sha256": "7b08bb69f7de59abecf9d8c67ca466bf60dfbd554e59b016993f75a179a7bafe"
+      "bytes": 5028,
+      "sha256": "a17850f8885cd442e43e0ff6456413c184dcfa984c7b8cab811c573bdf4d31a5"
     },
     {
       "path": "host/spatial_renderer.cpp",
@@ -245,8 +285,8 @@
     },
     {
       "path": "host/spatial_terrain.cpp",
-      "bytes": 3849,
-      "sha256": "0ce29b2cba73d0ed682dbd2c51ea9774e3420e15801995b9c6b542a77489146a"
+      "bytes": 4482,
+      "sha256": "709a508e922e3419f1e1c239bab0b92aee1c921f2672c813d65c19ab15cd0e81"
     },
     {
       "path": "host/spatial_units.hpp",
@@ -400,13 +440,13 @@
     },
     {
       "path": "PREVIEW.md",
-      "bytes": 15747,
-      "sha256": "ba783f8ed626b1b2c8bfcb5f0559d385bde8db8d6dac86a17567257a123aa5eb"
+      "bytes": 17737,
+      "sha256": "5108f8f8352c1c37f8d85583b92c214c34d4f9ba84e4251ee8caede7eb0f2260"
     },
     {
       "path": "README.md",
-      "bytes": 5687,
-      "sha256": "61218a54532310639b9dcf923120f09d71994e45b79ac913d24980761eb385a6"
+      "bytes": 5803,
+      "sha256": "da2af2397dafba4159eaaf93fc995cd6d6b0f56c444564b681b3812250938996"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -930,8 +970,8 @@
     },
     {
       "path": "tests/enhanced_host_tests.cpp",
-      "bytes": 10457,
-      "sha256": "debdb8b2a62557d820017c6b10bec5466b3d397ae0c57586992f161ee48279bb"
+      "bytes": 11179,
+      "sha256": "8220d899812878f6592a06530a3a98fbf8aabbf7568df61f60f2ed3aa4fb1a61"
     },
     {
       "path": "tests/entity_clock_tests.cpp",
@@ -1054,9 +1094,19 @@
       "sha256": "b0a756ae6346f926b96da07df638aa185b76018ae7c256927f877813026ace03"
     },
     {
+      "path": "tests/openxr_graphics_tests.cpp",
+      "bytes": 3076,
+      "sha256": "b20d6e5a8c2580e150cf27093d9a6a8e7d6bebebdb7f4d526acfa3b9cc4d4a23"
+    },
+    {
       "path": "tests/openxr_runtime_tests.cpp",
       "bytes": 6118,
       "sha256": "2d66792619e8ac0def0bb5221a5a8a4c621522b428b8ce8cc38fa1e299b14b9a"
+    },
+    {
+      "path": "tests/openxr_session_tests.cpp",
+      "bytes": 17343,
+      "sha256": "3415631aa3b0151dc9d1935cad65066c24877aee2bff5af9dc1c4d7f868d4c18"
     },
     {
       "path": "tests/options_probe.cpp",
@@ -1110,8 +1160,8 @@
     },
     {
       "path": "tests/presentation_view_tests.cpp",
-      "bytes": 13139,
-      "sha256": "344b0361c80c9ab6e4418e8ee513223615caa48b7ccf9ff268356ab6275a6d91"
+      "bytes": 13897,
+      "sha256": "f88ee22617cc1a5c4e773926938a5cbe8f1c2b2b4027992630151b7c88a7d3db"
     },
     {
       "path": "tests/render_probe.cpp",

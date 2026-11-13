@@ -2,6 +2,11 @@
 
 ## Enhanced SDL2 development
 
+- Reduce CPU raster work through clipping fast paths, incremental barycentric
+  weights and reused terrain vertex rows.
+- Add an optional threaded SDL2/OpenGL OpenXR host with stereo session/frame
+  submission, tracked views, cockpit/menu layers and focus recovery.
+
 - Interpolate entity positions/headings/rotors with the camera and reset
   discontinuous observations. Add persistent sharp cockpit/HUD scaling.
 - Add SDK-independent full-pose/asymmetric camera views, world-only output
@@ -28,7 +33,6 @@
 - Separate image presenter with high-DPI output, integer/nearest/driver-filtered
   scaling, small-window fallback and enhanced Alt+Enter fullscreen.
 - Optional OpenXR admission retains the immutable presentation boundary.
-  Headset frame submission remains planned.
 - Display-sized terrain rendering with bilinear heights, original panoramic sky,
   distance haze and depth-tested directional/animated SG billboards.
 - Immutable opt-in world snapshots, exact native cockpit/HUD coverage and

@@ -34,6 +34,14 @@ void projections() {
     const CameraPose eye{{0.032, 0.01, -0.02}, camera_orientation(0.1, 0.2, -0.1)};
     view.pose.orientation = camera_orientation(1.5707963267948966, 0, 0);
     const auto composed = eye_view(view, eye, frustum, 4);
+    const auto restored = eye_view(view, relative_pose(view.pose, composed.pose), frustum, 1);
+    require(near(restored.pose.position.x, composed.pose.position.x) &&
+            near(restored.pose.position.y, composed.pose.position.y) && near(restored.pose.position.z, composed.pose.position.z),
+            "Tracked origin removal and pose composition must round-trip");
+    const auto original_ray = CameraProjection(composed, 200, 100).ray(80, 20);
+    const auto restored_ray = CameraProjection(restored, 200, 100).ray(80, 20);
+    require(near(original_ray.x, restored_ray.x) && near(original_ray.y, restored_ray.y) && near(original_ray.z, restored_ray.z),
+            "Recentered eye orientation must preserve the complete tracked rotation");
     require(near(composed.pose.position.x, 3.92) && near(composed.pose.position.y, 5.04) && near(composed.pose.position.z, 5.872),
             "Tracked metre offsets must rotate into the base pose with explicit world scaling");
     CameraView symmetric{{}, {-1, 1, 1, -1, 0.1, 100}};

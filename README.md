@@ -33,8 +33,9 @@ for a saved action override.
 The default launch profile remains faithful. Immutable world observations feed
 a portable CPU renderer with a full-pose, asymmetric-projection camera
 interface and separate cockpit composition. SDL2 owns device output.
-OpenXR runtime admission is available in optional builds. Stereo submission
-and headset gameplay remain planned. Scripted screen effects, reflected-water
+Optional OpenXR builds add an experimental SDL2/OpenGL headset host with
+tracked stereo world views, a separate cockpit/menu layer and a presentation
+thread. Headset performance, comfort and physical controls need qualification. Scripted screen effects, reflected-water
 scenes and crash presentation use the recovered indexed image.
 [Enhanced controls and rendering](PREVIEW.md#enhanced-sdl2-presentation)
 

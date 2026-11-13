@@ -221,7 +221,9 @@ asymmetric tangent frusta and explicit near/far clipping. World-only output
 provides RGBA color and positive forward depth in world units. Per-eye pose
 composition accepts tracked metre offsets with an explicit world-units-per-metre
 scale. This supports software eye views and separate cockpit composition.
-OpenXR tracking/session integration and swapchain submission remain planned.
+The optional OpenXR adapter consumes these views on its own presentation thread.
+Clipping fast paths, incremental raster weights and reused terrain vertex rows
+reduce CPU rendering work. Renderer performance depends on output resolution.
 
 Automated Windows and Linux checks cover spatial rendering, camera wrapping,
 compositor coverage and continuous indexed/spatial capture parity. SDL2 route
@@ -231,24 +233,51 @@ qualification for this development branch remain open. The scripted Windows
 pilot intermittently stalls acquiring an objective. Completed route witnesses
 cover the declared flows, while that automation remains timing-sensitive.
 
-## Optional OpenXR admission
+## Experimental OpenXR headset host
 
-`COMANCHECD_BUILD_OPENXR=ON` builds the optional loader and runtime/graphics
-admission checks. Supply an independently installed OpenXR SDK include directory.
+Optional builds require OpenXR SDK headers, an OpenXR loader, OpenGL development
+libraries and SDL2. Linux also requires X11 development libraries and SDL2's
+X11/GLX video driver. Windows uses WGL through the SDL2-created context.
+Graphics requirements are queried before context/session creation.
 
 ```sh
 cmake -S source -B build -DCOMANCHECD_BUILD_OPENXR=ON -DCOMANCHECD_OPENXR_INCLUDE_DIR=/path/to/OpenXR-SDK/include
 cmake --build build --target comanche_viewer
 ./build/comanche_viewer --openxr-info
+./build/comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./xr-profile --mode enhanced --xr on --xr-world-scale 8 --xr-render-scale 0.5
 ```
 
-The query reports runtime identity and headset OpenGL requirements. Runtime
-admission has synthetic lifecycle/error coverage. OpenXR session/view acquisition,
-frame submission, actions and physical headset qualification remain planned.
-Immutable spatial terrain/entity snapshots are implemented. The current immutable session snapshot
-and latest-frame mailbox provide the presentation boundary for that work.
-Graphics requirements are queried before creating an XR graphics session.
-[Khronos OpenXR requirements](https://registry.khronos.org/OpenXR/specs/1.1/man/html/xrGetOpenGLGraphicsRequirementsKHR.html)
+`--xr-world-scale` explicitly supplies map cells per metre. The example's value
+of 8 is a trial scale. The reconstructed renderer has no qualified physical
+metre conversion. `--xr-render-scale` accepts 0.1 through 1 and defaults to 0.5.
+Each eye uses the runtime's recommended aspect ratio with a 1024-pixel dimension
+cap. Both values are launch-only. Use a separate native profile when testing XR.
+
+The loader must be available as `openxr_loader.dll` on Windows or
+`libopenxr_loader.so.1` on Linux. `--xr-loader FILE` selects an installed or
+locally built loader explicitly. The information query also accepts that option.
+Install and select a vendor runtime and connect its headset before launching.
+On Linux, select `SDL_VIDEODRIVER=x11` when the desktop uses Wayland.
+
+The XR thread owns session events, frame waits, predicted-time view location,
+image acquire/wait/release and layer submission. An immutable mailbox holds one
+scene across both eyes while the simulation and SDL2 audio continue separately.
+The desktop uses an indexed mirror with immediate presentation. Its keyboard
+and gamepad remain the input devices. XR focus loss releases controls and pauses
+playback. Press P after focus returns, including an initially paused startup.
+
+Flight submits a stereo world layer and a separate native cockpit/HUD quad
+fixed in aircraft reference space. Menus, indexed effects, reflected-water and
+crash scenes use a head-locked 4:3 screen. Invalid tracking suppresses the world
+layer. Local reference-space changes reanchor tracked poses at their effective
+predicted display time. Screen transitions retain original indexed artwork.
+
+Synthetic tests cover session restart, hidden frames, tracking loss, reference
+changes, frame ordering, waited-image ownership and exception cleanup. Real
+SDL2/OpenGL checks cover texture orientation, channels, alpha and color space.
+Physical headset validation, frame-rate/comfort qualification, XR actions and
+3D cockpit interaction remain open. The world renderer still runs on the CPU.
+[Khronos frame submission](https://github.com/KhronosGroup/OpenXR-Guide/blob/main/chapters/frame_submission.md)
 
 ## Preview limits
 

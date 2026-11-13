@@ -61,9 +61,35 @@ Tracked-pose composition requires an explicit world-units-per-metre factor.
 cockpit image. It returns color and positive forward depth in world units.
 The renderer owns the output until its next call. Each eye may use an independent
 renderer or consume its output before rendering another view. The SDL2 host
-composes the native overlay for flat-screen presentation. OpenXR runtime frame
-timing, tracked spaces/actions and swapchain ownership belong to a future host
-adapter.
+composes the native overlay for flat-screen presentation. The optional OpenXR
+host owns runtime frame timing, tracked spaces and swapchains. XR action mapping
+and 3D cockpit interaction remain future work.
+
+## OpenXR ownership
+
+`OpenXrHost` decorates the SDL2 device host. The simulation thread owns keyboard,
+controller, audio and the indexed desktop mirror. It publishes immutable
+`SessionPresentation` instances through `PresentationMailbox`. XR frame waits
+and rendering run on a dedicated thread. One retained observation and one
+interpolation sample feed both eyes. Pause freezes interpolation while tracked
+head poses continue updating. Worker failures propagate to the main host poll.
+
+`OpenXrGraphics` owns a hidden SDL2 OpenGL window/context and native WGL/GLX
+bindings. The context is detached before transfer to the XR thread. Session,
+reference spaces and swapchains are destroyed there before the thread joins
+and the main thread destroys the context. Original assets and SDK binaries are
+external dependencies.
+
+`OpenXrSession` owns primary-stereo session transitions, LOCAL/VIEW spaces,
+per-eye swapchains and a separate 4:3 panel swapchain. Valid poses/FOVs are
+located at predicted display time. A drawing failure releases a successfully
+waited image and ends an empty frame before propagating. Hidden frames submit
+zero layers. The driver uploads top-down CPU images with an OpenGL row flip,
+converts sRGB bytes for linear swapchain formats and flushes before release.
+
+OpenXR selection, world scale, render scale and loader path are launch-only.
+Host preferences keep their existing SDL2-only storage contract. The optional
+backend uses OpenGL and a platform graphics binding isolated in one driver.
 
 ## Session modules
 

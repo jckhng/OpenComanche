@@ -1,6 +1,7 @@
 #define XR_USE_GRAPHICS_API_OPENGL
 #include <openxr/openxr_platform.h>
 #include "openxr_runtime.hpp"
+#include "openxr_session.hpp"
 #include "sdl_common.hpp"
 
 #include <algorithm>
@@ -70,11 +71,10 @@ public:
         capabilities_.runtime_version = properties.runtimeVersion;
         XrSystemGetInfo system_info{XR_TYPE_SYSTEM_GET_INFO};
         system_info.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-        XrSystemId system = XR_NULL_SYSTEM_ID;
-        check(procedure<PFN_xrGetSystem>("xrGetSystem")(instance_, &system_info, &system), "xrGetSystem");
+        check(procedure<PFN_xrGetSystem>("xrGetSystem")(instance_, &system_info, &system_), "xrGetSystem");
         XrGraphicsRequirementsOpenGLKHR requirements{XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR};
         check(procedure<PFN_xrGetOpenGLGraphicsRequirementsKHR>("xrGetOpenGLGraphicsRequirementsKHR")(
-            instance_, system, &requirements), "xrGetOpenGLGraphicsRequirementsKHR");
+            instance_, system_, &requirements), "xrGetOpenGLGraphicsRequirementsKHR");
         if (requirements.minApiVersionSupported == 0 || requirements.minApiVersionSupported > requirements.maxApiVersionSupported) {
             throw std::runtime_error("OpenXR returned an invalid OpenGL version range");
         }
@@ -82,6 +82,9 @@ public:
         capabilities_.maximum_opengl = requirements.maxApiVersionSupported;
     }
     const OpenXrCapabilities& capabilities() const { return capabilities_; }
+    std::unique_ptr<OpenXrSession> create_session(const XrBaseInStructure& binding, double scale) const {
+        return std::unique_ptr<OpenXrSession>(new OpenXrSession(loader_, instance_, system_, binding, scale));
+    }
 private:
     template<class Procedure>
     Procedure procedure(const char* name) const {
@@ -92,6 +95,7 @@ private:
     }
     PFN_xrGetInstanceProcAddr loader_;
     XrInstance instance_ = XR_NULL_HANDLE;
+    XrSystemId system_ = XR_NULL_SYSTEM_ID;
     PFN_xrDestroyInstance destroy_ = nullptr;
     OpenXrCapabilities capabilities_;
 };
@@ -99,4 +103,7 @@ private:
 OpenXrRuntime::OpenXrRuntime(PFN_xrGetInstanceProcAddr loader) : impl_(std::make_unique<Impl>(loader)) { impl_->initialize(); }
 OpenXrRuntime::~OpenXrRuntime() = default;
 const OpenXrCapabilities& OpenXrRuntime::capabilities() const { return impl_->capabilities(); }
+std::unique_ptr<OpenXrSession> OpenXrRuntime::create_session(const XrBaseInStructure& binding, double scale) const {
+    return impl_->create_session(binding, scale);
+}
 }

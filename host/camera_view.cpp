@@ -73,6 +73,14 @@ CameraView eye_view(const CameraView& base, const CameraPose& relative_metres, C
     return result;
 }
 
+CameraPose relative_pose(const CameraPose& origin, const CameraPose& pose) {
+    validate(origin.position);
+    validate(pose.position);
+    const auto orientation = unit(origin.orientation);
+    const CameraQuaternion inverse{-orientation.x, -orientation.y, -orientation.z, orientation.w};
+    return {rotate(inverse, pose.position - origin.position), unit(multiply(inverse, unit(pose.orientation)))};
+}
+
 CameraProjection::CameraProjection(const CameraView& view, unsigned width, unsigned height)
     : origin_(view.pose.position), frustum_(view.frustum), width_(width), height_(height) {
     validate(origin_);

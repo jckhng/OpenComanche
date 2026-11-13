@@ -86,6 +86,7 @@ public:
         validate_controller_bindings(options.bindings);
         const bool enhanced = profile == InputProfile::enhanced;
         if (!enhanced && ((options.scaling != ImageScaling::profile_default && options.scaling != ImageScaling::nearest) ||
+                options.pacing != DisplayPacing::vertical_sync ||
                 options.controller.deadzone != ControllerTuning{}.deadzone ||
                 options.controller.sensitivity != ControllerTuning{}.sensitivity ||
                 options.controller.pitch != PitchDirection::normal)) {
@@ -98,7 +99,7 @@ public:
         }
         const auto scaling = options.scaling == ImageScaling::profile_default ?
             (enhanced ? ImageScaling::integer : ImageScaling::nearest) : options.scaling;
-        presenter = std::make_unique<SdlPresenter>(window.get(), scaling);
+        presenter = std::make_unique<SdlPresenter>(window.get(), scaling, options.pacing);
         if (enhanced) {
             controller = std::make_unique<SdlController>(options.controller_mappings, options.controller, options.bindings);
         }
@@ -123,6 +124,17 @@ private:
     }
 
 public:
+    void release_input(HostInput& input) {
+        for (std::size_t key = 0; key < held.size(); ++key) {
+            if (held[key] && !controller_held[key]) { key_bytes(input.scan_bytes, static_cast<SDL_Scancode>(key), false); }
+        }
+        held.fill(false);
+        suppressed.fill(false);
+        fullscreen_key_held = false;
+        if (controller) { controller->set_focus(false); flush_controller_keys(input); }
+        input.pause = PauseAction::pause;
+    }
+
     void flush_controller_keys(HostInput& input) {
         if (!controller) { return; }
         for (const auto& change : controller->take_keys()) {
@@ -138,6 +150,11 @@ public:
     HostInput poll() {
         HostInput input;
         flush_controller_keys(input);
+        if (focus_release_pending) {
+            release_input(input);
+            focus_release_pending = false;
+            if (controller && external_focus == HostFocus::active) { controller->set_focus(true); }
+        }
         const bool flight_input = context == InputContext::flight || context == InputContext::training;
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -151,19 +168,13 @@ public:
                 if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
                     input.quit = true;
                 } else if (event.window.event == SDL_WINDOWEVENT_FOCUS_LOST || event.window.event == SDL_WINDOWEVENT_MINIMIZED) {
-                    for (std::size_t key = 0; key < held.size(); ++key) {
-                        if (held[key] && !controller_held[key]) { key_bytes(input.scan_bytes, static_cast<SDL_Scancode>(key), false); }
-                    }
-                    held.fill(false);
-                    suppressed.fill(false);
-                    fullscreen_key_held = false;
-                    if (controller) { controller->set_focus(false); flush_controller_keys(input); }
-                    input.pause = PauseAction::pause;
+                    release_input(input);
                 } else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) {
-                    if (controller) { controller->set_focus(true); }
+                    if (controller) { controller->set_focus(external_focus == HostFocus::active); }
                 }
             } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
                 const auto key = event.key.keysym.scancode;
+                if (external_focus == HostFocus::inactive && event.type == SDL_KEYDOWN) { continue; }
                 if (key < SDL_SCANCODE_UNKNOWN || key >= SDL_NUM_SCANCODES) {
                     continue;
                 }
@@ -273,6 +284,8 @@ public:
     std::array<bool, SDL_NUM_SCANCODES> suppressed{};
     InputProfile profile;
     bool fullscreen_key_held = false;
+    HostFocus external_focus = HostFocus::active;
+    bool focus_release_pending = false;
     InputContext context = InputContext::flight;
     std::uint8_t throttle = 0;
     CockpitControls displays;
@@ -280,6 +293,12 @@ public:
 
 SdlFlightHost::SdlFlightHost(SdlHostOptions options) : impl_(std::make_unique<Impl>(std::move(options))) {}
 SdlFlightHost::~SdlFlightHost() = default;
+void SdlFlightHost::set_focus(HostFocus focus) {
+    if (focus == impl_->external_focus) { return; }
+    impl_->external_focus = focus;
+    if (focus == HostFocus::inactive) { impl_->focus_release_pending = true; }
+    if (impl_->controller && focus == HostFocus::active) { impl_->controller->set_focus(true); }
+}
 HostInput SdlFlightHost::poll() { return impl_->poll(); }
 void SdlFlightHost::set_input_context(InputContext context) {
     if (context != impl_->context && impl_->profile == InputProfile::enhanced) { impl_->suppressed = impl_->held; }

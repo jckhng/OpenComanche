@@ -9,6 +9,7 @@
 namespace comanchecd::host {
 enum class SceneRendering { spatial, native };
 enum class CameraInterpolation { enabled, disabled };
+enum class HostFocus { active, inactive };
 
 struct SdlHostOptions {
     InputProfile input = InputProfile::faithful;
@@ -19,6 +20,7 @@ struct SdlHostOptions {
     CameraInterpolation interpolation = CameraInterpolation::enabled;
     ControllerBindings bindings;
     CockpitScaling cockpit_scaling = CockpitScaling::sharp;
+    DisplayPacing pacing = DisplayPacing::vertical_sync;
 };
 
 class SdlFlightHost final : public FlightHost {
@@ -36,6 +38,7 @@ public:
     void set_playback(Playback playback) override;
     void idle() override;
     void reset_controls() override;
+    void set_focus(HostFocus focus);
 
 private:
     void update_title(const FlightState& state, const std::string& status);

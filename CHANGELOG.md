@@ -2,6 +2,9 @@
 
 ## Enhanced SDL2 development
 
+- Group ground, aircraft, projectile and shared combat implementations into
+  private source modules, preserving controller dispatch and instruction order.
+
 - Separate session core, frontend/settings and cinematic lifecycle operations,
   with private ownership and baseline-equivalent behavior.
 

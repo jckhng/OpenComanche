@@ -14,6 +14,10 @@ add_library(comanchecd_renderer
     src/audio_playback.cpp
     src/world_renderer.cpp
     src/flight.cpp
+    src/flight_entities.cpp
+    src/flight_ground.cpp
+    src/flight_aircraft.cpp
+    src/flight_projectiles.cpp
     src/training.cpp
     src/timing.cpp
     src/cockpit.cpp

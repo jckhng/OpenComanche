@@ -20,8 +20,8 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "bytes": 4190,
-      "sha256": "31f21c429d5079d6a2454a883321432c39572e3cccbb9bbff8f37ac40ddbe38b"
+      "bytes": 5354,
+      "sha256": "5f5a11b3ecce5f1366cdd084892a46ea748f52d31a51c649d126e4d71c972faf"
     },
     {
       "path": "BUILDING.md",
@@ -30,8 +30,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 3158,
-      "sha256": "a2edfd4258a2f7769d01c79abbb378cc9183938ec1958ba3c088d3687923ff84"
+      "bytes": 3315,
+      "sha256": "2e90a421ba23c4749bac94837c012c019c17161ff111a0e194869e4ddac0d889"
     },
     {
       "path": "cmake/Diagnostics.cmake",
@@ -45,8 +45,8 @@
     },
     {
       "path": "cmake/Runtime.cmake",
-      "bytes": 1348,
-      "sha256": "7553debff4314f74e714dbf987ee30a2472e7dc66c19befc000aa101bb435fac"
+      "bytes": 1465,
+      "sha256": "e559ff782ec3c18243ee29d0f08c5e79f4dcba49bf74d9a4af81cd8df8ced5de"
     },
     {
       "path": "cmake/SdlHost.cmake",
@@ -425,8 +425,28 @@
     },
     {
       "path": "src/flight.cpp",
-      "bytes": 106406,
-      "sha256": "99413548eab660234996c352ab75324a8f3b7a9d0fb4630b68160416937a539a"
+      "bytes": 43094,
+      "sha256": "e1a611ab9d8f2596094e470ee7b4458095b9a6b30aefab0858d88726e6f2f2b8"
+    },
+    {
+      "path": "src/flight_aircraft.cpp",
+      "bytes": 17592,
+      "sha256": "c7f4003bbfb3b5ce0a5e1cb1f79695a24963f0048716de58f7cfccfb72bdde6c"
+    },
+    {
+      "path": "src/flight_entities.cpp",
+      "bytes": 8913,
+      "sha256": "45c0215910e60cd9e4885d47cc71a14654a2b3c3b5c92b906b223919cf0a9039"
+    },
+    {
+      "path": "src/flight_entities.hpp",
+      "bytes": 5468,
+      "sha256": "93d175f81d1fa66f8ce7f80d33a1fcca3578830df57565eb9d845399ee971caf"
+    },
+    {
+      "path": "src/flight_ground.cpp",
+      "bytes": 12409,
+      "sha256": "af2681ec3d3bcbf39681d0d75db28900bae2036c51ed7ecc7ec1b11ba7a708e8"
     },
     {
       "path": "src/flight_input.cpp",
@@ -437,6 +457,11 @@
       "path": "src/flight_input.hpp",
       "bytes": 831,
       "sha256": "1de144a3f756d2af5fa659bb05cca84b999919a480a5c14d93cf163a638b0068"
+    },
+    {
+      "path": "src/flight_projectiles.cpp",
+      "bytes": 24091,
+      "sha256": "105f2bf316d614e7e9360916e62acc819c9ec585a3a3833343c3a583f522a75b"
     },
     {
       "path": "src/flight_work.cpp",

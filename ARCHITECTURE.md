@@ -37,12 +37,33 @@ Frontend request dispatch applies settings through one named private operation.
 Startup and movie transitions retain the original explicit clock operations
 alongside their corresponding state changes.
 
+## Flight and entity modules
+
+`FlightController` owns the player, scene, interrupt targets and update
+transactions. `src/flight.cpp` retains controller input, views, weapon firing,
+entity traversal and the per-entity RNG tail. Its interrupt-target scope spans
+entity callbacks and synchronous sound work.
+
+| File | Responsibility |
+|---|---|
+| `src/flight_entities.hpp` | Private operation contracts, retained sound sink, fixed-width arithmetic and pose helpers |
+| `src/flight_entities.cpp` | Bearings, explosions, enemy projectile construction and allied-target scans |
+| `src/flight_ground.cpp` | Ground movement, turrets and support vehicles |
+| `src/flight_aircraft.cpp` | Enemy/allied aircraft, wingman formation and launch commands |
+| `src/flight_projectiles.cpp` | Ballistic/guided/enemy projectiles, contact damage and artillery |
+
+Entity helpers receive references to the controller's candidate state. The
+ordered sound sink invokes its callback at the originating sound call before
+execution resumes. Shared arithmetic retains the recovered wrap, shift and
+sign-mask behavior. Helper bodies retain their original work-accounting calls
+and address comments.
+
 ## Refactoring sequence
 
 1. Session ownership and lifecycle separation is the first completed batch.
-2. Group the ground, aircraft and projectile update paths in `src/flight.cpp`
-   around their existing contracts and shared state. Preserve traversal and
-   interrupt-sensitive RNG access order in each extraction.
+2. Ground, aircraft, projectile and shared combat operations are separated
+   into private entity modules. The controller retains traversal, transaction
+   ownership and interrupt-sensitive RNG access order.
 3. Separate resource decoding, music sequencing and voice mixing in
    `src/audio.cpp`. Trace producer-buffer ownership and device callbacks before
    changing their representation.

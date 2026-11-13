@@ -18,9 +18,11 @@ and Alt+Enter desktop fullscreen. Build this branch to try these features.
 ```
 
 Enhanced flight renders terrain and directional SG models into a display-sized
-color/depth buffer, with bilinear terrain heights and camera interpolation.
+color/depth buffer, with stitched terrain detail and camera/entity interpolation.
 The default window renders the world at 960×720. The recovered cockpit and HUD
-retain their original artwork. Use `--scene-renderer native` for the indexed
+retain their original artwork, with optional sharp edge scaling.
+Use `--cockpit-scale nearest` for native pixel blocks.
+Use `--scene-renderer native` for the indexed
 presentation or `--interpolation off` for discrete camera steps.
 
 Enhanced controller bindings and tuning/display preferences persist in
@@ -29,7 +31,8 @@ for a saved action override.
 [Controller configuration](PREVIEW.md#controller-bindings-and-preferences)
 
 The default launch profile remains faithful. Immutable world observations feed
-a portable CPU renderer with an independent camera. SDL2 owns device output.
+a portable CPU renderer with a full-pose, asymmetric-projection camera
+interface and separate cockpit composition. SDL2 owns device output.
 OpenXR runtime admission is available in optional builds. Stereo submission
 and headset gameplay remain planned. Scripted screen effects, reflected-water
 scenes and crash presentation use the recovered indexed image.

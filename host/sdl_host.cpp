@@ -81,7 +81,7 @@ using SdlPointer = std::unique_ptr<T, decltype(Destroy)>;
 class SdlFlightHost::Impl {
 public:
     explicit Impl(SdlHostOptions options) : scene_rendering(options.scene_rendering),
-        interpolation(options.interpolation), profile(options.input) {
+        interpolation(options.interpolation), cockpit_scaling(options.cockpit_scaling), profile(options.input) {
         validate_controller_tuning(options.controller);
         validate_controller_bindings(options.bindings);
         const bool enhanced = profile == InputProfile::enhanced;
@@ -260,6 +260,7 @@ public:
     Playback playback = Playback::paused;
     SceneRendering scene_rendering;
     CameraInterpolation interpolation;
+    CockpitScaling cockpit_scaling;
     CameraHistory camera_history;
     SpatialRenderer spatial_renderer;
     SdlSubsystem subsystem{SDL_INIT_VIDEO | SDL_INIT_EVENTS};
@@ -308,7 +309,11 @@ void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> 
     const auto camera = impl_->interpolation == CameraInterpolation::enabled ?
         impl_->camera_history.sample(time) : spatial_camera(frame->spatial->camera);
     const auto size = impl_->presenter->spatial_size();
-    const auto& image = impl_->spatial_renderer.render(*frame->spatial, camera, frame->image, size.first, size.second);
+    const auto poses = impl_->interpolation == CameraInterpolation::enabled ?
+        impl_->camera_history.sample_entities(time) : entity_poses(*frame->spatial);
+    const auto view = camera_view(camera, size.first, size.second);
+    const auto& image = impl_->spatial_renderer.render(*frame->spatial, view, poses, frame->image,
+        size.first, size.second, impl_->cockpit_scaling);
     impl_->presenter->present_spatial(image.pixels, image.width, image.height);
     update_title(frame->flight, status);
 }

@@ -108,7 +108,8 @@ uses SDL2's GameController API. [SDL2 controller documentation](https://wiki.lib
 | `--invert-y on\|off` | off | Invert gamepad pitch |
 | `--scale nearest\|linear\|integer` | integer | Image scaling and viewport policy |
 | `--scene-renderer spatial\|native` | spatial | High-resolution world or recovered indexed presentation |
-| `--interpolation on\|off` | on | Presentation-only camera interpolation |
+| `--interpolation on\|off` | on | Presentation-only camera and entity interpolation |
+| `--cockpit-scale nearest\|sharp` | sharp | Native overlay sampling or mask-aware Scale2x edges |
 
 These options require `--mode enhanced`. Keyboard steering takes precedence
 over analog steering. Controller neutral detection uses the selected deadzone.
@@ -182,35 +183,45 @@ Alt+Enter toggles desktop fullscreen in enhanced mode. Its Enter is consumed
 by the host presentation shortcut. F1–F12 retain their instrument bindings.
 The faithful launch profile keeps nearest scaling and its existing key route.
 
-Enhanced flight renders the 1024×1024 toroidal height/color maps directly into
-an output-sized color/depth buffer. Heights use bilinear sampling. The source
-color map retains its original texel density. Distance haze uses quarter/half
-RGB fog blends at the recovered distance-table boundaries. Panoramic and flat
-sky settings follow the selected scenery policy. SG models are directional and
-animated sprites. The spatial renderer draws depth-tested billboards using
-their original frames, origins, transparency, mirroring and rotor layers.
+Enhanced flight renders the 1024×1024 toroidal height/color maps into an
+output-sized color/depth buffer. The CPU terrain mesh uses distance-dependent
+rings with stitched detail boundaries and bilinear vertex heights. Perspective
+texture sampling retains the original color-map density. Distance haze uses
+quarter/half RGB fog blends at the recovered distance-table boundaries.
+Panoramic and flat sky settings follow the selected scenery policy. SG models
+use depth-tested directional/animated billboards with their original frames,
+origins, transparency, mirroring, elevation tables and rotor layers.
 
 At the default window size, the world is 960×720. The selected 4:3 viewport
 sets the resolution after high-DPI and integer-scaling rules. The CPU renderer
 caps its output at 3200×2400. The cockpit artwork, HUD and instrument monitors
-retain native resolution. A compositor coverage mask preserves their pixels,
-including HUD colors shared with the terrain. Crash presentation, scripted
+retain native source resolution. A separate compositor uses the scene coverage
+mask, including HUD colors shared with terrain. Enhanced spatial presentation
+defaults to mask-aware Scale2x edges at outputs of at least 640×480. Native-sized
+and smaller outputs use nearest sampling. `--cockpit-scale nearest` selects
+the original pixel blocks at every size. The choice persists in host preferences. Crash presentation, scripted
 screen-effect frames and reflected-water scenes retain indexed presentation.
 `--scene-renderer native` selects that presentation throughout the session.
 
-Camera interpolation spans the previous and current world observations over
-one simulation interval. It adds one interval of visual latency. Position and
-heading interpolation follow the shortest toroidal path. Pause freezes its
-presentation clock. Mission, resource, view and discontinuous frame transitions
-reset its history. Entity transforms and native instruments update at the
-simulation cadence. `--interpolation off` displays the current scene camera.
+Camera and entity interpolation span the previous and current world
+observations over one shared simulation interval, adding one interval of visual
+latency. Position, heading and rotor phase follow the shortest wrapped path.
+Pause freezes presentation time. Mission/resource/view changes, frame gaps and
+large jumps reset history. Entity activation, phase/model changes and broken
+projectile pose histories snap to the current observation. Sprite animation
+frames and native instruments use the current canonical state.
+`--interpolation off` displays current camera and entity transforms.
 
 The session optionally exports immutable terrain/model resources and frame
 transforms at its original world-drawing boundary. Capturing and rendering
 these observations preserves CPU/IRQ/RNG accounting, simulation and mixed PCM.
 The spatial renderer accepts a separate camera and owns no SDL2 devices or
-session clock. This boundary can serve future eye views. OpenXR stereo
-projection, pose integration and frame submission remain planned.
+session clock. Its camera interface supports right-handed quaternion poses,
+asymmetric tangent frusta and explicit near/far clipping. World-only output
+provides RGBA color and positive forward depth in world units. Per-eye pose
+composition accepts tracked metre offsets with an explicit world-units-per-metre
+scale. This supports software eye views and separate cockpit composition.
+OpenXR tracking/session integration and swapchain submission remain planned.
 
 Automated Windows and Linux checks cover spatial rendering, camera wrapping,
 compositor coverage and continuous indexed/spatial capture parity. SDL2 route
@@ -232,8 +243,8 @@ cmake --build build --target comanche_viewer
 ```
 
 The query reports runtime identity and headset OpenGL requirements. Runtime
-admission has synthetic lifecycle/error coverage. Headset frame submission,
-stereo rendering, XR actions and physical headset qualification remain planned.
+admission has synthetic lifecycle/error coverage. OpenXR session/view acquisition,
+frame submission, actions and physical headset qualification remain planned.
 Immutable spatial terrain/entity snapshots are implemented. The current immutable session snapshot
 and latest-frame mailbox provide the presentation boundary for that work.
 Graphics requirements are queried before creating an XR graphics session.

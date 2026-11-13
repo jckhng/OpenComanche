@@ -66,6 +66,8 @@ int main(int argc, char** argv) {
         verify();
         const training_test::Route route(indexed_installation);
         host::SpatialRenderer renderer;
+        host::CameraHistory history;
+        history.observe(first, spatial_audio->execution_clock().cycles(), 0);
         double render_seconds = 0;
         unsigned rendered = 0, compared = 0;
         for (unsigned tick = 0; tick < training_test::victory_tick_limit && !indexed.state().ended; ++tick) {
@@ -77,6 +79,7 @@ int main(int argc, char** argv) {
             verify();
             ++compared;
             const auto snapshot = observed.spatial_frame();
+            history.observe(snapshot, spatial_audio->execution_clock().cycles(), (tick + 1) / double(training_ticks_per_second));
             require(snapshot && snapshot->resources == first->resources && (indexed.state().ended || snapshot->serial == tick + 1),
                     "Mission frames must share immutable asset ownership with monotonically advancing identities");
             if (!indexed.state().ended && ((tick < 128 && tick % 16 == 0) || tick % 128 == 0)) {
@@ -109,6 +112,13 @@ int main(int argc, char** argv) {
                     }
                     save(std::filesystem::path(argv[3]) / ("native-" + std::to_string(tick) + ".ppm"), native);
                 }
+                const auto display_time = (tick + 1.5) / double(training_ticks_per_second);
+                const auto view = host::camera_view(history.sample(display_time), 960, 720);
+                const auto& enhanced = renderer.render(*snapshot, view, history.sample_entities(display_time),
+                    observed.cockpit_image(), 960, 720, host::CockpitScaling::sharp);
+                require(enhanced.width == 960 && enhanced.height == 720, "Interpolated sharp presentation must produce the selected viewport");
+                if (argc == 4) { save(std::filesystem::path(argv[3]) / ("sharp-interpolated-" + std::to_string(tick) + ".ppm"), enhanced); }
+                verify();
             }
         }
         require(first->serial == 0 && first->camera.x != observed.spatial_frame()->camera.x,

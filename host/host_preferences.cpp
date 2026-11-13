@@ -131,8 +131,12 @@ std::string serialize(const SdlHostOptions& options) {
     if (options.interpolation != CameraInterpolation::enabled && options.interpolation != CameraInterpolation::disabled) {
         throw std::invalid_argument("Invalid host interpolation preference");
     }
+    if (options.cockpit_scaling != CockpitScaling::nearest && options.cockpit_scaling != CockpitScaling::sharp) {
+        throw std::invalid_argument("Invalid cockpit scaling preference");
+    }
     output << "scene-renderer=" << (options.scene_rendering == SceneRendering::native ? "native" : "spatial") << '\n'
         << "interpolation=" << (options.interpolation == CameraInterpolation::enabled ? "on" : "off") << '\n'
+        << "cockpit-scale=" << (options.cockpit_scaling == CockpitScaling::sharp ? "sharp" : "nearest") << '\n'
         << "steer-x=" << axis_name(options.bindings.horizontal) << '\n'
         << "steer-y=" << axis_name(options.bindings.vertical) << '\n';
     for (std::size_t button = 0; button < controller_button_count; ++button) {

@@ -17,7 +17,8 @@ int main(int argc, char** argv) {
             " [--bind menu.CONTROL=ACTION|flight.CONTROL=ACTION]"
             " [--steer-x none|leftx|lefty|rightx|righty] [--steer-y none|leftx|lefty|rightx|righty]"
             " [--stick-deadzone 0..32766] [--stick-sensitivity 1..400]"
-            " [--invert-y on|off] [--scale nearest|linear|integer] [--scene-renderer native|spatial] [--interpolation on|off]";
+            " [--invert-y on|off] [--scale nearest|linear|integer] [--scene-renderer native|spatial] [--interpolation on|off]"
+            " [--cockpit-scale nearest|sharp]";
         if (argc == 2 && std::string(argv[1]) == "--help") {
             std::cout << usage << "\ncomanche_viewer --openxr-info (OpenXR-enabled build)\n";
             return 0;

@@ -36,6 +36,35 @@ after host initialization. Context/focus suppression, trigger neutral rearming
 and shared logical-key ownership belong to the input adapter. Original-format
 pilot and menu settings retain their existing persistence owners.
 
+## Enhanced presentation views
+
+`host/spatial_history.cpp` samples camera and entity transforms from retained
+immutable observations using one clamped display interval. Identity/phase
+changes, projectile pose discontinuities and large jumps reset interpolation.
+Canonical state and sprite animation remain owned by the simulation.
+
+`host/camera_view.hpp` defines SDK-independent poses, tangent frusta and view
+projection. World X/Z follow map X/Y, with world Y pointing up. Camera space uses
+X right, Y up and negative Z forward. Native map coordinates use 2²² fixed-point
+units per cell. Display heights use the established terrain/entity scale.
+Tracked-pose composition requires an explicit world-units-per-metre factor.
+
+| File | Responsibility |
+|---|---|
+| `host/spatial_renderer.cpp` | World color/depth ownership, sky, palette and view admission |
+| `host/spatial_terrain.cpp` | Stitched distance rings and original-density terrain color sampling |
+| `host/spatial_models.cpp` | Directional SG frames, rotor layers and perspective billboard placement |
+| `host/spatial_raster.hpp` | Six-plane triangle clipping, perspective attributes and depth testing |
+| `host/cockpit_scaling.cpp` | Coverage-aware nearest/Scale2x overlay composition |
+
+`render_world` accepts a view, entity poses and palette independently of a
+cockpit image. It returns color and positive forward depth in world units.
+The renderer owns the output until its next call. Each eye may use an independent
+renderer or consume its output before rendering another view. The SDL2 host
+composes the native overlay for flat-screen presentation. OpenXR runtime frame
+timing, tracked spaces/actions and swapchain ownership belong to a future host
+adapter.
+
 ## Session modules
 
 All three implementation files define private operations of `GameSession`.

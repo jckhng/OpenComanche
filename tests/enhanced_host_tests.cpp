@@ -156,6 +156,32 @@ int main() {
         input = host.poll();
         require(input.scan_bytes == std::vector<std::uint8_t>{0x9c} && !input.controls.cycle_target,
                 "Adding Alt after an ordinary Enter must preserve its canonical release");
+
+        auto resources = std::make_shared<comanchecd::SpatialResources>();
+        resources->assets.terrain.height.assign(comanchecd::terrain_side * comanchecd::terrain_side, 0);
+        resources->assets.terrain.color.assign(comanchecd::terrain_side * comanchecd::terrain_side, 1);
+        auto scene = std::make_shared<comanchecd::SpatialFrame>();
+        scene->resources = resources;
+        scene->camera.height = 40;
+        scene->scene_mask.assign(comanchecd::cockpit_width * comanchecd::cockpit_height, 1);
+        auto snapshot = std::make_shared<comanchecd::SessionPresentation>();
+        snapshot->image.palette[1] = {0, 63, 0};
+        snapshot->image.palette[255] = {0, 0, 63};
+        snapshot->spatial = scene;
+        snapshot->flying = true;
+        snapshot->cpu_cycles = 100;
+        host.present_snapshot(snapshot, "View fixture");
+        auto next_scene = std::make_shared<comanchecd::SpatialFrame>(*scene);
+        next_scene->serial = 1;
+        next_scene->camera.x = 4194304;
+        auto next_snapshot = std::make_shared<comanchecd::SessionPresentation>(*snapshot);
+        next_snapshot->spatial = next_scene;
+        next_snapshot->cpu_cycles = 1000100;
+        host.present_snapshot(next_snapshot, "Interpolated view fixture");
+        host.set_playback(Playback::paused);
+        host.present_snapshot(next_snapshot, "Paused view fixture");
+        require(scene->camera.x == 0 && next_scene->camera.x == 4194304 && snapshot->cpu_cycles == 100,
+                "The live SDL2 presentation path must consume immutable views without advancing their clock");
         std::cout << "Enhanced keyboard buffering and input boundaries passed\n";
         return 0;
     } catch (const std::exception& error) {

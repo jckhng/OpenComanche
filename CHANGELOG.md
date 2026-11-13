@@ -2,6 +2,11 @@
 
 ## Enhanced SDL2 development
 
+- Interpolate entity positions/headings/rotors with the camera and reset
+  discontinuous observations. Add persistent sharp cockpit/HUD scaling.
+- Add SDK-independent full-pose/asymmetric camera views, world-only output
+  and a clipped CPU terrain/billboard renderer for future per-eye presentation.
+
 - Configurable context-specific controller button/trigger actions and steering
   axes, with persistent enhanced host preferences and command-line overrides.
 

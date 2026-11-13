@@ -50,7 +50,7 @@ int main() {
             "--bind", "flight.x=fire", "--bind", "flight.lefttrigger=settings", "--bind", "menu.b=accept",
             "--steer-x", "rightx", "--steer-y", "righty", "--stick-deadzone", "4000",
             "--stick-sensitivity", "150", "--invert-y", "on", "--scale", "linear",
-            "--scene-renderer", "native", "--interpolation", "off"});
+            "--scene-renderer", "native", "--interpolation", "off", "--cockpit-scale", "nearest"});
         preferences.write(configured);
         const auto path = directory / "host-preferences.cfg";
         const auto original = text(path);
@@ -62,7 +62,7 @@ int main() {
                 loaded.bindings.vertical == ControllerAxis::righty && loaded.controller.deadzone == 4000 &&
                 loaded.controller.sensitivity == 150 && loaded.controller.pitch == PitchDirection::inverted &&
                 loaded.scaling == ImageScaling::linear && loaded.scene_rendering == SceneRendering::native &&
-                loaded.interpolation == CameraInterpolation::disabled,
+                loaded.interpolation == CameraInterpolation::disabled && loaded.cockpit_scaling == CockpitScaling::nearest,
                 "Restart must restore bindings, axes, tuning and presentation preferences");
         require(restarted.resolve({}).input == InputProfile::faithful &&
                 restarted.resolve({}).controller.deadzone == ControllerTuning{}.deadzone,
@@ -83,7 +83,8 @@ int main() {
                 {"--bind", "flight.a=fire"}, {"--mode", "enhanced", "--bind", "a=fire"},
                 {"--mode", "enhanced", "--bind", "flight.a=accept"}, {"--mode", "enhanced", "--bind", "menu.a=fire"},
                 {"--mode", "enhanced", "--bind", "menu.lefttrigger=accept"}, {"--mode", "enhanced", "--bind", "flight.missing=fire"},
-                {"--mode", "enhanced", "--bind", "flight.a=missing"}, {"--mode", "enhanced", "--steer-x", "triggerleft"}}) {
+                {"--mode", "enhanced", "--bind", "flight.a=missing"}, {"--mode", "enhanced", "--steer-x", "triggerleft"},
+                {"--cockpit-scale", "sharp"}, {"--mode", "enhanced", "--cockpit-scale", "smooth"}}) {
             bool rejected = false;
             try { preferences.resolve(arguments); } catch (const std::invalid_argument&) { rejected = true; }
             require(rejected && text(path) == replacement, "Invalid bindings must preserve the saved preferences");

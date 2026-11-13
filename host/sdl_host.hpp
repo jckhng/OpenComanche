@@ -4,6 +4,7 @@
 #include "controller_response.hpp"
 #include "controller_bindings.hpp"
 #include "sdl_presenter.hpp"
+#include "cockpit_scaling.hpp"
 
 namespace comanchecd::host {
 enum class SceneRendering { spatial, native };
@@ -17,6 +18,7 @@ struct SdlHostOptions {
     SceneRendering scene_rendering = SceneRendering::spatial;
     CameraInterpolation interpolation = CameraInterpolation::enabled;
     ControllerBindings bindings;
+    CockpitScaling cockpit_scaling = CockpitScaling::sharp;
 };
 
 class SdlFlightHost final : public FlightHost {

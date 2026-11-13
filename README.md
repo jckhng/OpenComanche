@@ -23,6 +23,11 @@ The default window renders the world at 960×720. The recovered cockpit and HUD
 retain their original artwork. Use `--scene-renderer native` for the indexed
 presentation or `--interpolation off` for discrete camera steps.
 
+Enhanced controller bindings and tuning/display preferences persist in
+`host-preferences.cfg` inside the native profile. Use `--bind flight.x=fire`
+for a saved action override.
+[Controller configuration](PREVIEW.md#controller-bindings-and-preferences)
+
 The default launch profile remains faithful. Immutable world observations feed
 a portable CPU renderer with an independent camera. SDL2 owns device output.
 OpenXR runtime admission is available in optional builds. Stereo submission

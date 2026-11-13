@@ -83,6 +83,7 @@ public:
     explicit Impl(SdlHostOptions options) : scene_rendering(options.scene_rendering),
         interpolation(options.interpolation), profile(options.input) {
         validate_controller_tuning(options.controller);
+        validate_controller_bindings(options.bindings);
         const bool enhanced = profile == InputProfile::enhanced;
         if (!enhanced && ((options.scaling != ImageScaling::profile_default && options.scaling != ImageScaling::nearest) ||
                 options.controller.deadzone != ControllerTuning{}.deadzone ||
@@ -99,7 +100,7 @@ public:
             (enhanced ? ImageScaling::integer : ImageScaling::nearest) : options.scaling;
         presenter = std::make_unique<SdlPresenter>(window.get(), scaling);
         if (enhanced) {
-            controller = std::make_unique<SdlController>(options.controller_mappings, options.controller);
+            controller = std::make_unique<SdlController>(options.controller_mappings, options.controller, options.bindings);
         }
     }
 
@@ -244,7 +245,7 @@ public:
             input.controls.flare = context == InputContext::training && held[SDL_SCANCODE_APOSTROPHE];
             input.cockpit = displays;
         }
-        if (controller) { controller->sample(input); }
+        if (controller) { controller->sample(input, throttle); flush_controller_keys(input); }
         return input;
     }
 

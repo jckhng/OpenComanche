@@ -2,6 +2,7 @@
 
 #include "flight_host.hpp"
 #include "controller_response.hpp"
+#include "controller_bindings.hpp"
 #include "sdl_presenter.hpp"
 
 namespace comanchecd::host {
@@ -15,6 +16,7 @@ struct SdlHostOptions {
     ImageScaling scaling = ImageScaling::profile_default;
     SceneRendering scene_rendering = SceneRendering::spatial;
     CameraInterpolation interpolation = CameraInterpolation::enabled;
+    ControllerBindings bindings;
 };
 
 class SdlFlightHost final : public FlightHost {

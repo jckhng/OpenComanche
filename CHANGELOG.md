@@ -2,6 +2,9 @@
 
 ## Enhanced SDL2 development
 
+- Configurable context-specific controller button/trigger actions and steering
+  axes, with persistent enhanced host preferences and command-line overrides.
+
 - Share compatible resource integer readers and name CD executable layouts,
   preserving format errors, decoded tables and clocked loading boundaries.
 

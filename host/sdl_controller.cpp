@@ -7,22 +7,43 @@ namespace comanchecd::host {
 namespace {
 constexpr int trigger_deadzone = 3276;
 constexpr std::uint8_t maximum_throttle = 15;
+constexpr std::array<SDL_GameControllerButton, controller_button_count> buttons{
+    SDL_CONTROLLER_BUTTON_A, SDL_CONTROLLER_BUTTON_B, SDL_CONTROLLER_BUTTON_X, SDL_CONTROLLER_BUTTON_Y,
+    SDL_CONTROLLER_BUTTON_BACK, SDL_CONTROLLER_BUTTON_GUIDE, SDL_CONTROLLER_BUTTON_START,
+    SDL_CONTROLLER_BUTTON_LEFTSTICK, SDL_CONTROLLER_BUTTON_RIGHTSTICK,
+    SDL_CONTROLLER_BUTTON_LEFTSHOULDER, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,
+    SDL_CONTROLLER_BUTTON_DPAD_UP, SDL_CONTROLLER_BUTTON_DPAD_DOWN,
+    SDL_CONTROLLER_BUTTON_DPAD_LEFT, SDL_CONTROLLER_BUTTON_DPAD_RIGHT};
+constexpr std::array<SDL_GameControllerAxis, controller_trigger_count> triggers{
+    SDL_CONTROLLER_AXIS_TRIGGERLEFT, SDL_CONTROLLER_AXIS_TRIGGERRIGHT};
 
-SDL_Scancode menu_key(Uint8 button) {
-    switch (button) {
-    case SDL_CONTROLLER_BUTTON_A: return SDL_SCANCODE_RETURN;
-    case SDL_CONTROLLER_BUTTON_B: return SDL_SCANCODE_ESCAPE;
-    case SDL_CONTROLLER_BUTTON_DPAD_UP: return SDL_SCANCODE_UP;
-    case SDL_CONTROLLER_BUTTON_DPAD_DOWN: return SDL_SCANCODE_DOWN;
-    case SDL_CONTROLLER_BUTTON_DPAD_LEFT: return SDL_SCANCODE_LEFT;
-    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return SDL_SCANCODE_RIGHT;
+Sint16 axis(SDL_GameController* controller, ControllerAxis selected) {
+    switch (selected) {
+    case ControllerAxis::leftx: return SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
+    case ControllerAxis::lefty: return SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
+    case ControllerAxis::rightx: return SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX);
+    case ControllerAxis::righty: return SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY);
+    default: return 0;
+    }
+}
+
+SDL_Scancode menu_key(HostAction action) {
+    switch (action) {
+    case HostAction::accept: return SDL_SCANCODE_RETURN;
+    case HostAction::back: case HostAction::settings: return SDL_SCANCODE_ESCAPE;
+    case HostAction::up: return SDL_SCANCODE_UP;
+    case HostAction::down: return SDL_SCANCODE_DOWN;
+    case HostAction::left: return SDL_SCANCODE_LEFT;
+    case HostAction::right: return SDL_SCANCODE_RIGHT;
     default: return SDL_SCANCODE_UNKNOWN;
     }
 }
 }
 
-SdlController::SdlController(const std::string& mappings, ControllerTuning tuning) : tuning_(tuning) {
+SdlController::SdlController(const std::string& mappings, ControllerTuning tuning, ControllerBindings bindings)
+    : tuning_(tuning), bindings_(bindings) {
     validate_controller_tuning(tuning_);
+    validate_controller_bindings(bindings_);
     if (!mappings.empty() && SDL_GameControllerAddMappingsFromFile(mappings.c_str()) < 0) {
         throw sdl_error("SDL2 controller mappings failed");
     }
@@ -40,8 +61,8 @@ void SdlController::open_available() {
         controller_ = SDL_GameControllerOpen(index);
         if (!controller_) { continue; }
         instance_ = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller_));
-        for (unsigned button = 0; button < held_.size(); ++button) {
-            held_[button] = SDL_GameControllerGetButton(controller_, static_cast<SDL_GameControllerButton>(button)) != 0;
+        for (std::size_t button = 0; button < held_.size(); ++button) {
+            held_[button] = SDL_GameControllerGetButton(controller_, buttons[button]) != 0;
         }
         reset();
         return;
@@ -50,17 +71,28 @@ void SdlController::open_available() {
 
 bool SdlController::flight_input() const { return context_ == InputContext::flight || context_ == InputContext::training; }
 
-void SdlController::release_keys() {
-    for (auto& key : menu_keys_) {
-        if (key != SDL_SCANCODE_UNKNOWN) { keys_.push_back({key, false}); key = SDL_SCANCODE_UNKNOWN; }
+void SdlController::release_key(std::size_t source) {
+    const auto key = menu_keys_[source];
+    menu_keys_[source] = SDL_SCANCODE_UNKNOWN;
+    if (key != SDL_SCANCODE_UNKNOWN && std::find(menu_keys_.begin(), menu_keys_.end(), key) == menu_keys_.end()) {
+        keys_.push_back({key, false});
     }
+}
+
+void SdlController::press_key(std::size_t source, SDL_Scancode key) {
+    if (std::find(menu_keys_.begin(), menu_keys_.end(), key) == menu_keys_.end()) { keys_.push_back({key, true}); }
+    menu_keys_[source] = key;
+}
+
+void SdlController::release_keys() {
+    for (std::size_t source = 0; source < menu_keys_.size(); ++source) { release_key(source); }
 }
 
 void SdlController::reset() {
     release_keys();
     suppressed_ = held_;
     axes_armed_ = false;
-    trigger_down_ = false;
+    trigger_down_.fill(false);
 }
 
 void SdlController::set_context(InputContext context) {
@@ -77,6 +109,26 @@ std::vector<ControllerKey> SdlController::take_keys() {
     return keys;
 }
 
+void SdlController::emit(HostAction action, std::size_t source, HostInput& input, std::uint8_t& throttle) {
+    if (action == HostAction::pause) {
+        if (context_ != InputContext::name_entry && input.pause != PauseAction::pause) { input.pause = PauseAction::toggle; }
+        return;
+    }
+    const auto key = menu_key(action);
+    if (key != SDL_SCANCODE_UNKNOWN) { press_key(source, key); return; }
+    switch (action) {
+    case HostAction::fire: input.pressed.fire = true; break;
+    case HostAction::target: input.pressed.target = true; break;
+    case HostAction::chaff: input.pressed.chaff = true; break;
+    case HostAction::flare: input.pressed.flare = true; break;
+    case HostAction::previous_weapon: input.controls.weapon = WeaponSelection::previous; break;
+    case HostAction::next_weapon: input.controls.weapon = WeaponSelection::next; break;
+    case HostAction::throttle_up: throttle = std::min<unsigned>(throttle + 1, maximum_throttle); break;
+    case HostAction::throttle_down: if (throttle) { --throttle; } break;
+    default: break;
+    }
+}
+
 void SdlController::event(const SDL_Event& event, HostInput& input, std::uint8_t& throttle) {
     if (event.type == SDL_CONTROLLERDEVICEADDED) { open_available(); return; }
     if (controller_ && event.type == SDL_CONTROLLERDEVICEREMOVED && event.cdevice.which == instance_) {
@@ -90,55 +142,36 @@ void SdlController::event(const SDL_Event& event, HostInput& input, std::uint8_t
         open_available();
         return;
     }
-    if (!controller_ || (event.type != SDL_CONTROLLERBUTTONDOWN && event.type != SDL_CONTROLLERBUTTONUP)) { return; }
-    if (event.cbutton.which != instance_) { return; }
-    const auto button = event.cbutton.button;
-    if (button >= held_.size()) { return; }
+    if (!controller_ || (event.type != SDL_CONTROLLERBUTTONDOWN && event.type != SDL_CONTROLLERBUTTONUP) ||
+            event.cbutton.which != instance_) { return; }
+    const auto found = std::find(buttons.begin(), buttons.end(), static_cast<SDL_GameControllerButton>(event.cbutton.button));
+    if (found == buttons.end()) { return; }
+    const auto button = static_cast<std::size_t>(found - buttons.begin());
     const bool down = event.type == SDL_CONTROLLERBUTTONDOWN;
     const bool previous = held_[button];
     held_[button] = down;
     if (!down) {
         suppressed_[button] = false;
-        if (menu_keys_[button] != SDL_SCANCODE_UNKNOWN) {
-            keys_.push_back({menu_keys_[button], false});
-            menu_keys_[button] = SDL_SCANCODE_UNKNOWN;
-        }
+        release_key(button);
         return;
     }
     if (previous || suppressed_[button] || !focused_) { return; }
     input.key_pressed = true;
-    if (button == SDL_CONTROLLER_BUTTON_START && context_ != InputContext::name_entry) {
-        if (input.pause != PauseAction::pause) { input.pause = PauseAction::toggle; }
-        return;
-    }
-    const auto key = flight_input() ?
-        (button == SDL_CONTROLLER_BUTTON_BACK ? SDL_SCANCODE_ESCAPE : SDL_SCANCODE_UNKNOWN) : menu_key(button);
-    if (key != SDL_SCANCODE_UNKNOWN) {
-        menu_keys_[button] = key;
-        keys_.push_back({key, true});
-        return;
-    }
-    if (!flight_input()) { return; }
-    switch (button) {
-    case SDL_CONTROLLER_BUTTON_A: input.pressed.fire = true; break;
-    case SDL_CONTROLLER_BUTTON_Y: input.pressed.target = true; break;
-    case SDL_CONTROLLER_BUTTON_X: input.pressed.chaff = true; break;
-    case SDL_CONTROLLER_BUTTON_B: input.pressed.flare = true; break;
-    case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: input.controls.weapon = WeaponSelection::previous; break;
-    case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: input.controls.weapon = WeaponSelection::next; break;
-    case SDL_CONTROLLER_BUTTON_DPAD_UP: throttle = std::min<unsigned>(throttle + 1, maximum_throttle); break;
-    case SDL_CONTROLLER_BUTTON_DPAD_DOWN: if (throttle) { --throttle; } break;
-    default: break;
-    }
+    emit(flight_input() ? bindings_.flight[button] : bindings_.menu[button], button, input, throttle);
 }
 
-void SdlController::sample(HostInput& input) {
+void SdlController::sample(HostInput& input, std::uint8_t& throttle) {
     if (!controller_ || !focused_ || !flight_input()) { return; }
-    const auto x = SDL_GameControllerGetAxis(controller_, SDL_CONTROLLER_AXIS_LEFTX);
-    const auto y = SDL_GameControllerGetAxis(controller_, SDL_CONTROLLER_AXIS_LEFTY);
-    const auto trigger = SDL_GameControllerGetAxis(controller_, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+    const auto x = axis(controller_, bindings_.horizontal);
+    const auto y = axis(controller_, bindings_.vertical);
+    std::array<bool, controller_trigger_count> pressed{};
+    for (std::size_t trigger = 0; trigger < triggers.size(); ++trigger) {
+        pressed[trigger] = bindings_.triggers[trigger] != HostAction::none &&
+            SDL_GameControllerGetAxis(controller_, triggers[trigger]) > trigger_deadzone;
+    }
     if (!axes_armed_) {
-        axes_armed_ = std::abs(int(x)) <= tuning_.deadzone && std::abs(int(y)) <= tuning_.deadzone && trigger <= trigger_deadzone;
+        axes_armed_ = std::abs(int(x)) <= tuning_.deadzone && std::abs(int(y)) <= tuning_.deadzone &&
+            std::none_of(pressed.begin(), pressed.end(), [](bool down) { return down; });
     }
     if (axes_armed_) {
         if (input.controls.horizontal == 0) { input.controls.horizontal = controller_steering(x, tuning_); }
@@ -146,11 +179,18 @@ void SdlController::sample(HostInput& input) {
             const auto pitch = controller_steering(y, tuning_);
             input.controls.vertical = tuning_.pitch == PitchDirection::inverted ? -pitch : pitch;
         }
-        const bool trigger_down = trigger > trigger_deadzone;
-        input.pressed.fire = input.pressed.fire || (trigger_down && !trigger_down_);
-        input.controls.fire = input.controls.fire || trigger_down;
-        trigger_down_ = trigger_down;
+        for (std::size_t trigger = 0; trigger < triggers.size(); ++trigger) {
+            const auto source = controller_button_count + trigger;
+            if (pressed[trigger] && !trigger_down_[trigger]) { emit(bindings_.triggers[trigger], source, input, throttle); }
+            if (!pressed[trigger] && trigger_down_[trigger]) { release_key(source); }
+            input.controls.fire = input.controls.fire || (pressed[trigger] && bindings_.triggers[trigger] == HostAction::fire);
+            trigger_down_[trigger] = pressed[trigger];
+        }
     }
-    input.controls.fire = input.controls.fire || (held_[SDL_CONTROLLER_BUTTON_A] && !suppressed_[SDL_CONTROLLER_BUTTON_A]);
+    for (std::size_t button = 0; button < held_.size(); ++button) {
+        input.controls.fire = input.controls.fire ||
+            (bindings_.flight[button] == HostAction::fire && held_[button] && !suppressed_[button]);
+    }
+    input.controls.throttle = throttle;
 }
 }

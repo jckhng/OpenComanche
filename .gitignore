@@ -84,3 +84,6 @@ Thumbs.db
 *.mp4
 *.avi
 *.mkv
+# Native host preferences.
+host-preferences.cfg
+host-preferences.cfg.pending-*/

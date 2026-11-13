@@ -22,6 +22,20 @@ Additional rendering reads those observations. `MissionAudio` produces PCM
 through a separate ordered path. Both presentation modes share the canonical
 session, simulation and audio implementation.
 
+## Host input and preferences
+
+`host/controller_bindings.hpp` defines logical controller slots and `HostAction`
+identifiers independently of SDL2 headers. The SDL2 adapter translates device
+events into those actions and the established `HostInput` boundary. Future XR
+actions can use the same host action vocabulary and simulation input contract.
+
+`host/host_preferences.cpp` owns versioned text parsing and staged replacement
+inside the native profile. Command-line overrides share the option validator.
+`session_main.cpp` selects enhanced preference loading and saves resolved values
+after host initialization. Context/focus suppression, trigger neutral rearming
+and shared logical-key ownership belong to the input adapter. Original-format
+pilot and menu settings retain their existing persistence owners.
+
 ## Session modules
 
 All three implementation files define private operations of `GameSession`.

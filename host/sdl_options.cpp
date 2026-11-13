@@ -11,9 +11,8 @@ int integer_option(const std::string& value) {
 }
 }
 
-SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments) {
+SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments, SdlHostOptions options) {
     if (arguments.size() % 2 != 0) { throw std::invalid_argument("Each host option requires a value"); }
-    SdlHostOptions options;
     bool enhanced_options = false;
     for (std::size_t index = 0; index < arguments.size(); index += 2) {
         const auto& option = arguments[index];
@@ -23,10 +22,16 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments) {
             continue;
         }
         enhanced_options = true;
-        if (option == "--controller-mappings" && !value.empty()) {
+        if (option == "--controller-mappings") {
             options.controller_mappings = value;
         } else if (option == "--stick-deadzone") {
             options.controller.deadzone = integer_option(value);
+        } else if (option == "--bind") {
+            bind_controller(options.bindings, value);
+        } else if (option == "--steer-x") {
+            options.bindings.horizontal = controller_axis(value);
+        } else if (option == "--steer-y") {
+            options.bindings.vertical = controller_axis(value);
         } else if (option == "--stick-sensitivity") {
             options.controller.sensitivity = integer_option(value);
         } else if (option == "--invert-y" && (value == "on" || value == "off")) {
@@ -43,8 +48,9 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments) {
         }
     }
     validate_controller_tuning(options.controller);
+    validate_controller_bindings(options.bindings);
     if (enhanced_options && options.input != InputProfile::enhanced) {
-        throw std::invalid_argument("Controller tuning, mapping and scaling options require --mode enhanced");
+        throw std::invalid_argument("Controller and presentation options require --mode enhanced");
     }
     return options;
 }

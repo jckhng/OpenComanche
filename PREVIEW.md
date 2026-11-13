@@ -113,6 +113,59 @@ uses SDL2's GameController API. [SDL2 controller documentation](https://wiki.lib
 These options require `--mode enhanced`. Keyboard steering takes precedence
 over analog steering. Controller neutral detection uses the selected deadzone.
 
+## Controller bindings and preferences
+
+Enhanced launches load `host-preferences.cfg` from the native profile directory.
+Command-line values override saved values and persist after successful SDL2
+host initialization. An initial enhanced launch creates the file. It stores
+bindings, steering axes, stick tuning, mapping-file location, scaling, scene
+renderer and interpolation. Select `--mode enhanced` on each launch to use it.
+
+```sh
+./comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile --mode enhanced --bind flight.a=target --bind flight.x=fire --steer-x rightx --steer-y righty
+```
+
+Repeat `--bind CONTEXT.CONTROL=ACTION` to change individual controls. Contexts
+are `menu` and `flight`. Button names are `a`, `b`, `x`, `y`, `back`, `guide`,
+`start`, `leftstick`, `rightstick`, `leftshoulder`, `rightshoulder`, `dpup`,
+`dpdown`, `dpleft` and `dpright`. Flight also accepts `lefttrigger` and
+`righttrigger`. Several controls can share an action. `none` unbinds a control.
+
+| Context | Actions |
+|---|---|
+| Menu/name entry | `accept`, `back`, `up`, `down`, `left`, `right`, `pause`, `none` |
+| Flight | `fire`, `target`, `chaff`, `flare`, `previous-weapon`, `next-weapon`, `throttle-up`, `throttle-down`, `settings`, `pause`, `none` |
+
+Pause retains its name-entry suppression. Buttons and triggers retain release
+ownership, focus/context suppression and neutral-axis rearming after remapping.
+`--steer-x` and `--steer-y` select `leftx`, `lefty`, `rightx`, `righty` or `none`.
+Keyboard steering retains precedence. Triggers emit an action on crossing the
+press threshold. A trigger bound to `fire` also supplies held fire.
+
+The text preference file accepts `#` comment lines and partial overrides with
+`version=1`. For example, these lines select the right stick and move fire.
+
+```ini
+version=1
+steer-x=rightx
+steer-y=righty
+bind.flight.a=target
+bind.flight.x=fire
+```
+
+The existing tuning/presentation option names are file keys, without `--`.
+Mapping paths in this file resolve relative to the profile directory.
+Command-line mapping paths resolve relative to the working directory and save
+as absolute paths. An empty `controller-mappings=` restores built-in mappings.
+Deleting the file restores the enhanced defaults. Invalid files report an error
+before launching an enhanced session. Equivalent preferences preserve comments
+and formatting. Changes save a complete replacement and retain the previous
+file as `host-preferences.cfg.bak`.
+
+Host preferences have a separate file and lifetime from the DOS pilot/settings
+records. Faithful launches use their existing keyboard and DOS settings route.
+Physical remapped-controller qualification remains open.
+
 ## Enhanced SDL2 presentation
 
 Enhanced windows request high-DPI output. Integer scaling uses the largest
@@ -180,8 +233,8 @@ cmake --build build --target comanche_viewer
 
 The query reports runtime identity and headset OpenGL requirements. Runtime
 admission has synthetic lifecycle/error coverage. Headset frame submission,
-spatial terrain/entity snapshots, stereo rendering, XR actions and physical
-headset qualification remain planned. The current immutable session snapshot
+stereo rendering, XR actions and physical headset qualification remain planned.
+Immutable spatial terrain/entity snapshots are implemented. The current immutable session snapshot
 and latest-frame mailbox provide the presentation boundary for that work.
 Graphics requirements are queried before creating an XR graphics session.
 [Khronos OpenXR requirements](https://registry.khronos.org/OpenXR/specs/1.1/man/html/xrGetOpenGLGraphicsRequirementsKHR.html)

@@ -1,5 +1,6 @@
 #include "sdl_host.hpp"
 #include "sdl_common.hpp"
+#include "sdl_options.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -40,8 +41,9 @@ int main() {
         require(bool(joystick), "Virtual joystick must open");
         char guid[33];
         SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(joystick.get()), guid, sizeof(guid));
-        const auto mapping = std::string(guid) + ",Comanche test controller,a:b0,b:b1,x:b2,y:b3,back:b4,start:b6," +
-            "leftshoulder:b9,rightshoulder:b10,dpup:b11,dpdown:b12,dpleft:b13,dpright:b14,leftx:a0,lefty:a1,righttrigger:a5,";
+        const auto mapping = std::string(guid) + ",Comanche test controller,a:b0,b:b1,x:b2,y:b3,back:b4,guide:b5,start:b6," +
+            "leftstick:b7,rightstick:b8,leftshoulder:b9,rightshoulder:b10,dpup:b11,dpdown:b12,dpleft:b13,dpright:b14," +
+            "leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a4,righttrigger:a5,";
         require(SDL_GameControllerAddMapping(mapping.c_str()) >= 0, "Virtual controller mapping must install");
         require(SDL_JoystickSetVirtualAxis(joystick.get(), SDL_CONTROLLER_AXIS_TRIGGERRIGHT, -32768) == 0,
                 "Trigger must begin released");
@@ -151,6 +153,93 @@ int main() {
                     "Tuned steering must resume after a neutral release");
             SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTX, 0);
             SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTY, 0);
+        }
+        {
+            for (int button = 0; button < SDL_CONTROLLER_BUTTON_MAX; ++button) {
+                SDL_JoystickSetVirtualButton(replacement_joystick.get(), button, 0);
+            }
+            for (const auto axis : {SDL_CONTROLLER_AXIS_LEFTX, SDL_CONTROLLER_AXIS_LEFTY,
+                    SDL_CONTROLLER_AXIS_RIGHTX, SDL_CONTROLLER_AXIS_RIGHTY}) {
+                SDL_JoystickSetVirtualAxis(replacement_joystick.get(), axis, 0);
+            }
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_TRIGGERLEFT, -32768);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_TRIGGERRIGHT, -32768);
+            const auto options = parse_sdl_options({"--mode", "enhanced", "--bind", "menu.a=none",
+                "--bind", "menu.b=accept", "--bind", "menu.x=accept", "--bind", "menu.guide=pause",
+                "--bind", "flight.a=target", "--bind", "flight.x=fire", "--bind", "flight.b=settings",
+                "--bind", "flight.lefttrigger=settings", "--bind", "flight.righttrigger=target",
+                "--bind", "flight.leftstick=throttle-up", "--bind", "flight.rightstick=throttle-down",
+                "--bind", "flight.guide=pause", "--bind", "flight.dpup=next-weapon",
+                "--bind", "flight.dpdown=previous-weapon", "--steer-x", "rightx", "--steer-y", "righty"});
+            SdlFlightHost remapped(options);
+            remapped.set_input_context(InputContext::menu);
+            remapped.poll();
+            const auto press = [&](SDL_GameControllerButton button, bool down) {
+                require(SDL_JoystickSetVirtualButton(replacement_joystick.get(), button, down ? 1 : 0) == 0,
+                        "Remapped controller button must update");
+                return remapped.poll();
+            };
+            require(press(SDL_CONTROLLER_BUTTON_A, true).scan_bytes.empty(), "An unbound menu button must emit no scan byte");
+            press(SDL_CONTROLLER_BUTTON_A, false);
+            require(press(SDL_CONTROLLER_BUTTON_B, true).scan_bytes == std::vector<std::uint8_t>{0x1c},
+                    "A remapped menu accept must reach the canonical key route");
+            require(press(SDL_CONTROLLER_BUTTON_X, true).scan_bytes.empty() && press(SDL_CONTROLLER_BUTTON_B, false).scan_bytes.empty(),
+                    "Multiple controller owners must retain one logical menu key");
+            require(press(SDL_CONTROLLER_BUTTON_X, false).scan_bytes == std::vector<std::uint8_t>{0x9c},
+                    "The final remapped owner must release the menu key");
+            press(SDL_CONTROLLER_BUTTON_X, true);
+            remapped.set_input_context(InputContext::flight);
+            require(!remapped.poll().controls.fire, "Remapped menu-held fire must remain suppressed at flight entry");
+            press(SDL_CONTROLLER_BUTTON_X, false);
+            input = press(SDL_CONTROLLER_BUTTON_X, true);
+            require(input.controls.fire && input.pressed.fire, "Remapped fire must retain held and buffered behavior");
+            press(SDL_CONTROLLER_BUTTON_X, false);
+            input = press(SDL_CONTROLLER_BUTTON_A, true);
+            require(input.pressed.target && !input.controls.fire, "Remapped target must replace the original fire action");
+            press(SDL_CONTROLLER_BUTTON_A, false);
+            require(press(SDL_CONTROLLER_BUTTON_LEFTSTICK, true).controls.throttle == 1, "Remapped throttle-up must update retained power");
+            press(SDL_CONTROLLER_BUTTON_LEFTSTICK, false);
+            require(press(SDL_CONTROLLER_BUTTON_RIGHTSTICK, true).controls.throttle == 0, "Remapped throttle-down must update retained power");
+            press(SDL_CONTROLLER_BUTTON_RIGHTSTICK, false);
+            require(press(SDL_CONTROLLER_BUTTON_DPAD_UP, true).controls.weapon == WeaponSelection::next, "Remapped next weapon must route once");
+            press(SDL_CONTROLLER_BUTTON_DPAD_UP, false);
+            require(press(SDL_CONTROLLER_BUTTON_DPAD_DOWN, true).controls.weapon == WeaponSelection::previous, "Remapped previous weapon must route once");
+            press(SDL_CONTROLLER_BUTTON_DPAD_DOWN, false);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_TRIGGERLEFT, 32767);
+            require(remapped.poll().scan_bytes == std::vector<std::uint8_t>{0x01}, "A trigger-bound settings action must flush its key in the same poll");
+            require(press(SDL_CONTROLLER_BUTTON_B, true).scan_bytes.empty(), "Button and trigger may share an owned settings key");
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_TRIGGERLEFT, -32768);
+            require(remapped.poll().scan_bytes.empty(), "Releasing a shared trigger must retain the button owner");
+            require(press(SDL_CONTROLLER_BUTTON_B, false).scan_bytes == std::vector<std::uint8_t>{0x81}, "The last settings owner must release Escape");
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 32767);
+            input = remapped.poll();
+            require(input.pressed.target && !input.controls.fire && !remapped.poll().pressed.target,
+                    "A remapped trigger target must emit one buffered edge");
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_TRIGGERRIGHT, -32768);
+            remapped.poll();
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_RIGHTX, 32767);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_RIGHTY, -32768);
+            input = remapped.poll();
+            require(input.controls.horizontal == 350 && input.controls.vertical == -350, "Selected right-stick axes must steer within the original range");
+            press(SDL_CONTROLLER_BUTTON_X, true);
+            SDL_Event focus{};
+            focus.type = SDL_WINDOWEVENT;
+            focus.window.event = SDL_WINDOWEVENT_FOCUS_LOST;
+            SDL_PushEvent(&focus);
+            require(!remapped.poll().controls.fire, "Focus loss must release remapped held fire");
+            focus.window.event = SDL_WINDOWEVENT_FOCUS_GAINED;
+            SDL_PushEvent(&focus);
+            input = remapped.poll();
+            require(!input.controls.fire && input.controls.horizontal == 0, "Focus recovery must suppress remapped holds and deflected axes");
+            press(SDL_CONTROLLER_BUTTON_X, false);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_RIGHTX, 0);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_RIGHTY, 0);
+            remapped.poll();
+            require(press(SDL_CONTROLLER_BUTTON_GUIDE, true).pause == PauseAction::toggle, "Remapped pause must reach the host action");
+            press(SDL_CONTROLLER_BUTTON_GUIDE, false);
+            remapped.set_input_context(InputContext::name_entry);
+            require(press(SDL_CONTROLLER_BUTTON_GUIDE, true).pause == PauseAction::none, "Name entry must retain pause suppression after remapping");
+            press(SDL_CONTROLLER_BUTTON_GUIDE, false);
         }
         {
             SdlFlightHost faithful;

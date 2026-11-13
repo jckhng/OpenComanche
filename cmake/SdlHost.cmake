@@ -11,7 +11,7 @@ target_include_directories(comanchecd_spatial PUBLIC host)
 target_link_libraries(comanchecd_spatial PUBLIC comanchecd_renderer)
 add_library(comanchecd_sdl2
     host/sdl_audio.cpp host/sdl_host.cpp host/sdl_controller.cpp
-    host/sdl_options.cpp host/sdl_presenter.cpp)
+    host/sdl_options.cpp host/sdl_presenter.cpp host/controller_bindings.cpp host/host_preferences.cpp)
 target_include_directories(comanchecd_sdl2 PUBLIC host)
 target_link_libraries(comanchecd_sdl2 PUBLIC comanchecd_renderer comanchecd_spatial PRIVATE ${COMANCHECD_SDL2_TARGET})
 add_library(comanchecd_viewer host/viewer.cpp)
@@ -62,6 +62,9 @@ if(BUILD_TESTING)
     add_executable(enhanced_host_tests tests/enhanced_host_tests.cpp)
     target_link_libraries(enhanced_host_tests PRIVATE comanchecd_sdl2 ${COMANCHECD_SDL2_TARGET})
     add_test(NAME enhanced_host_tests COMMAND enhanced_host_tests)
+    add_executable(host_preferences_tests tests/host_preferences_tests.cpp)
+    target_link_libraries(host_preferences_tests PRIVATE comanchecd_sdl2)
+    add_test(NAME host_preferences_tests COMMAND host_preferences_tests)
     set_tests_properties(enhanced_host_tests PROPERTIES
         ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy;SDL_RENDER_DRIVER=software")
     add_executable(sdl_host_tests tests/sdl_host_tests.cpp)
@@ -77,7 +80,7 @@ endif()
 if(WIN32 AND TARGET SDL2::SDL2)
     foreach(target
         training_viewer comanche_viewer audio_probe sdl_host_tests sdl_controller_tests
-        enhanced_host_tests sdl_presenter_tests sdl_keyboard_route openxr_runtime_tests)
+        enhanced_host_tests host_preferences_tests sdl_presenter_tests sdl_keyboard_route openxr_runtime_tests)
         if(TARGET ${target})
             add_custom_command(TARGET ${target} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:SDL2::SDL2> $<TARGET_FILE_DIR:${target}>)

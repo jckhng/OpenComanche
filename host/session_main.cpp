@@ -2,6 +2,7 @@
 #include "sdl_options.hpp"
 #include "profile.hpp"
 #include "settings_profile.hpp"
+#include "host_preferences.hpp"
 #ifdef COMANCHECD_OPENXR_RUNTIME
 #include "openxr_runtime.hpp"
 #endif
@@ -13,6 +14,8 @@ int main(int argc, char** argv) {
         constexpr const char* usage =
             "comanche_viewer INSTALLATION PAYLOAD_DIRECTORY PROFILE_DIRECTORY"
             " [--mode faithful|enhanced] [--controller-mappings FILE]"
+            " [--bind menu.CONTROL=ACTION|flight.CONTROL=ACTION]"
+            " [--steer-x none|leftx|lefty|rightx|righty] [--steer-y none|leftx|lefty|rightx|righty]"
             " [--stick-deadzone 0..32766] [--stick-sensitivity 1..400]"
             " [--invert-y on|off] [--scale nearest|linear|integer] [--scene-renderer native|spatial] [--interpolation on|off]";
         if (argc == 2 && std::string(argv[1]) == "--help") {
@@ -37,7 +40,6 @@ int main(int argc, char** argv) {
         if (argc < 4 || (argc - 4) % 2 != 0) {
             throw std::invalid_argument(usage);
         }
-        auto options = comanchecd::host::parse_sdl_options(std::vector<std::string>(argv + 4, argv + argc));
         const auto profile_path = std::filesystem::absolute(argv[3]).lexically_normal();
         for (const auto root : {argv[1], argv[2]}) {
             if (profile_path == std::filesystem::absolute(root).lexically_normal() ||
@@ -45,12 +47,15 @@ int main(int argc, char** argv) {
                 throw std::invalid_argument("Use a separate native profile directory");
             }
         }
+        const comanchecd::host::HostPreferences preferences(profile_path);
+        const auto options = preferences.resolve(std::vector<std::string>(argv + 4, argv + argc));
         const comanchecd::host::PilotProfile profile(profile_path);
         const comanchecd::host::SettingsProfile settings(profile_path);
         comanchecd::GameSession session(comanchecd::Installation(argv[1], argv[2]),
             [&](const auto& record) { profile.write(record); }, profile.read(), settings.read(),
             [&](const auto& record) { settings.write(record); }, comanchecd::SessionStart::cold);
-        comanchecd::host::SdlFlightHost host(std::move(options));
+        comanchecd::host::SdlFlightHost host(options);
+        if (options.input == comanchecd::host::InputProfile::enhanced) { preferences.write(options); }
         std::cout << "Arrows/Enter navigate | Tab/Enter acquires targets | Space fires | E/D throttle | P pauses | Alt-A ends mission | Esc leaves debrief\n";
         comanchecd::host::run_session(session, host);
         return 0;

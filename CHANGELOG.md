@@ -2,6 +2,9 @@
 
 ## Enhanced SDL2 development
 
+- Separate K1 decoding, MS/OPL sequencing and voice/DMA mixing into private
+  audio modules, retaining shared storage and recovered callback timing.
+
 - Group ground, aircraft, projectile and shared combat implementations into
   private source modules, preserving controller dispatch and instruction order.
 

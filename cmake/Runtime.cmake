@@ -11,6 +11,9 @@ add_library(comanchecd_renderer
     src/gameplay.cpp
     src/scene.cpp
     src/audio.cpp
+    src/audio_decode.cpp
+    src/audio_sequencing.cpp
+    src/audio_mixing.cpp
     src/audio_playback.cpp
     src/world_renderer.cpp
     src/flight.cpp

@@ -20,8 +20,8 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "bytes": 5354,
-      "sha256": "5f5a11b3ecce5f1366cdd084892a46ea748f52d31a51c649d126e4d71c972faf"
+      "bytes": 6935,
+      "sha256": "5b8558a244a3a6bce2e3c40ee6ea339b9ce8da5bf8ba36f004fb21816493d8f7"
     },
     {
       "path": "BUILDING.md",
@@ -30,8 +30,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 3315,
-      "sha256": "2e90a421ba23c4749bac94837c012c019c17161ff111a0e194869e4ddac0d889"
+      "bytes": 3465,
+      "sha256": "31b3786a67f53a7a1ab229c0e6df8bbeb6063efeb000b353bd2c484c6777ca91"
     },
     {
       "path": "cmake/Diagnostics.cmake",
@@ -45,8 +45,8 @@
     },
     {
       "path": "cmake/Runtime.cmake",
-      "bytes": 1465,
-      "sha256": "e559ff782ec3c18243ee29d0f08c5e79f4dcba49bf74d9a4af81cd8df8ced5de"
+      "bytes": 1547,
+      "sha256": "e3f52721da8ea0d517a809bd1a17994dfb0af03a9c6faba20147e4a30d3e9f25"
     },
     {
       "path": "cmake/SdlHost.cmake",
@@ -350,8 +350,28 @@
     },
     {
       "path": "src/audio.cpp",
-      "bytes": 73057,
-      "sha256": "cb00e61b39f823369f6ec923737a0d0b9e22a09a337f277052c98776a9e82957"
+      "bytes": 31363,
+      "sha256": "4201ee6f417162815669760cc5ba00704928ac972dc1a0d288425c11d87f5faf"
+    },
+    {
+      "path": "src/audio_decode.cpp",
+      "bytes": 1465,
+      "sha256": "c25ed2f042ed480bbf0835af5c407525e7775d6093ce479296bdc08c020e0c2c"
+    },
+    {
+      "path": "src/audio_decode.hpp",
+      "bytes": 387,
+      "sha256": "18b8c293bea5c126e16efa670c6659901e9f569963d5acaddcbbc3071f4e185c"
+    },
+    {
+      "path": "src/audio_impl.hpp",
+      "bytes": 9649,
+      "sha256": "c0f08d4e462518d7f4eefa8cf1fe7985087382af32a7f7faa3527e20a1533192"
+    },
+    {
+      "path": "src/audio_mixing.cpp",
+      "bytes": 16931,
+      "sha256": "a7b8c856da48ad284492e42a21f1f09e1f068a441405c528ff724d889f254e5e"
     },
     {
       "path": "src/audio_playback.cpp",
@@ -362,6 +382,11 @@
       "path": "src/audio_scheduler.cpp",
       "bytes": 42509,
       "sha256": "8e35eca3122ae9c403ee9085882924f3c1014b82e51c59329264ebeff42437eb"
+    },
+    {
+      "path": "src/audio_sequencing.cpp",
+      "bytes": 15767,
+      "sha256": "a9fc969bf297b7664211d8518fed7130aac29203cd2fdd7915ac8f28bd47c0bf"
     },
     {
       "path": "src/callback_audio.cpp",

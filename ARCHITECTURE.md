@@ -58,15 +58,41 @@ execution resumes. Shared arithmetic retains the recovered wrap, shift and
 sign-mask behavior. Helper bodies retain their original work-accounting calls
 and address comments.
 
+## Audio modules
+
+`MissionAudio::Impl` owns the sample banks, music streams, three voices, echo,
+DMA halves and execution clock. Its declaration lives in `src/audio_impl.hpp`.
+The implementation modules share that owner through private member operations.
+
+| File | Responsibility |
+|---|---|
+| `src/audio.cpp` | Audio lifetime, loading/presentation transitions, scheduler callbacks, clock/input forwarding and ordered output |
+| `src/audio_decode.hpp`, `src/audio_decode.cpp` | K1 sample-bank decoding and checked little-endian resource reads |
+| `src/audio_sequencing.cpp` | MS events, programs/envelopes, channel state, OPL writes and music IRQ work |
+| `src/audio_mixing.cpp` | Sound routing, current/queued voices, engine/radio cues, echo/conversion and DMA production |
+| `src/audio_playback.cpp` | SB16 output resampling/filtering |
+
+Voices retain pointers into the owner's banks or shared silence sample.
+Bank replacement stays alongside the original voice clearing and reset work.
+The MS cursor publishes its replacement allocation at the recovered clocked
+instruction, allowing intervening callbacks to finish with the preceding stream.
+
+IRQ7 arms the current DMA half before toggling the producer to the other half.
+Each produced sample applies its queued requests, mixes the voices and echo,
+retires its recovered instruction cost, then advances the digital sample count.
+Voice reload and changed-sample costs remain attached to their original sample.
+The shared owner also retains output queues and callback captures across moves
+of the public `MissionAudio` object.
+
 ## Refactoring sequence
 
 1. Session ownership and lifecycle separation is the first completed batch.
 2. Ground, aircraft, projectile and shared combat operations are separated
    into private entity modules. The controller retains traversal, transaction
    ownership and interrupt-sensitive RNG access order.
-3. Separate resource decoding, music sequencing and voice mixing in
-   `src/audio.cpp`. Trace producer-buffer ownership and device callbacks before
-   changing their representation.
+3. Audio decoding, sequencing and voice mixing are separated into private
+   modules. One implementation owner retains allocation lifetimes, producer
+   buffers and device callbacks.
 4. Consolidate repeated format readers and recovered constants where their
    byte order, bounds and failure behavior agree. Executable-specific layouts
    currently reside in `src/assets.cpp`.

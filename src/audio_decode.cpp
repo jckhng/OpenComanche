@@ -1,17 +1,11 @@
 #include "audio_decode.hpp"
+#include "resource_reader.hpp"
 
 #include <stdexcept>
 
 namespace comanchecd::audio_detail {
 std::uint32_t integer(const std::vector<std::uint8_t>& bytes, std::size_t position, std::size_t width) {
-    if (position > bytes.size() || width > bytes.size() - position) {
-        throw std::invalid_argument("Truncated audio resource");
-    }
-    std::uint32_t result = 0;
-    for (std::size_t byte = 0; byte < width; ++byte) {
-        result |= std::uint32_t(bytes[position + byte]) << (byte * 8);
-    }
-    return result;
+    return resource_reader::little_endian(bytes, position, width, "Truncated audio resource");
 }
 
 std::vector<Sample> sample_bank(const std::vector<std::uint8_t>& bytes) {

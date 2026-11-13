@@ -1,4 +1,5 @@
 #include "comanchecd/cockpit.hpp"
+#include "resource_reader.hpp"
 #include "color_metric.hpp"
 
 #include <algorithm>
@@ -51,14 +52,7 @@ void copy_span(const CpuWorkSink& work, std::size_t destination, unsigned length
 }
 
 std::uint32_t integer(const std::vector<std::uint8_t>& bytes, std::size_t position, std::size_t count) {
-    if (position > bytes.size() || count > bytes.size() - position) {
-        throw std::invalid_argument("Truncated cockpit sprite");
-    }
-    std::uint32_t result = 0;
-    for (std::size_t byte = 0; byte < count; ++byte) {
-        result |= std::uint32_t(bytes[position + byte]) << (byte * 8);
-    }
-    return result;
+    return resource_reader::little_endian(bytes, position, count, "Truncated cockpit sprite");
 }
 
 std::int32_t multiply_high(std::int32_t first, std::int32_t second) {

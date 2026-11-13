@@ -1,4 +1,5 @@
 #include "comanchecd/playback.hpp"
+#include "resource_reader.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -21,14 +22,7 @@ std::uint64_t sample_at(std::uint64_t cycles) {
 }
 
 std::uint32_t integer(const std::vector<std::uint8_t>& bytes, std::size_t offset, std::size_t count = 4) {
-    if (offset > bytes.size() || count > bytes.size() - offset) {
-        throw std::invalid_argument("Truncated playback resource");
-    }
-    std::uint32_t value = 0;
-    for (std::size_t index = 0; index < count; ++index) {
-        value |= std::uint32_t(bytes[offset + index]) << (index * 8);
-    }
-    return value;
+    return resource_reader::little_endian(bytes, offset, count, "Truncated playback resource");
 }
 }
 

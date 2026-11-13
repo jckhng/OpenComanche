@@ -1,4 +1,6 @@
 #include "comanchecd/assets.hpp"
+#include "resource_reader.hpp"
+#include "cd_executable_layout.hpp"
 #include "loading_work.hpp"
 #include "mission_work.hpp"
 
@@ -11,10 +13,11 @@
 
 namespace comanchecd {
 namespace {
+namespace layout = cd_executable;
 using Bytes = std::vector<std::uint8_t>;
-constexpr std::size_t packed_bytes = 67221;
-constexpr std::size_t image_bytes = 404738;
-constexpr std::size_t protected_image = 0x1800;
+using layout::packed_bytes;
+using layout::image_bytes;
+using layout::protected_image;
 constexpr std::size_t picture_header_bytes = 128;
 constexpr std::size_t picture_width = line_stride * plane_count;
 constexpr std::size_t picture_height = 240;
@@ -22,9 +25,10 @@ constexpr std::size_t campaign_header_bytes = 23;
 constexpr std::size_t campaign_row_bytes = 32;
 constexpr std::size_t campaign_limit = 10;
 constexpr std::size_t maximum_file_bytes = 16 * 1024 * 1024;
-constexpr std::uint64_t supported_executable_identity = 0xca98bc78eef27ed8ull;
+using layout::supported_executable_identity;
 constexpr std::uint64_t fnv_offset_basis = 14695981039346656037ull;
 constexpr std::uint64_t fnv_prime = 1099511628211ull;
+constexpr std::array<const char*, 3> terrain_detail_files{"HIGH.DTL", "MEDIUM.DTL", "LOW.DTL"};
 
 std::string mission_filename(const MissionFilename& field) {
     const auto end = std::find(field.begin(), field.end(), 0);
@@ -37,10 +41,7 @@ std::string mission_filename(const MissionFilename& field) {
 }
 
 std::uint16_t word(const Bytes& bytes, std::size_t offset) {
-    if (offset >= bytes.size() || bytes.size() - offset < 2) {
-        throw std::invalid_argument("Truncated resource word");
-    }
-    return bytes[offset] | (std::uint16_t(bytes[offset + 1]) << 8);
+    return static_cast<std::uint16_t>(resource_reader::little_endian(bytes, offset, 2, "Truncated resource word"));
 }
 
 std::uint32_t integer(const Bytes& bytes, std::size_t offset) {
@@ -225,29 +226,29 @@ FrontendAssets Installation::load_frontend() const {
         return slice(image, protected_image + offset, count);
     };
     FrontendAssets assets{};
-    assets.font = resource(0x2a47d, 0x2b1e5 - 0x2a47d);
-    assets.pilot.menu_header = resource(0x2cd5c, 0x12);
-    assets.pilot.editor_prompt = resource(0x2b411, 54);
+    assets.font = resource(layout::frontend::font, layout::frontend::font_end - layout::frontend::font);
+    assets.pilot.menu_header = resource(layout::frontend::pilot_header, layout::frontend::pilot_header_bytes);
+    assets.pilot.editor_prompt = resource(layout::frontend::editor_prompt, layout::frontend::editor_prompt_bytes);
     const auto copy_resource = [&](std::size_t offset, auto& target) {
         const auto bytes = resource(offset, target.size());
         std::copy(bytes.begin(), bytes.end(), target.begin());
     };
-    copy_resource(0x2b3fc, assets.pilot.row_prefix);
-    copy_resource(0x2b405, assets.pilot.row_tail);
-    copy_resource(0x2a485, assets.pilot.glyph_widths);
-    copy_resource(0x19fd, assets.pilot.normal_keys);
-    copy_resource(0x197d, assets.pilot.shifted_keys);
-    copy_resource(0x2f160, assets.transfer);
+    copy_resource(layout::frontend::row_prefix, assets.pilot.row_prefix);
+    copy_resource(layout::frontend::row_tail, assets.pilot.row_tail);
+    copy_resource(layout::frontend::glyph_widths, assets.pilot.glyph_widths);
+    copy_resource(layout::frontend::normal_keys, assets.pilot.normal_keys);
+    copy_resource(layout::frontend::shifted_keys, assets.pilot.shifted_keys);
+    copy_resource(layout::transfer, assets.transfer);
     assets.pilot_record = read("COMANCHE.NAM");
     PilotStorage checked(assets.pilot_record);
-    assets.main_menu = table(image, protected_image + 0x2d31e);
-    assets.mission_menu = table(image, protected_image + 0x2d56d);
-    assets.briefing_choices = table(image, protected_image + 0x2d53d);
-    assets.loading_prompt = table(image, protected_image + 0x2d6c5);
-    assets.statistics = resource(0x2bf57, 130);
-    assets.locked_prompt = table(image, protected_image + 0x29a9a);
-    assets.settings.header = table(image, protected_image + 0x29590);
-    constexpr std::array<std::size_t, 4> settings_menus{0x295d7, 0x2963e, 0x2969f, 0x297af};
+    assets.main_menu = table(image, protected_image + layout::frontend::main_menu);
+    assets.mission_menu = table(image, protected_image + layout::frontend::mission_menu);
+    assets.briefing_choices = table(image, protected_image + layout::frontend::briefing_choices);
+    assets.loading_prompt = table(image, protected_image + layout::frontend::loading_prompt);
+    assets.statistics = resource(layout::frontend::statistics, layout::frontend::statistics_bytes);
+    assets.locked_prompt = table(image, protected_image + layout::frontend::locked_prompt);
+    assets.settings.header = table(image, protected_image + layout::settings::header);
+    const auto& settings_menus = layout::settings::category_menus;
     for (std::size_t category = 0; category < settings_menus.size(); ++category) {
         auto& menu = assets.settings.menus[category];
         menu = table(image, protected_image + settings_menus[category]);
@@ -265,22 +266,23 @@ FrontendAssets Installation::load_frontend() const {
         }
         assets.settings.widths[category] = static_cast<std::uint8_t>((maximum + 18) >> 2);
     }
-    assets.settings.about = table(image, protected_image + 0x299e2);
-    assets.settings.saved = table(image, protected_image + 0x29a81);
-    assets.debrief.text = resource(0x2ba85, 255);
+    assets.settings.about = table(image, protected_image + layout::settings::about);
+    assets.settings.saved = table(image, protected_image + layout::settings::saved);
+    assets.debrief.text = resource(layout::frontend::debrief_text, layout::frontend::debrief_text_bytes);
     for (std::size_t index = 0; index < assets.debrief.messages.size(); ++index) {
-        assets.debrief.messages[index] = resource(0x2b90d + index * 47, 47);
+        assets.debrief.messages[index] = resource(layout::frontend::debrief_messages + index * layout::frontend::debrief_message_bytes,
+            layout::frontend::debrief_message_bytes);
     }
     for (std::size_t index = 0; index < assets.gameplay_presets.size(); ++index) {
-        const auto offset = protected_image + 0x2e294 + index * 4;
-        assets.gameplay_presets[index] = word(image, offset) | (std::uint32_t(word(image, offset + 2)) << 16);
+        const auto offset = protected_image + layout::frontend::gameplay_presets + index * 4;
+        assets.gameplay_presets[index] = integer(image, offset);
     }
     for (std::size_t index = 0; index < assets.mission_resources.size(); ++index) {
-        const auto pointer = protected_image + 0x2db34 + index * 4;
-        const std::size_t address = word(image, pointer) | (std::uint32_t(word(image, pointer + 2)) << 16);
+        const auto pointer = protected_image + layout::frontend::mission_resources + index * 4;
+        const std::size_t address = integer(image, pointer);
         copy_resource(address, assets.mission_resources[index]);
     }
-    const auto campaign = table(image, protected_image + 0x2d3d8);
+    const auto campaign = table(image, protected_image + layout::frontend::campaign_menu);
     assets.campaign_menu = slice(campaign, 0, campaign_header_bytes);
     for (std::size_t index = 0; index < campaign_limit; ++index) {
         const auto name = std::to_string(index) + ".MIS";
@@ -310,7 +312,7 @@ MenuSettings Installation::load_menu_settings() const {
         return MenuSettings(read("COMANCHE.MNU"));
     }
     const auto image = unpack(read("COMANCHE.EXE"));
-    return MenuSettings(slice(image, protected_image + 0x28d24, MenuSettings::record_bytes));
+    return MenuSettings(slice(image, protected_image + layout::settings::record, MenuSettings::record_bytes));
 }
 
 KdvMovie Installation::load_overview() const {
@@ -352,7 +354,7 @@ FanfareAssets Installation::load_fanfare() const {
     result.score_location = std::filesystem::exists(directory_ / "FANFARE.RLE") ? StartupLocation::local : StartupLocation::cdrom;
     result.picture_location = std::filesystem::exists(directory_ / "BACK.DTA") ? StartupLocation::local : StartupLocation::cdrom;
     const auto image = unpack(read("COMANCHE.EXE"));
-    const auto transfer = slice(image, protected_image + 0x2f160, result.transfer.size());
+    const auto transfer = slice(image, protected_image + layout::transfer, result.transfer.size());
     std::copy(transfer.begin(), transfer.end(), result.transfer.begin());
     return result;
 }
@@ -458,11 +460,11 @@ SceneEntry Installation::load_scene_entry() const {
     SceneEntry result;
     for (std::size_t slot = 0; slot < scene_slots; ++slot) {
         auto& entry = result.entities[slot];
-        entry.previous_x = integer(image, protected_image + 0x21ebc + slot * 4);
-        entry.previous_y = integer(image, protected_image + 0x220ec + slot * 4);
-        entry.previous_height = image.at(protected_image + 0x229af + slot);
-        entry.animation_frame = image.at(protected_image + 0x22897 + slot);
-        entry.rotor_phase = image.at(protected_image + 0x22e87 + slot);
+        entry.previous_x = integer(image, protected_image + layout::scene::previous_x + slot * 4);
+        entry.previous_y = integer(image, protected_image + layout::scene::previous_y + slot * 4);
+        entry.previous_height = image.at(protected_image + layout::scene::previous_height + slot);
+        entry.animation_frame = image.at(protected_image + layout::scene::animation_frame + slot);
+        entry.rotor_phase = image.at(protected_image + layout::scene::rotor_phase + slot);
     }
     return result;
 }
@@ -471,31 +473,30 @@ CockpitTables Installation::load_cockpit_tables() const {
     const auto image = unpack(read("COMANCHE.EXE"));
     CockpitTables result;
     for (std::size_t index = 0; index < result.panel_y.size(); ++index) {
-        result.panel_y[index] = image.at(protected_image + 0x7b14 + index);
-        result.left_panel_x[index] = image.at(protected_image + 0x7b1a + index);
-        result.right_panel_x[index] = image.at(protected_image + 0x7b20 + index);
-        result.weapon_flash[index] = image.at(protected_image + 0x7c01 + index);
+        result.panel_y[index] = image.at(protected_image + layout::cockpit::panel_y + index);
+        result.left_panel_x[index] = image.at(protected_image + layout::cockpit::left_panel_x + index);
+        result.right_panel_x[index] = image.at(protected_image + layout::cockpit::right_panel_x + index);
+        result.weapon_flash[index] = image.at(protected_image + layout::cockpit::weapon_flash + index);
     }
     for (std::size_t index = 0; index < result.shake_displacement.size(); ++index) {
-        result.shake_displacement[index] = integer(image, protected_image + 0x16630 + index * 4);
+        result.shake_displacement[index] = integer(image, protected_image + layout::cockpit::shake_displacement + index * 4);
     }
-    result.map_scale = integer(image, protected_image + 0x1a918);
-    result.chaff = image.at(protected_image + 0x1aa29);
-    result.flares = image.at(protected_image + 0x1aa2a);
-    result.center_marker = image.at(protected_image + 0x297af) != 0x7b;
-    result.heading_tape = image.at(protected_image + 0x297d5) != 0x7b;
-    result.flight_hud = image.at(protected_image + 0x297c4) != 0x7b;
+    result.map_scale = integer(image, protected_image + layout::cockpit::map_scale);
+    result.chaff = image.at(protected_image + layout::cockpit::chaff);
+    result.flares = image.at(protected_image + layout::cockpit::flares);
+    result.center_marker = image.at(protected_image + layout::settings::center_marker) != layout::settings::disabled_flag;
+    result.heading_tape = image.at(protected_image + layout::settings::heading_tape) != layout::settings::disabled_flag;
+    result.flight_hud = image.at(protected_image + layout::settings::flight_hud) != layout::settings::disabled_flag;
     return result;
 }
 
 TerrainTables Installation::load_terrain_tables(TerrainDetail detail) const {
     const auto image = unpack(read("COMANCHE.EXE"));
-    const std::array<const char*, 3> names{"HIGH.DTL", "MEDIUM.DTL", "LOW.DTL"};
     const auto index = static_cast<std::size_t>(detail);
-    if (index >= names.size()) {
+    if (index >= terrain_detail_files.size()) {
         throw std::invalid_argument("Unsupported terrain detail setting");
     }
-    const auto distances = read(names[index]);
+    const auto distances = read(terrain_detail_files[index]);
     constexpr std::size_t detail_bytes = 4 + 5 * terrain_distance_capacity * 4;
     if (distances.size() != detail_bytes) {
         throw std::invalid_argument("Invalid terrain detail resource size");
@@ -503,7 +504,7 @@ TerrainTables Installation::load_terrain_tables(TerrainDetail detail) const {
     TerrainTables result;
     result.levels = integer(distances, 0);
     for (std::size_t sample = 0; sample < result.sine.size(); ++sample) {
-        result.sine[sample] = static_cast<std::int32_t>(integer(image, protected_image + 0x35f10 + sample * 4));
+        result.sine[sample] = static_cast<std::int32_t>(integer(image, protected_image + layout::terrain::sine + sample * 4));
     }
     for (std::size_t table = 0; table < result.distance.size(); ++table) {
         for (std::size_t level = 0; level < terrain_distance_capacity; ++level) {
@@ -511,21 +512,21 @@ TerrainTables Installation::load_terrain_tables(TerrainDetail detail) const {
         }
     }
     for (std::size_t octant = 0; octant < result.angle_octants.size(); ++octant) {
-        result.angle_octants[octant] = integer(image, protected_image + 0x236b1 + octant * 4);
+        result.angle_octants[octant] = integer(image, protected_image + layout::terrain::angle_octants + octant * 4);
     }
     for (std::size_t ratio = 0; ratio < result.angle_ratio.size(); ++ratio) {
-        result.angle_ratio[ratio] = image.at(protected_image + 0x236d1 + ratio);
+        result.angle_ratio[ratio] = image.at(protected_image + layout::terrain::angle_ratio + ratio);
     }
     for (std::size_t scale = 0; scale < result.sprite_offsets.size(); ++scale) {
-        result.sprite_offsets[scale] = integer(image, protected_image + 0x1e49c + scale * 4);
+        result.sprite_offsets[scale] = integer(image, protected_image + layout::terrain::sprite_offsets + scale * 4);
     }
-    result.sprite_steps = slice(image, protected_image + 0x1e89c, 0x2041);
-    result.initial_height_gap = image.at(protected_image + 0x1aa99);
+    result.sprite_steps = slice(image, protected_image + layout::terrain::sprite_steps, layout::terrain::sprite_step_bytes);
+    result.initial_height_gap = image.at(protected_image + layout::terrain::initial_height_gap);
     for (std::size_t index = 0; index < result.gust.size(); ++index) {
-        result.gust[index] = static_cast<std::int8_t>(image.at(protected_image + 0x28058 + index));
+        result.gust[index] = static_cast<std::int8_t>(image.at(protected_image + layout::terrain::gust + index));
     }
     for (std::size_t index = 0; index < result.transfer.size(); ++index) {
-        result.transfer[index] = image.at(protected_image + 0x2f160 + index);
+        result.transfer[index] = image.at(protected_image + layout::transfer + index);
     }
     return result;
 }
@@ -552,16 +553,14 @@ StartupFiles Installation::load_startup_files() const {
     if (std::filesystem::exists(directory_ / "COMANCHE.NAM")) { loading.pilots = read("COMANCHE.NAM"); }
     if (std::filesystem::exists(directory_ / "COMANCHE.MNU")) { loading.settings = read("COMANCHE.MNU"); }
     const auto image = unpack(read("COMANCHE.EXE"));
-    loading.active_settings = loading.settings ? *loading.settings : slice(image, protected_image + 0x28d24, MenuSettings::record_bytes);
+    loading.active_settings = loading.settings ? *loading.settings : slice(image, protected_image + layout::settings::record, MenuSettings::record_bytes);
     const MenuSettings settings(loading.active_settings);
-    constexpr std::array<const char*, 3> detail_names{"HIGH.DTL", "MEDIUM.DTL", "LOW.DTL"};
-    const auto name = detail_names.at(settings.detail());
+    const auto name = terrain_detail_files.at(settings.detail());
     loading.detail = read(name);
     loading.detail_location = std::filesystem::exists(directory_ / name) ? StartupLocation::local : StartupLocation::cdrom;
-    constexpr std::array<std::size_t, 5> menu_addresses{0x295d7, 0x2963e, 0x2969f, 0x297af, 0x29856};
-    constexpr std::array<std::size_t, 15> flag_addresses{0x29763, 0x2977d, 0x29670, 0x29679, 0x29688, 0x29691,
-        0x297af, 0x297c4, 0x297d5, 0x297e3, 0x297f1, 0x2980b, 0x29821, 0x2983c, 0x29849};
-    constexpr std::array<unsigned, 15> flag_fields{41, 42, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40};
+    const auto& menu_addresses = layout::settings::loading_menus;
+    const auto& flag_addresses = layout::settings::flag_addresses;
+    const auto& flag_fields = layout::settings::flag_fields;
     auto menu_image = image;
     for (std::size_t index = 0; index < flag_fields.size(); ++index) {
         menu_image[protected_image + flag_addresses[index]] = loading.active_settings[flag_fields[index]];
@@ -569,7 +568,7 @@ StartupFiles Installation::load_startup_files() const {
     for (std::size_t index = 0; index < menu_addresses.size(); ++index) {
         loading.menus[index] = table(menu_image, protected_image + menu_addresses[index]);
     }
-    const auto widths = slice(image, protected_image + 0x2a485, loading.glyph_widths.size());
+    const auto widths = slice(image, protected_image + layout::frontend::glyph_widths, loading.glyph_widths.size());
     std::copy(widths.begin(), widths.end(), loading.glyph_widths.begin());
     return result;
 }
@@ -578,13 +577,14 @@ AudioTables Installation::load_audio() const {
     const auto image = unpack(read("COMANCHE.EXE"));
     AudioTables result;
     for (std::size_t index = 0; index < result.instruments.size(); ++index) {
-        const auto data = slice(image, protected_image + 0x30139 + index * 16, 16);
+        const auto data = slice(image, protected_image + layout::audio::instruments + index * layout::audio::instrument_bytes,
+            layout::audio::instrument_bytes);
         std::copy(data.begin(), data.end(), result.instruments[index].begin());
-        result.pitch[index] = image.at(protected_image + 0x30efc + index);
-        result.volume[index] = image.at(protected_image + 0x30f7c + index);
-        const auto pointer = protected_image + 0x31012 + index * 4;
-        auto position = protected_image + (word(image, pointer) | (std::uint32_t(word(image, pointer + 2)) << 16));
-        for (std::size_t count = 0; count < 512; ++count) {
+        result.pitch[index] = image.at(protected_image + layout::audio::pitch + index);
+        result.volume[index] = image.at(protected_image + layout::audio::volume + index);
+        const auto pointer = protected_image + layout::audio::envelopes + index * 4;
+        auto position = protected_image + integer(image, pointer);
+        for (std::size_t count = 0; count < layout::audio::envelope_scan_limit; ++count) {
             const auto value = image.at(position++);
             result.envelopes[index].push_back(value);
             if (value == 0x80 || value == 0x81) {
@@ -596,11 +596,11 @@ AudioTables Installation::load_audio() const {
         }
     }
     for (std::size_t index = 0; index < result.frequencies.size(); ++index) {
-        result.frequencies[index] = word(image, protected_image + 0x30939 + index * 2);
+        result.frequencies[index] = word(image, protected_image + layout::audio::frequencies + index * 2);
     }
-    const auto conversion = slice(image, protected_image + 0x4df9, result.sample_conversion.size());
+    const auto conversion = slice(image, protected_image + layout::audio::sample_conversion, result.sample_conversion.size());
     std::copy(conversion.begin(), conversion.end(), result.sample_conversion.begin());
-    const auto soft_conversion = slice(image, protected_image + 0x4bf9, result.soft_sample_conversion.size());
+    const auto soft_conversion = slice(image, protected_image + layout::audio::soft_sample_conversion, result.soft_sample_conversion.size());
     std::copy(soft_conversion.begin(), soft_conversion.end(), result.soft_sample_conversion.begin());
     return result;
 }

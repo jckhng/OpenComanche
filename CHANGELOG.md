@@ -2,6 +2,9 @@
 
 ## Enhanced SDL2 development
 
+- Share compatible resource integer readers and name CD executable layouts,
+  preserving format errors, decoded tables and clocked loading boundaries.
+
 - Separate K1 decoding, MS/OPL sequencing and voice/DMA mixing into private
   audio modules, retaining shared storage and recovered callback timing.
 

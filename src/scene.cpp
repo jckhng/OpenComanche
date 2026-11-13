@@ -1,4 +1,5 @@
 #include "comanchecd/scene.hpp"
+#include "resource_reader.hpp"
 #include "color_metric.hpp"
 #include "comanchecd/execution_clock.hpp"
 #include "comanchecd/timing.hpp"
@@ -20,14 +21,7 @@ enum class ColorPolicy { terrain, model, fixed };
 constexpr std::array<std::uint8_t, 6> category_colors{9, 6, 7, 8, 3, 0};
 
 std::uint32_t integer(const std::vector<std::uint8_t>& bytes, std::size_t offset, std::size_t width) {
-    if (offset > bytes.size() || width > bytes.size() - offset) {
-        throw std::invalid_argument("Truncated SG resource");
-    }
-    std::uint32_t value = 0;
-    for (std::size_t index = 0; index < width; ++index) {
-        value |= std::uint32_t(bytes[offset + index]) << (index * 8);
-    }
-    return value;
+    return resource_reader::little_endian(bytes, offset, width, "Truncated SG resource");
 }
 
 Palette palette(const std::vector<std::uint8_t>& bytes, std::size_t offset) {

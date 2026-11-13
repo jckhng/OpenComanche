@@ -84,6 +84,25 @@ Voice reload and changed-sample costs remain attached to their original sample.
 The shared owner also retains output queues and callback captures across moves
 of the public `MissionAudio` object.
 
+## Resource readers and executable layout
+
+`src/resource_reader.hpp` supplies the shared bounds check and little-endian
+integer read for assets, K1 audio, cockpit sprites, SG scene resources and
+KDV/demo playback. Format-local operations retain their widths, defaults,
+return types and exception messages. Asset dwords retain their two-word
+composition. Empty reads at the end of a buffer consume zero bytes.
+
+`src/cd_executable_layout.hpp` names the supported packed executable's size,
+identity, unpacked size and protected-mode-relative resource addresses.
+Groups cover frontend/pilot text, settings, scene initialization, cockpit,
+terrain and audio. Shared settings flag addresses also supply cockpit defaults
+and the startup menu overlay. `src/assets.cpp` applies these addresses after
+the executable identity check and constructs the domain tables.
+
+Readers operate on host-side resource bytes. Clocked loading and presentation
+work lives at the corresponding `Installation`, `MissionAudio`, `loading_work`
+and `mission_work` caller boundaries.
+
 ## Refactoring sequence
 
 1. Session ownership and lifecycle separation is the first completed batch.
@@ -93,9 +112,9 @@ of the public `MissionAudio` object.
 3. Audio decoding, sequencing and voice mixing are separated into private
    modules. One implementation owner retains allocation lifetimes, producer
    buffers and device callbacks.
-4. Consolidate repeated format readers and recovered constants where their
-   byte order, bounds and failure behavior agree. Executable-specific layouts
-   currently reside in `src/assets.cpp`.
+4. Compatible little-endian readers share a private implementation. Named
+   CD executable constants supply asset construction, with table and
+   malformed-input comparisons alongside retained lifecycle checks.
 
 Each batch has its own baseline, bounded scope and verification result.
 Preserve recovered address comments and work-accounting calls through moves.

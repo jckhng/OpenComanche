@@ -1,4 +1,5 @@
 #include "sdl_host.hpp"
+#include "sdl_options.hpp"
 #include "profile.hpp"
 #include "settings_profile.hpp"
 #include "training_route.hpp"
@@ -24,8 +25,8 @@ void require(bool value, const std::string& message) {
 class KeyboardRoute final : public FlightHost {
 public:
     KeyboardRoute(GameSession& session, const Installation& installation, const PilotProfile& profile,
-                  const SettingsProfile& settings, const std::filesystem::path& output, RouteMode mode)
-        : session_(session), route_(installation), profile_(profile), settings_(settings), log_(output / "events.jsonl"),
+                  const SettingsProfile& settings, const std::filesystem::path& output, RouteMode mode, SdlHostOptions options = {})
+        : session_(session), route_(installation), profile_(profile), settings_(settings), host_(std::move(options)), log_(output / "events.jsonl"),
           states_(output / "states.jsonl"), mode_(mode), begin_(Clock::now()) {}
 
     void set_input_context(InputContext context) override { host_.set_input_context(context); }
@@ -383,7 +384,9 @@ private:
 
 int main(int argc, char** argv) {
     try {
-        require(argc == 6, "INSTALLATION PAYLOAD PROFILE OUTPUT play|restart|abort");
+        require(argc >= 6 && (argc - 6) % 2 == 0,
+                "INSTALLATION PAYLOAD PROFILE OUTPUT play|restart|abort [SDL2 host options]");
+        auto options = parse_sdl_options(std::vector<std::string>(argv + 6, argv + argc));
         const Installation installation(argv[1], argv[2]);
         const auto profile_path = std::filesystem::absolute(argv[3]).lexically_normal();
         for (const auto root : {argv[1], argv[2]}) {
@@ -404,7 +407,7 @@ int main(int argc, char** argv) {
         unsigned pilot_writes = 0, settings_writes = 0;
         GameSession session(installation, [&](const auto& bytes) { profile.write(bytes); ++pilot_writes; }, before, settings.read(),
             [&](const auto& bytes) { settings.write(bytes); ++settings_writes; }, SessionStart::cold);
-        KeyboardRoute host(session, installation, profile, settings, output, mode);
+        KeyboardRoute host(session, installation, profile, settings, output, mode, std::move(options));
         run_session(session, host);
         host.verify();
         require(pilot_writes == (mode == RouteMode::restart ? 0u : 2u), "Pilot commit and debrief must each save exactly once");

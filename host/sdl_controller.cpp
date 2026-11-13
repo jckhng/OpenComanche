@@ -5,18 +5,8 @@
 
 namespace comanchecd::host {
 namespace {
-constexpr int stick_deadzone = 8000;
 constexpr int trigger_deadzone = 3276;
-constexpr int steering_limit = 350;
 constexpr std::uint8_t maximum_throttle = 15;
-
-int steering(Sint16 value) {
-    const int magnitude = std::abs(int(value));
-    if (magnitude <= stick_deadzone) { return 0; }
-    const auto extent = value < 0 ? 32768 : 32767;
-    const int scaled = (magnitude - stick_deadzone) * steering_limit / (extent - stick_deadzone);
-    return value < 0 ? -scaled : scaled;
-}
 
 SDL_Scancode menu_key(Uint8 button) {
     switch (button) {
@@ -31,7 +21,8 @@ SDL_Scancode menu_key(Uint8 button) {
 }
 }
 
-SdlController::SdlController(const std::string& mappings) {
+SdlController::SdlController(const std::string& mappings, ControllerTuning tuning) : tuning_(tuning) {
+    validate_controller_tuning(tuning_);
     if (!mappings.empty() && SDL_GameControllerAddMappingsFromFile(mappings.c_str()) < 0) {
         throw sdl_error("SDL2 controller mappings failed");
     }
@@ -147,11 +138,14 @@ void SdlController::sample(HostInput& input) {
     const auto y = SDL_GameControllerGetAxis(controller_, SDL_CONTROLLER_AXIS_LEFTY);
     const auto trigger = SDL_GameControllerGetAxis(controller_, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
     if (!axes_armed_) {
-        axes_armed_ = std::abs(int(x)) <= stick_deadzone && std::abs(int(y)) <= stick_deadzone && trigger <= trigger_deadzone;
+        axes_armed_ = std::abs(int(x)) <= tuning_.deadzone && std::abs(int(y)) <= tuning_.deadzone && trigger <= trigger_deadzone;
     }
     if (axes_armed_) {
-        if (input.controls.horizontal == 0) { input.controls.horizontal = steering(x); }
-        if (input.controls.vertical == 0) { input.controls.vertical = steering(y); }
+        if (input.controls.horizontal == 0) { input.controls.horizontal = controller_steering(x, tuning_); }
+        if (input.controls.vertical == 0) {
+            const auto pitch = controller_steering(y, tuning_);
+            input.controls.vertical = tuning_.pitch == PitchDirection::inverted ? -pitch : pitch;
+        }
         const bool trigger_down = trigger > trigger_deadzone;
         input.pressed.fire = input.pressed.fire || (trigger_down && !trigger_down_);
         input.controls.fire = input.controls.fire || trigger_down;

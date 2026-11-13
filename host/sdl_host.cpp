@@ -78,30 +78,47 @@ using SdlPointer = std::unique_ptr<T, decltype(Destroy)>;
 
 class SdlFlightHost::Impl {
 public:
-    explicit Impl(SdlHostOptions options) {
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+    explicit Impl(SdlHostOptions options) : profile(options.input) {
+        validate_controller_tuning(options.controller);
+        const bool enhanced = profile == InputProfile::enhanced;
+        if (!enhanced && ((options.scaling != ImageScaling::profile_default && options.scaling != ImageScaling::nearest) ||
+                options.controller.deadzone != ControllerTuning{}.deadzone ||
+                options.controller.sensitivity != ControllerTuning{}.sensitivity ||
+                options.controller.pitch != PitchDirection::normal)) {
+            throw std::invalid_argument("Enhanced controls and presentation options require enhanced mode");
+        }
         window.reset(SDL_CreateWindow("Comanche CD training preview", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                      960, 720, SDL_WINDOW_RESIZABLE));
+                                      960, 720, SDL_WINDOW_RESIZABLE | (enhanced ? SDL_WINDOW_ALLOW_HIGHDPI : 0)));
         if (!window) {
             throw sdl_error("SDL2 window creation failed");
         }
-        renderer.reset(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC));
-        if (!renderer) {
-            renderer.reset(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_SOFTWARE));
-        }
-        if (!renderer || SDL_RenderSetLogicalSize(renderer.get(), cockpit_width, cockpit_height) != 0) {
-            throw sdl_error("SDL2 renderer creation failed");
-        }
-        texture.reset(SDL_CreateTexture(renderer.get(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-                                       cockpit_width, cockpit_height));
-        if (!texture) {
-            throw sdl_error("SDL2 texture creation failed");
-        }
-        if (options.input == InputProfile::enhanced) {
-            controller = std::make_unique<SdlController>(options.controller_mappings);
+        const auto scaling = options.scaling == ImageScaling::profile_default ?
+            (enhanced ? ImageScaling::integer : ImageScaling::nearest) : options.scaling;
+        presenter = std::make_unique<SdlPresenter>(window.get(), scaling);
+        if (enhanced) {
+            controller = std::make_unique<SdlController>(options.controller_mappings, options.controller);
         }
     }
 
+private:
+    bool presentation_key(const SDL_KeyboardEvent& event) {
+        if (profile != InputProfile::enhanced || event.keysym.scancode != SDL_SCANCODE_RETURN) { return false; }
+        if (fullscreen_key_held) {
+            if (event.type == SDL_KEYUP) { fullscreen_key_held = false; }
+            return true;
+        }
+        if (event.type != SDL_KEYDOWN || (event.keysym.mod & KMOD_ALT) == 0 || held[SDL_SCANCODE_RETURN]) {
+            return false;
+        }
+        fullscreen_key_held = true;
+        if (event.repeat == 0) {
+            const auto mode = (SDL_GetWindowFlags(window.get()) & SDL_WINDOW_FULLSCREEN) != 0 ? 0u : SDL_WINDOW_FULLSCREEN_DESKTOP;
+            if (SDL_SetWindowFullscreen(window.get(), mode) != 0) { throw sdl_error("SDL2 fullscreen change failed"); }
+        }
+        return true;
+    }
+
+public:
     void flush_controller_keys(HostInput& input) {
         if (!controller) { return; }
         for (const auto& change : controller->take_keys()) {
@@ -134,6 +151,8 @@ public:
                         if (held[key] && !controller_held[key]) { key_bytes(input.scan_bytes, static_cast<SDL_Scancode>(key), false); }
                     }
                     held.fill(false);
+                    suppressed.fill(false);
+                    fullscreen_key_held = false;
                     if (controller) { controller->set_focus(false); flush_controller_keys(input); }
                     input.pause = PauseAction::pause;
                 } else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) {
@@ -144,16 +163,27 @@ public:
                 if (key < SDL_SCANCODE_UNKNOWN || key >= SDL_NUM_SCANCODES) {
                     continue;
                 }
+                if (presentation_key(event.key)) { continue; }
+                const bool was_held = held[key];
+                const bool enhanced = profile == InputProfile::enhanced;
+                const bool modified = (event.key.keysym.mod & (KMOD_ALT | KMOD_CTRL)) != 0;
+                if (enhanced && event.type == SDL_KEYDOWN &&
+                        ((!was_held && event.key.repeat != 0) ||
+                         (flight_input && modified &&
+                          (key == SDL_SCANCODE_SPACE || key == SDL_SCANCODE_TAB || key == SDL_SCANCODE_RETURN)))) {
+                    suppressed[key] = true;
+                }
                 held[key] = event.type == SDL_KEYDOWN;
+                if (event.type == SDL_KEYDOWN && enhanced && suppressed[key]) { continue; }
                 if (event.type == SDL_KEYDOWN || !controller_held[key]) {
                     key_bytes(input.scan_bytes, key, event.type == SDL_KEYDOWN);
                 }
                 if (event.type == SDL_KEYUP) {
+                    suppressed[key] = false;
                     continue;
                 }
                 input.key_pressed = true;
                 const auto scan = menu_scan(key);
-                const bool modified = (event.key.keysym.mod & (KMOD_ALT | KMOD_CTRL)) != 0;
                 if (flight_input && key == SDL_SCANCODE_A && (event.key.keysym.mod & KMOD_ALT) != 0 && event.key.repeat == 0) {
                     input.abort_mission = true;
                 }
@@ -173,6 +203,10 @@ public:
                 if (!flight_input || modified) {
                     continue;
                 }
+                if (enhanced && !was_held && event.key.repeat == 0) {
+                    input.pressed.fire = input.pressed.fire || key == SDL_SCANCODE_SPACE;
+                    input.pressed.target = input.pressed.target || key == SDL_SCANCODE_TAB || key == SDL_SCANCODE_RETURN;
+                }
                 if (key == SDL_SCANCODE_E) {
                     throttle = std::min<unsigned>(throttle + 1, maximum_throttle);
                 } else if (key == SDL_SCANCODE_D && throttle > 0) {
@@ -189,16 +223,20 @@ public:
             }
         }
         if (controller && input.pause != PauseAction::none) {
+            suppressed = held;
             controller->reset();
             flush_controller_keys(input);
             input.pressed = {};
         }
         if (flight_input) {
-            input.controls.horizontal = keyboard_control * (int(held[SDL_SCANCODE_RIGHT]) - int(held[SDL_SCANCODE_LEFT]));
-            input.controls.vertical = keyboard_control * (int(held[SDL_SCANCODE_DOWN]) - int(held[SDL_SCANCODE_UP]));
+            const auto active = [&](SDL_Scancode key) {
+                return held[key] && (profile != InputProfile::enhanced || !suppressed[key]);
+            };
+            input.controls.horizontal = keyboard_control * (int(active(SDL_SCANCODE_RIGHT)) - int(active(SDL_SCANCODE_LEFT)));
+            input.controls.vertical = keyboard_control * (int(active(SDL_SCANCODE_DOWN)) - int(active(SDL_SCANCODE_UP)));
             input.controls.throttle = throttle;
-            input.controls.fire = held[SDL_SCANCODE_SPACE];
-            input.controls.cycle_target = held[SDL_SCANCODE_TAB] || held[SDL_SCANCODE_RETURN];
+            input.controls.fire = active(SDL_SCANCODE_SPACE);
+            input.controls.cycle_target = active(SDL_SCANCODE_TAB) || active(SDL_SCANCODE_RETURN);
             input.controls.chaff = context == InputContext::training && held[SDL_SCANCODE_SEMICOLON];
             input.controls.flare = context == InputContext::training && held[SDL_SCANCODE_APOSTROPHE];
             input.cockpit = displays;
@@ -209,42 +247,33 @@ public:
 
     SdlSubsystem subsystem{SDL_INIT_VIDEO | SDL_INIT_EVENTS};
     SdlPointer<SDL_Window, SDL_DestroyWindow> window{nullptr, SDL_DestroyWindow};
-    SdlPointer<SDL_Renderer, SDL_DestroyRenderer> renderer{nullptr, SDL_DestroyRenderer};
-    SdlPointer<SDL_Texture, SDL_DestroyTexture> texture{nullptr, SDL_DestroyTexture};
+    std::unique_ptr<SdlPresenter> presenter;
     SdlAudioOutput audio;
     std::unique_ptr<SdlController> controller;
     std::array<bool, SDL_NUM_SCANCODES> held{};
     std::array<bool, SDL_NUM_SCANCODES> controller_held{};
+    std::array<bool, SDL_NUM_SCANCODES> suppressed{};
+    InputProfile profile;
+    bool fullscreen_key_held = false;
     InputContext context = InputContext::flight;
     std::uint8_t throttle = 0;
     CockpitControls displays;
-    std::array<std::uint32_t, cockpit_width * cockpit_height> pixels{};
 };
 
 SdlFlightHost::SdlFlightHost(SdlHostOptions options) : impl_(std::make_unique<Impl>(std::move(options))) {}
 SdlFlightHost::~SdlFlightHost() = default;
 HostInput SdlFlightHost::poll() { return impl_->poll(); }
 void SdlFlightHost::set_input_context(InputContext context) {
+    if (context != impl_->context && impl_->profile == InputProfile::enhanced) { impl_->suppressed = impl_->held; }
     impl_->context = context;
     if (impl_->controller) { impl_->controller->set_context(context); }
 }
 
 void SdlFlightHost::present(const CockpitImage& image, const FlightState& state, const std::string& status) {
-    std::array<std::uint32_t, 256> palette{};
-    for (std::size_t index = 0; index < palette.size(); ++index) {
-        const auto& color = image.palette[index];
-        palette[index] = 0xff000000u | ((color[0] * 255u / 63u) << 16) |
-                         ((color[1] * 255u / 63u) << 8) | (color[2] * 255u / 63u);
-    }
-    std::transform(image.pixels.begin(), image.pixels.end(), impl_->pixels.begin(), [&](auto index) { return palette[index]; });
-    if (SDL_UpdateTexture(impl_->texture.get(), nullptr, impl_->pixels.data(), cockpit_width * sizeof(std::uint32_t)) != 0 ||
-            SDL_RenderClear(impl_->renderer.get()) != 0 ||
-            SDL_RenderCopy(impl_->renderer.get(), impl_->texture.get(), nullptr, nullptr) != 0) {
-        throw sdl_error("SDL2 scene presentation failed");
-    }
-    SDL_RenderPresent(impl_->renderer.get());
+    impl_->presenter->present(image);
     std::ostringstream title;
-    title << "Comanche CD | " << status << " | throttle " << unsigned(impl_->throttle)
+    title << (impl_->profile == InputProfile::enhanced ? "OpenCommanche enhanced | " : "Comanche CD | ")
+          << status << " | throttle " << unsigned(impl_->throttle)
           << "/15 | height " << unsigned(state.view.height) << " | armor " << state.armor
           << " | weapon " << unsigned(state.weapon + 1) << " | ammo " << state.ammunition[state.weapon];
     const auto text = title.str();
@@ -258,6 +287,7 @@ void SdlFlightHost::clear_audio() { impl_->audio.clear(); }
 void SdlFlightHost::set_playback(Playback playback) { impl_->audio.set_playback(playback); }
 void SdlFlightHost::idle() { SDL_Delay(1); }
 void SdlFlightHost::reset_controls() {
+    if (impl_->profile == InputProfile::enhanced) { impl_->suppressed = impl_->held; }
     if (impl_->controller) { impl_->controller->reset(); }
     impl_->held.fill(false);
     impl_->throttle = 0;

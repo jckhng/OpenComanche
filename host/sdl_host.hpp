@@ -1,11 +1,15 @@
 #pragma once
 
 #include "flight_host.hpp"
+#include "controller_response.hpp"
+#include "sdl_presenter.hpp"
 
 namespace comanchecd::host {
 struct SdlHostOptions {
     InputProfile input = InputProfile::faithful;
     std::string controller_mappings;
+    ControllerTuning controller;
+    ImageScaling scaling = ImageScaling::profile_default;
 };
 
 class SdlFlightHost final : public FlightHost {

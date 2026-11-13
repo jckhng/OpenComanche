@@ -7,6 +7,23 @@ Windows x64 and Linux x86-64.
 Start with **Begin a Mission → Comanche Training → Oil Tank Holiday**.
 Other selectable missions remain experimental.
 
+## Enhanced SDL2 development
+
+The `codex/enhanced-sdl2` branch adds configurable gamepad response, buffered
+keyboard fire/target taps, high-DPI integer scaling, optional filtered scaling
+and Alt+Enter desktop fullscreen. Build this branch to try these features.
+
+```sh
+./build/comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile --mode enhanced --scale integer --stick-deadzone 4000 --stick-sensitivity 150 --invert-y off
+```
+
+The default launch profile remains faithful. Enhanced presentation still uses
+the recovered 320×240 indexed image. The SDL2 image presenter is separated
+from input handling and consumes completed images through the existing
+immutable session snapshot boundary. Spatial high-resolution rendering,
+interpolation and OpenXR frame submission remain planned.
+[Enhanced controls and scaling options](PREVIEW.md#enhanced-sdl2-input)
+
 ## Download and play
 
 Download the Windows or Linux ZIP from the RC10 release and extract it fully.
@@ -49,6 +66,7 @@ progress/settings in the native profile directory.
 | Flight | Escape | In-flight settings |
 | Flight | Alt-A | Abort to debrief |
 | Session | P | Pause/resume outside pilot name entry |
+| Enhanced | Alt+Enter | Toggle desktop fullscreen |
 | Debrief | Escape | Return to operations |
 
 Focus loss pauses flight and releases held controls. Resume with P after

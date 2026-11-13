@@ -1,5 +1,17 @@
 # Changelog
 
+## Enhanced SDL2 development
+
+- Configurable controller deadzone, sensitivity and pitch inversion, with
+  keyboard precedence and neutral rearming on context/focus changes.
+- Buffered keyboard fire/target taps with pause/context cancellation.
+- Separate image presenter with high-DPI output, integer/nearest/driver-filtered
+  scaling, small-window fallback and enhanced Alt+Enter fullscreen.
+- Optional OpenXR admission retains the immutable presentation boundary.
+  Spatial scene rendering and headset frame submission remain planned.
+- The shared canonical simulation, recovered CPU/device work, indexed renderer
+  and audio source retain their RC10 implementations.
+
 ## 0.1.0-preview1-rc10 — 2026-11-13
 
 Initial limited public preview for Windows x64 and Linux x86-64 using SDL2.

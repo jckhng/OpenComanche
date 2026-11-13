@@ -72,6 +72,9 @@ recovery. Supported commands clear the notice.
 Append `--mode enhanced` to enable SDL2 GameController input. Both input profiles
 use the same simulation and indexed renderer. Enhanced input adds analog
 steering and buffers short action presses until the next simulation tick.
+Keyboard Space, Tab and Enter taps are buffered in enhanced flight. Held fire
+continues normally. Pause, focus loss and context changes cancel queued edges
+and require held actions to be released before rearming.
 
 ```sh
 ./comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile --mode enhanced
@@ -96,6 +99,38 @@ context requires neutral steering/trigger axes. An optional
 The original DOS joystick settings remain separate from this host input
 profile. Physical controller qualification remains open. The mapping boundary
 uses SDL2's GameController API. [SDL2 controller documentation](https://wiki.libsdl.org/SDL2/SDL_GameControllerOpen)
+
+| Enhanced option | Default | Meaning |
+|---|---|---|
+| `--stick-deadzone 0..32766` | 8000 | Per-axis deadzone in signed SDL2 stick units |
+| `--stick-sensitivity 1..400` | 100 | Steering gain in percent, clamped to the recovered control range |
+| `--invert-y on\|off` | off | Invert gamepad pitch |
+| `--scale nearest\|linear\|integer` | integer | Image scaling policy |
+
+These options require `--mode enhanced`. Keyboard steering takes precedence
+over analog steering. Controller neutral detection uses the selected deadzone.
+
+## Enhanced SDL2 presentation
+
+Enhanced windows request high-DPI output. Integer scaling uses the largest
+whole-number multiple of 320×240 that fits the output, with letterboxing.
+Outputs smaller than the native image use fractional downscaling to keep the
+whole cockpit visible. Nearest scaling fits the 4:3 image continuously. Linear
+filtering uses the selected SDL2 driver's filtering support, including its
+software fallback behavior.
+[SDL2 integer scaling](https://wiki.libsdl.org/SDL2/SDL_RenderSetIntegerScale),
+[SDL2 texture filtering](https://wiki.libsdl.org/SDL2/SDL_HINT_RENDER_SCALE_QUALITY)
+
+Alt+Enter toggles desktop fullscreen in enhanced mode. Its Enter is consumed
+by the host presentation shortcut. F1–F12 retain their instrument bindings.
+The faithful launch profile keeps nearest scaling and its existing key route.
+
+The SDL2 presenter accepts completed indexed images. Rendering does not access
+GameSession, advance its clock or mutate its snapshot. The canonical simulation,
+CPU/IRQ/RNG work, indexed renderer and PCM generation retain their shared
+implementation. Higher-resolution scene rendering, camera interpolation and
+OpenXR stereo submission remain planned. Physical controller, fullscreen and
+high-DPI qualification for this development branch remain open.
 
 ## Optional OpenXR admission
 

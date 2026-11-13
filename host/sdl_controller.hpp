@@ -1,6 +1,7 @@
 #pragma once
 
 #include "flight_host.hpp"
+#include "controller_response.hpp"
 #include "sdl_common.hpp"
 
 namespace comanchecd::host {
@@ -11,7 +12,7 @@ struct ControllerKey {
 
 class SdlController {
 public:
-    explicit SdlController(const std::string& mappings);
+    explicit SdlController(const std::string& mappings, ControllerTuning tuning = {});
     ~SdlController();
     void event(const SDL_Event& event, HostInput& input, std::uint8_t& throttle);
     void sample(HostInput& input);
@@ -31,5 +32,6 @@ private:
     std::array<bool, SDL_CONTROLLER_BUTTON_MAX> held_{}, suppressed_{};
     std::array<SDL_Scancode, SDL_CONTROLLER_BUTTON_MAX> menu_keys_{};
     std::vector<ControllerKey> keys_;
+    ControllerTuning tuning_;
 };
 }

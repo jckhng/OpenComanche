@@ -48,8 +48,8 @@ their uppercase filenames on case-sensitive filesystems.
 
 ## Tests and installation
 
-CTest runs the resource-free suites. Windows passes 45 suites. Linux passes
-44, with an existing controller test skip on SDL2 versions lacking its virtual
+CTest runs the resource-free suites. This enhanced branch has 47 suites.
+Linux retains an existing controller test skip on SDL2 versions lacking its virtual
 controller support.
 
 Optional integration checks read your own supported game data. Run from the
@@ -73,7 +73,9 @@ Build and test artifacts belong in ignored output directories.
 ## Optional input and OpenXR
 
 Append `--mode enhanced` when launching to enable experimental SDL2
-GameController input. Physical controller qualification remains open.
+GameController input and presentation options. PREVIEW.md describes stick
+tuning, integer/filtered scaling and the fullscreen shortcut. Physical
+controller, fullscreen and high-DPI qualification remains open.
 
 OpenXR support currently covers loader/runtime admission queries. Headset frame
 submission and OpenXR gameplay remain planned. The optional build requires
@@ -82,10 +84,11 @@ options and runtime query. The initial release defaults to SDL2 keyboard play.
 
 ## Source and redistribution
 
-The RC10 source files retain their release-archive bytes. SOURCE_MANIFEST.json
-lists repository file hashes, excluding the manifest itself, and the two
-qualified runtime archive hashes. The GitHub RC10 tag also supplies a source
-download. Runtime ZIPs each contain their matching source and notices.
+SOURCE_MANIFEST.json lists this branch's file hashes, excluding the manifest
+itself. Its baseline release and archive hashes identify the published RC10
+snapshot. The canonical core retains its RC10 source bytes. The GitHub RC10 tag
+supplies that release's source download. Runtime ZIPs each contain their matching
+source and notices.
 
 Player-supplied game files, native profiles, captures, SDKs and local build
 configuration stay outside the published tree. Preserve LICENSE-MIT, COPYING

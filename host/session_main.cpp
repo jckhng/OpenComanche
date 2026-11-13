@@ -1,4 +1,5 @@
 #include "sdl_host.hpp"
+#include "sdl_options.hpp"
 #include "profile.hpp"
 #include "settings_profile.hpp"
 #ifdef COMANCHECD_OPENXR_RUNTIME
@@ -9,7 +10,11 @@
 
 int main(int argc, char** argv) {
     try {
-        constexpr const char* usage = "comanche_viewer INSTALLATION PAYLOAD_DIRECTORY PROFILE_DIRECTORY [--mode faithful|enhanced] [--controller-mappings FILE]";
+        constexpr const char* usage =
+            "comanche_viewer INSTALLATION PAYLOAD_DIRECTORY PROFILE_DIRECTORY"
+            " [--mode faithful|enhanced] [--controller-mappings FILE]"
+            " [--stick-deadzone 0..32766] [--stick-sensitivity 1..400]"
+            " [--invert-y on|off] [--scale nearest|linear|integer]";
         if (argc == 2 && std::string(argv[1]) == "--help") {
             std::cout << usage << "\ncomanche_viewer --openxr-info (OpenXR-enabled build)\n";
             return 0;
@@ -32,20 +37,7 @@ int main(int argc, char** argv) {
         if (argc < 4 || (argc - 4) % 2 != 0) {
             throw std::invalid_argument(usage);
         }
-        comanchecd::host::SdlHostOptions options;
-        for (int index = 4; index < argc; index += 2) {
-            const std::string option(argv[index]), value(argv[index + 1]);
-            if (option == "--mode" && (value == "faithful" || value == "enhanced")) {
-                options.input = value == "faithful" ? comanchecd::host::InputProfile::faithful : comanchecd::host::InputProfile::enhanced;
-            } else if (option == "--controller-mappings" && !value.empty()) {
-                options.controller_mappings = value;
-            } else {
-                throw std::invalid_argument(usage);
-            }
-        }
-        if (!options.controller_mappings.empty() && options.input != comanchecd::host::InputProfile::enhanced) {
-            throw std::invalid_argument("Controller mappings require enhanced mode");
-        }
+        auto options = comanchecd::host::parse_sdl_options(std::vector<std::string>(argv + 4, argv + argc));
         const auto profile_path = std::filesystem::absolute(argv[3]).lexically_normal();
         for (const auto root : {argv[1], argv[2]}) {
             if (profile_path == std::filesystem::absolute(root).lexically_normal() ||

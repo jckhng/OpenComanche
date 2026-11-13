@@ -6,7 +6,9 @@ else()
     pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET "sdl2>=2.0.10")
     set(COMANCHECD_SDL2_TARGET PkgConfig::SDL2)
 endif()
-add_library(comanchecd_sdl2 host/sdl_audio.cpp host/sdl_host.cpp host/sdl_controller.cpp)
+add_library(comanchecd_sdl2
+    host/sdl_audio.cpp host/sdl_host.cpp host/sdl_controller.cpp
+    host/sdl_options.cpp host/sdl_presenter.cpp)
 target_include_directories(comanchecd_sdl2 PUBLIC host)
 target_link_libraries(comanchecd_sdl2 PUBLIC comanchecd_renderer PRIVATE ${COMANCHECD_SDL2_TARGET})
 add_library(comanchecd_viewer host/viewer.cpp)
@@ -44,6 +46,16 @@ if(TARGET audio_probe)
     target_link_libraries(audio_probe PRIVATE comanchecd_sdl2)
 endif()
 if(BUILD_TESTING)
+    add_executable(sdl_presenter_tests tests/sdl_presenter_tests.cpp)
+    target_link_libraries(sdl_presenter_tests PRIVATE comanchecd_sdl2 ${COMANCHECD_SDL2_TARGET})
+    add_test(NAME sdl_presenter_tests COMMAND sdl_presenter_tests)
+    set_tests_properties(sdl_presenter_tests PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy;SDL_RENDER_DRIVER=software")
+    add_executable(enhanced_host_tests tests/enhanced_host_tests.cpp)
+    target_link_libraries(enhanced_host_tests PRIVATE comanchecd_sdl2 ${COMANCHECD_SDL2_TARGET})
+    add_test(NAME enhanced_host_tests COMMAND enhanced_host_tests)
+    set_tests_properties(enhanced_host_tests PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy;SDL_RENDER_DRIVER=software")
     add_executable(sdl_host_tests tests/sdl_host_tests.cpp)
     target_link_libraries(sdl_host_tests PRIVATE comanchecd_sdl2 ${COMANCHECD_SDL2_TARGET})
     add_test(NAME sdl_host_tests COMMAND sdl_host_tests)
@@ -55,7 +67,9 @@ if(BUILD_TESTING)
         ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy;SDL_RENDER_DRIVER=software")
 endif()
 if(WIN32 AND TARGET SDL2::SDL2)
-    foreach(target training_viewer comanche_viewer audio_probe sdl_host_tests sdl_controller_tests sdl_keyboard_route openxr_runtime_tests)
+    foreach(target
+        training_viewer comanche_viewer audio_probe sdl_host_tests sdl_controller_tests
+        enhanced_host_tests sdl_presenter_tests sdl_keyboard_route openxr_runtime_tests)
         if(TARGET ${target})
             add_custom_command(TARGET ${target} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:SDL2::SDL2> $<TARGET_FILE_DIR:${target}>)

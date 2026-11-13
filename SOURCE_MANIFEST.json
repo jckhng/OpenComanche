@@ -1,7 +1,9 @@
 {
-  "version": "0.1.0-preview1-rc10",
-  "qualification": "Limited SDL2 keyboard preview. See CHANGELOG.md and PREVIEW.md.",
-  "runtime_archives": {
+  "version": "enhanced-sdl2-dev",
+  "branch": "codex/enhanced-sdl2",
+  "baseline_release": "v0.1.0-preview1-rc10",
+  "qualification": "Enhanced SDL2 development snapshot. See PREVIEW.md for controls, presentation and qualification limits.",
+  "baseline_runtime_archives": {
     "comanche-preview1-rc10-windows.zip": "7d91b5b68cc54fc40919e0068a4a40612d924e9435d5cc4e0e7ef2fd5fb9a9d2",
     "comanche-preview1-rc10-linux.zip": "58c6268be1b70364bf1162fa774a486bc1cdc714c8b7c4fa37917e585bc67a9d"
   },
@@ -18,13 +20,13 @@
     },
     {
       "path": "BUILDING.md",
-      "bytes": 3556,
-      "sha256": "73198e7cc86f8c8c2929eb71aa040cd52cf214a717dff60a6a26c2aa39bb4f74"
+      "bytes": 3732,
+      "sha256": "bd69e38c1c3c81a9493309df14d1869313589a923b0649102b5e16eb83bdb6e4"
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 1925,
-      "sha256": "acdbd936807e5737f3d0ac8bbb319b051870c0b15e8965ff8b08bb8b95179b7a"
+      "bytes": 2595,
+      "sha256": "94325057decb8edc7391067829f69894d6ee4b5b5a6953a508b1836b518cef3f"
     },
     {
       "path": "cmake/Diagnostics.cmake",
@@ -43,8 +45,8 @@
     },
     {
       "path": "cmake/SdlHost.cmake",
-      "bytes": 3387,
-      "sha256": "7d6f3e767a6f789e5daa4bf1c7b64917f7124d5bcacc5a14113ee464634e909d"
+      "bytes": 4277,
+      "sha256": "dc56d1e1cb216c90d38e4b0b452dba4eeccbddac2bbc6b28e2a971e04b7af8cf"
     },
     {
       "path": "cmake/Tests.cmake",
@@ -60,6 +62,11 @@
       "path": "COPYING",
       "bytes": 17995,
       "sha256": "8674f5aabf4dd033831e7148a39184d8579e50c385da61a7d8bac6a5dd11c6da"
+    },
+    {
+      "path": "host/controller_response.hpp",
+      "bytes": 1547,
+      "sha256": "d2952001dfcc9893229182a5ed626a1593354e4c05fac779a064ca8dfd587540"
     },
     {
       "path": "host/flight_host.hpp",
@@ -113,28 +120,48 @@
     },
     {
       "path": "host/sdl_controller.cpp",
-      "bytes": 6515,
-      "sha256": "361932ced626b3e9ca969ea98976bd0d02cc096303f5b5e59bd0108f4eb6dc13"
+      "bytes": 6360,
+      "sha256": "486ea2e495552f46d5d57ffb85d010e3dc8f6674f44c85e17c7f0d411728c722"
     },
     {
       "path": "host/sdl_controller.hpp",
-      "bytes": 1060,
-      "sha256": "7a7ece54b651383718bd9734f80c062719174f955cd27aaf1886dc62d8cbf086"
+      "bytes": 1155,
+      "sha256": "7f53a8c856285b4b76d3394810d5c8f3143ce6ced1557b7a6b6e9c2ad1edf185"
     },
     {
       "path": "host/sdl_host.cpp",
-      "bytes": 13071,
-      "sha256": "9d7036595136bd9036e4a0c7ae82b8440c5dd696798999e2d0867a1dae46b4a9"
+      "bytes": 14731,
+      "sha256": "a8671c133df837c484e94d222124ea10df899fc2b0e5bd886318dfc9c4341e35"
     },
     {
       "path": "host/sdl_host.hpp",
-      "bytes": 894,
-      "sha256": "6dc669d2bc6744e34349fe49cf22d47ae13b05fb72e39b3a4d293bd267307f25"
+      "bytes": 1049,
+      "sha256": "adb224061a5111ab8b12e9bc598e058365429072be1f6b57bdd305b0fee9c193"
+    },
+    {
+      "path": "host/sdl_options.cpp",
+      "bytes": 2242,
+      "sha256": "94b68aefff73cf51f0c9b758166e494fe00a128e91ea253b7ab798c43275bd46"
+    },
+    {
+      "path": "host/sdl_options.hpp",
+      "bytes": 147,
+      "sha256": "7a6ddd5368a6195a203ad92a57a32cfe04c86518a63ce820cbbe18f4bacde4a1"
+    },
+    {
+      "path": "host/sdl_presenter.cpp",
+      "bytes": 3736,
+      "sha256": "45bd7234f7c2fa58f837a4f9668e6833debea0896455bfae5cfbb242d415fde2"
+    },
+    {
+      "path": "host/sdl_presenter.hpp",
+      "bytes": 493,
+      "sha256": "5077762e2e9f9cf969bf231ef3d0cfe44fef9f8468197df5b76b6a69ff082ddd"
     },
     {
       "path": "host/session_main.cpp",
-      "bytes": 3808,
-      "sha256": "9f7718fd8c2fcb7e298400c207d7dec60118e33ad8805824eeb61cf5d1bacdec"
+      "bytes": 3268,
+      "sha256": "899c5973bc5418823e6d7350dc42323d0b3a6699d76215cfa641f8ca5a7d89d1"
     },
     {
       "path": "host/settings_profile.hpp",
@@ -283,13 +310,13 @@
     },
     {
       "path": "PREVIEW.md",
-      "bytes": 7719,
-      "sha256": "18fa106e2c7e070b7230bfe086b8bc3ec3f4bcd4ba0546be0cf03225be466a00"
+      "bytes": 9753,
+      "sha256": "97074138bb760f785cbe1ed2e41ac5d07bca7ca76d5c377cea23d2c487bed833"
     },
     {
       "path": "README.md",
-      "bytes": 3886,
-      "sha256": "bfdca678582a30108f43a9a63e6940fa923b81fe05dc9246fa008e32cd740362"
+      "bytes": 4826,
+      "sha256": "b09ad0953972fac341abc4339492ff1c320c7cd31cfa114cca8814fd131f62c9"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -742,6 +769,11 @@
       "sha256": "43dcc352bbd4aa8ad5aaae8c1559498f895f427e7418dd97906f6bc3daad1248"
     },
     {
+      "path": "tests/enhanced_host_tests.cpp",
+      "bytes": 8114,
+      "sha256": "48f4e44996656ff470c621bb2d3074941eed946285b6323872ea372274057caa"
+    },
+    {
       "path": "tests/entity_clock_tests.cpp",
       "bytes": 14378,
       "sha256": "acd4abdb9e02e78d73b2048b36bbd4174fec01da80d0a10425c796bf7a363825"
@@ -943,8 +975,8 @@
     },
     {
       "path": "tests/sdl_controller_tests.cpp",
-      "bytes": 8218,
-      "sha256": "a8c17c95d62d076ef2753c6f639df9f3b3cb959dbdded003d6f128764837a424"
+      "bytes": 10844,
+      "sha256": "76c38e380b324965a6607ee76b5adee61b19917b142ce901d6895859e4135a5f"
     },
     {
       "path": "tests/sdl_host_tests.cpp",
@@ -953,8 +985,13 @@
     },
     {
       "path": "tests/sdl_keyboard_route.cpp",
-      "bytes": 21264,
-      "sha256": "a95e3c6a90adf2993d53d25651ba2b75a57f89cdc5583fdd65530fc258d0dd08"
+      "bytes": 21517,
+      "sha256": "21b846756a878d893a6b5eb3e7a5ce8919b6670cfd59b686f725bd0f18cd5fce"
+    },
+    {
+      "path": "tests/sdl_presenter_tests.cpp",
+      "bytes": 5985,
+      "sha256": "b2f6f7fd980fb625ee4760b3344149b5c8f8ef780410fece97ddad59f370bde2"
     },
     {
       "path": "tests/session_tests.cpp",

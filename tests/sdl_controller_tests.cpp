@@ -117,6 +117,42 @@ int main() {
         require(host->poll().controls.fire, "Hot-plugged controller must accept a fresh flight press");
         host.reset();
         {
+            SDL_JoystickSetVirtualButton(replacement_joystick.get(), SDL_CONTROLLER_BUTTON_A, 0);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTX, 0);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTY, 0);
+            SdlHostOptions options{InputProfile::enhanced, {}};
+            options.controller = {4000, 150, PitchDirection::inverted};
+            SdlFlightHost tuned(options);
+            tuned.poll();
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTX, 16000);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTY, 16000);
+            input = tuned.poll();
+            const auto expected = controller_steering(16000, options.controller);
+            require(input.controls.horizontal == expected && input.controls.vertical == -expected,
+                    "Live SDL2 axes must apply custom sensitivity and pitch direction");
+            keyboard(SDL_KEYDOWN, SDL_SCANCODE_RIGHT);
+            require(tuned.poll().controls.horizontal == 350,
+                    "Keyboard steering must retain precedence over a tuned controller axis");
+            keyboard(SDL_KEYUP, SDL_SCANCODE_RIGHT);
+            SDL_Event focus{};
+            focus.type = SDL_WINDOWEVENT;
+            focus.window.event = SDL_WINDOWEVENT_FOCUS_LOST;
+            SDL_PushEvent(&focus);
+            require(tuned.poll().controls.horizontal == 0, "Focus loss must clear tuned axes");
+            focus.window.event = SDL_WINDOWEVENT_FOCUS_GAINED;
+            SDL_PushEvent(&focus);
+            require(tuned.poll().controls.horizontal == 0,
+                    "A deflected tuned stick must remain disarmed after returning focus");
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTX, 3000);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTY, 3000);
+            require(tuned.poll().controls.horizontal == 0, "The configured deadzone must rearm neutral axes");
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTX, 6000);
+            require(tuned.poll().controls.horizontal == controller_steering(6000, options.controller),
+                    "Tuned steering must resume after a neutral release");
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTX, 0);
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTY, 0);
+        }
+        {
             SdlFlightHost faithful;
             faithful.poll();
             SDL_JoystickSetVirtualButton(replacement_joystick.get(), SDL_CONTROLLER_BUTTON_A, 0);

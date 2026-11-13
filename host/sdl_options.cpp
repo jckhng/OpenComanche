@@ -31,6 +31,10 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments) {
             options.controller.sensitivity = integer_option(value);
         } else if (option == "--invert-y" && (value == "on" || value == "off")) {
             options.controller.pitch = value == "on" ? PitchDirection::inverted : PitchDirection::normal;
+        } else if (option == "--scene-renderer" && (value == "native" || value == "spatial")) {
+            options.scene_rendering = value == "native" ? SceneRendering::native : SceneRendering::spatial;
+        } else if (option == "--interpolation" && (value == "on" || value == "off")) {
+            options.interpolation = value == "on" ? CameraInterpolation::enabled : CameraInterpolation::disabled;
         } else if (option == "--scale" && (value == "nearest" || value == "linear" || value == "integer")) {
             options.scaling = value == "nearest" ? ImageScaling::nearest :
                 value == "linear" ? ImageScaling::linear : ImageScaling::integer;

@@ -1,0 +1,40 @@
+#pragma once
+
+#include "comanchecd/presentation.hpp"
+
+namespace comanchecd::host {
+// Map cells and radians keep host cameras independent of DOS fixed-point storage.
+struct SpatialCamera {
+    double x = 0, y = 0, height = 0, heading = 0;
+    double bank = 0, pitch = 0, shake = 0;
+    SceneViewMode mode = SceneViewMode::cockpit;
+};
+
+SpatialCamera spatial_camera(const SceneView& view);
+
+class CameraHistory {
+public:
+    void observe(std::shared_ptr<const SpatialFrame> frame, std::uint64_t cpu_cycles, double time);
+    SpatialCamera sample(double time) const;
+    void reset();
+private:
+    std::shared_ptr<const SpatialFrame> previous_, current_;
+    std::uint64_t cycles_ = 0;
+    double arrival_ = 0, duration_ = 0;
+};
+
+struct SpatialImage {
+    unsigned width = 0, height = 0;
+    std::vector<std::uint32_t> pixels;
+    std::vector<float> depth;
+};
+
+// CPU presentation backend. Rendering never advances the session or its devices.
+class SpatialRenderer {
+public:
+    const SpatialImage& render(const SpatialFrame& frame, const SpatialCamera& camera,
+                              const CockpitImage& overlay, unsigned width, unsigned height);
+private:
+    SpatialImage image_;
+};
+}

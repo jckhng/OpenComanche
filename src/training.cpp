@@ -280,9 +280,40 @@ public:
         presentation = std::move(next_presentation);
         intermediate_presentations = std::move(intermediate);
         ++tick;
+        if (!flight.state().ended) { publish_spatial(); }
         for (const auto& sound : sounds) {
             audio->play_cue(sound);
         }
+    }
+
+    std::shared_ptr<const SpatialResources> spatial_resources;
+    std::shared_ptr<SpatialFrame> pending_spatial;
+    std::shared_ptr<const SpatialFrame> spatial;
+    TerrainTables presentation_tables;
+    SceneryPolicy presentation_scenery;
+    PresentationDetail presentation_detail = PresentationDetail::indexed;
+
+    void set_presentation_detail(PresentationDetail detail) {
+        presentation_detail = detail;
+        cockpit.set_scene_tracking(detail == PresentationDetail::spatial);
+        if (detail == PresentationDetail::spatial) {
+            if (!spatial_resources) {
+                spatial_resources = std::make_shared<const SpatialResources>(SpatialResources{assets, presentation_tables, renderer.projection(), presentation_scenery});
+            }
+        } else {
+            spatial_resources.reset();
+            pending_spatial.reset();
+            spatial.reset();
+        }
+    }
+
+    void publish_spatial() {
+        if (!pending_spatial) { return; }
+        pending_spatial->native_effects = pending_spatial->native_effects || flight.state().crash_rotation != 0 ||
+            flight.state().exit_requested != 0 || flight.state().armor <= 0;
+        pending_spatial->scene_mask = cockpit.scene_mask();
+        pending_spatial->serial = tick;
+        spatial = std::move(pending_spatial);
     }
 
     SceneAssets assets;
@@ -297,7 +328,9 @@ public:
     bool missile_camera = true;
 
     void apply_settings(const Installation& installation, const MenuSettings& settings, const FlightMission* mission) {
-        auto next_renderer = TerrainRenderer(mission_terrain_tables(installation, settings, mission),
+        presentation_tables = mission_terrain_tables(installation, settings, mission);
+        presentation_scenery = settings.scenery_policy();
+        auto next_renderer = TerrainRenderer(presentation_tables,
                                              0x03000000, settings.scenery_policy());
         flight.set_policy(settings.flight_policy());
         cockpit.apply_settings(settings);
@@ -305,6 +338,10 @@ public:
         reflections_enabled = settings.scenery_policy().reflections;
         alternate_keys = settings.alternate_keys();
         renderer = std::move(next_renderer);
+        if (presentation_detail == PresentationDetail::spatial) {
+            spatial_resources.reset();
+            set_presentation_detail(presentation_detail);
+        }
         audio->set_sound_level(settings.sound_level());
     }
     SceneImage image;
@@ -402,6 +439,16 @@ private:
         if (work) { work(CpuOperation::instructions, 2); }
         if (controller.state().cockpit_mode != 6) { reflect(); }
         if (work) { work(CpuOperation::instructions, 5); }
+        if (spatial_resources) {
+            pending_spatial = std::make_shared<SpatialFrame>();
+            pending_spatial->resources = spatial_resources;
+            pending_spatial->scene = controller.scene();
+            pending_spatial->camera = view;
+            pending_spatial->native_camera = frame->camera;
+            pending_spatial->native_effects = (reflections_enabled && terrain_variant != 0) ||
+                std::any_of(frame->write_mask.begin(), frame->write_mask.end(), [](auto mask) { return (mask & 4) != 0; });
+            pending_spatial->cockpit_mode = controller.state().cockpit_mode;
+        }
         return frame;
     }
 
@@ -573,6 +620,7 @@ private:
             }
         }
         apply_settings(installation, settings, mission);
+        set_presentation_detail(mission ? mission->presentation_detail : PresentationDetail::indexed);
         audio->set_music_level(settings.music_level(), MusicChange::loaded);
         audio->set_sound_level(settings.sound_level());
         std::vector<SoundCue> sounds;
@@ -591,6 +639,7 @@ private:
         auto frame = draw_tick(flight, cockpit, {}, {}, 0, sounds, intermediate_presentations, next_reflections, effects, playback);
         image = scene_image(*frame, assets.terrain.palette);
         presentation = cockpit.present(flight.state());
+        publish_spatial();
         if (external_clock) {
             audio->execution_clock().execute(CpuOperation::instructions, 1);
             flight_work::present(audio->execution_clock());
@@ -630,6 +679,11 @@ TrainingFlight::TrainingFlight(Installation installation, FlightMission mission,
       effects_state_(effects ? std::move(effects) : std::make_shared<EffectsState>()),
       impl_(std::make_unique<Impl>(installation_, seed_, reflection_state_, effects_state_, mission_.get(), std::move(audio), loading_state_)) {}
 TrainingFlight::~TrainingFlight() = default;
+void TrainingFlight::set_presentation_detail(PresentationDetail detail) {
+    if (mission_) { mission_->presentation_detail = detail; }
+    impl_->set_presentation_detail(detail);
+}
+std::shared_ptr<const SpatialFrame> TrainingFlight::spatial_frame() const { return impl_->spatial; }
 const FlightState& TrainingFlight::state() const { return impl_->flight.state(); }
 IrqState TrainingFlight::interrupt_state() const {
     const auto& state = impl_->flight.state();

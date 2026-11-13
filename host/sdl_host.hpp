@@ -5,11 +5,16 @@
 #include "sdl_presenter.hpp"
 
 namespace comanchecd::host {
+enum class SceneRendering { spatial, native };
+enum class CameraInterpolation { enabled, disabled };
+
 struct SdlHostOptions {
     InputProfile input = InputProfile::faithful;
     std::string controller_mappings;
     ControllerTuning controller;
     ImageScaling scaling = ImageScaling::profile_default;
+    SceneRendering scene_rendering = SceneRendering::spatial;
+    CameraInterpolation interpolation = CameraInterpolation::enabled;
 };
 
 class SdlFlightHost final : public FlightHost {
@@ -17,6 +22,8 @@ public:
     explicit SdlFlightHost(SdlHostOptions options = {});
     ~SdlFlightHost() override;
     HostInput poll() override;
+    PresentationDetail presentation_detail() const override;
+    void present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) override;
     void set_input_context(InputContext context) override;
     void present(const CockpitImage& image, const FlightState& state, const std::string& status) override;
     void queue_audio(const std::vector<std::int16_t>& samples) override;
@@ -27,6 +34,7 @@ public:
     void reset_controls() override;
 
 private:
+    void update_title(const FlightState& state, const std::string& status);
     class Impl;
     std::unique_ptr<Impl> impl_;
 };

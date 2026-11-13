@@ -9,7 +9,7 @@ Other selectable missions remain experimental.
 
 ## Enhanced SDL2 development
 
-The `codex/enhanced-sdl2` branch adds configurable gamepad response, buffered
+The `enhanced-sdl2` branch adds configurable gamepad response, buffered
 keyboard fire/target taps, high-DPI integer scaling, optional filtered scaling
 and Alt+Enter desktop fullscreen. Build this branch to try these features.
 
@@ -17,12 +17,18 @@ and Alt+Enter desktop fullscreen. Build this branch to try these features.
 ./build/comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile --mode enhanced --scale integer --stick-deadzone 4000 --stick-sensitivity 150 --invert-y off
 ```
 
-The default launch profile remains faithful. Enhanced presentation still uses
-the recovered 320×240 indexed image. The SDL2 image presenter is separated
-from input handling and consumes completed images through the existing
-immutable session snapshot boundary. Spatial high-resolution rendering,
-interpolation and OpenXR frame submission remain planned.
-[Enhanced controls and scaling options](PREVIEW.md#enhanced-sdl2-input)
+Enhanced flight renders terrain and directional SG models into a display-sized
+color/depth buffer, with bilinear terrain heights and camera interpolation.
+The default window renders the world at 960×720. The recovered cockpit and HUD
+retain their original artwork. Use `--scene-renderer native` for the indexed
+presentation or `--interpolation off` for discrete camera steps.
+
+The default launch profile remains faithful. Immutable world observations feed
+a portable CPU renderer with an independent camera. SDL2 owns device output.
+OpenXR runtime admission is available in optional builds. Stereo submission
+and headset gameplay remain planned. Scripted screen effects, reflected-water
+scenes and crash presentation use the recovered indexed image.
+[Enhanced controls and rendering](PREVIEW.md#enhanced-sdl2-presentation)
 
 ## Download and play
 

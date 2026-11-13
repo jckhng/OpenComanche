@@ -13,6 +13,7 @@ public:
                 std::vector<std::uint8_t> settings = {}, SettingsWriter settings_writer = {},
                 SessionStart start = SessionStart::pilot_menu);
     void consume(PilotKey key);
+    void set_presentation_detail(PresentationDetail detail);
     void queue_key_byte(std::uint8_t scan);
     void schedule_key_byte(std::uint64_t cycle, std::uint8_t scan);
     std::uint64_t cpu_cycles() const;
@@ -33,6 +34,7 @@ public:
     void abort_mission();
 
 private:
+    PresentationDetail presentation_detail_ = PresentationDetail::indexed;
     Installation installation_;
     MenuSettings settings_;
     SettingsWriter settings_writer_;

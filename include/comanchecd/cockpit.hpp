@@ -75,6 +75,9 @@ public:
         const InstrumentCameraProvider& camera_provider = {}, const SoundCueHandler& sound_handler = {});
     CockpitImage present(const FlightState& player);
     void copy_front_page();
+    void set_scene_tracking(bool enabled);
+    const std::vector<std::uint8_t>& scene_mask() const;
+
     void apply_settings(const MenuSettings& settings);
     void refresh_stores(const FlightState& player, const CpuWorkSink& work = {});
     void refresh_countermeasures(const FlightState& player, const CpuWorkSink& work = {});
@@ -85,6 +88,9 @@ public:
     void initialize_displays(const FlightState& player, const CpuWorkSink& work);
 
 private:
+    void write_surface(std::size_t offset, std::uint8_t planes, std::uint8_t color, std::uint8_t scene = 0);
+    std::uint8_t scene_at(unsigned plane, std::size_t offset) const;
+    std::vector<std::uint8_t> scene_coverage_, presented_coverage_;
     void restore_marker(const CpuWorkSink& work);
     void load_picture(std::uint8_t mode);
     void console(std::uint8_t number, std::int32_t x, std::uint8_t y, const CpuWorkSink& work = {});
@@ -111,7 +117,7 @@ private:
 
     struct MarkerBackground {
         std::size_t origin = 0, width = 0, height = 0;
-        std::vector<std::uint8_t> pixels;
+        std::vector<std::uint8_t> pixels, coverage;
     };
 
     CockpitAssets assets_;

@@ -2,6 +2,7 @@
 
 #include "comanchecd/assets.hpp"
 #include "comanchecd/flight.hpp"
+#include "comanchecd/spatial_presentation.hpp"
 
 namespace comanchecd {
 constexpr std::size_t scene_pixel_aspect = 2;
@@ -25,6 +26,7 @@ struct FlightMission {
     // Full startup allocation margins survive mission changes and detail settings.
     std::shared_ptr<const std::vector<std::uint8_t>> depth_padding;
     std::size_t back_page = 0;
+    PresentationDetail presentation_detail = PresentationDetail::indexed;
 };
 
 enum class ObjectiveState : std::uint8_t { none, active, destroyed };
@@ -47,6 +49,8 @@ public:
                    std::shared_ptr<EffectsState> effects = {}, IrqState* loading_state = nullptr);
     ~TrainingFlight();
     void apply_settings(const MenuSettings& settings);
+    void set_presentation_detail(PresentationDetail detail);
+    std::shared_ptr<const SpatialFrame> spatial_frame() const;
     FrontendPicture begin_settings();
     const FlightState& state() const;
     IrqState interrupt_state() const;

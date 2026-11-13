@@ -74,7 +74,8 @@ Build and test artifacts belong in ignored output directories.
 
 Append `--mode enhanced` when launching to enable experimental SDL2
 GameController input and presentation options. PREVIEW.md describes stick
-tuning, integer/filtered scaling and the fullscreen shortcut. Physical
+tuning, high-resolution terrain/model presentation, camera interpolation,
+integer/filtered scaling and the fullscreen shortcut. Physical
 controller, fullscreen and high-DPI qualification remains open.
 
 OpenXR support currently covers loader/runtime admission queries. Headset frame
@@ -86,7 +87,8 @@ options and runtime query. The initial release defaults to SDL2 keyboard play.
 
 SOURCE_MANIFEST.json lists this branch's file hashes, excluding the manifest
 itself. Its baseline release and archive hashes identify the published RC10
-snapshot. The canonical core retains its RC10 source bytes. The GitHub RC10 tag
+snapshot. Canonical work accounting and simulation remain shared across host modes.
+Spatial observation hooks are opt-in. The GitHub RC10 tag
 supplies that release's source download. Runtime ZIPs each contain their matching
 source and notices.
 

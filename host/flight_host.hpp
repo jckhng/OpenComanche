@@ -34,6 +34,7 @@ class FlightHost {
 public:
     virtual ~FlightHost() = default;
     virtual HostInput poll() = 0;
+    virtual PresentationDetail presentation_detail() const { return PresentationDetail::indexed; }
     virtual void set_input_context(InputContext) {}
     virtual void present(const CockpitImage& image, const FlightState& state, const std::string& status) = 0;
     virtual void present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) {

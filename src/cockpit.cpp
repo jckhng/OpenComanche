@@ -192,7 +192,7 @@ void CockpitRenderer::load_picture(std::uint8_t mode) {
     state_.nearby = 0; // 1a311 clears radar proximity when the view picture changes.
     const auto& pixels = mode == 1 ? assets_.normal_picture : assets_.crash_picture;
     for (std::size_t index = 0; index < pixels.size(); ++index) {
-        surface_.write(state_.back_page + index / plane_count, std::uint8_t(1u << (index % plane_count)), pixels[index]);
+        write_surface(state_.back_page + index / plane_count, std::uint8_t(1u << (index % plane_count)), pixels[index]);
     }
 }
 
@@ -201,7 +201,7 @@ void CockpitRenderer::pixel(std::int32_t x, std::int32_t y, std::uint8_t color) 
     if (offset < 0 || offset >= plane_bytes) {
         throw std::invalid_argument("Cockpit drawing exceeds planar memory");
     }
-    surface_.write(static_cast<std::size_t>(offset), std::uint8_t(1u << (x & 3)), color);
+    write_surface(static_cast<std::size_t>(offset), std::uint8_t(1u << (x & 3)), color);
 }
 
 void CockpitRenderer::console(std::uint8_t number, std::int32_t x, std::uint8_t y, const CpuWorkSink& work) {
@@ -223,7 +223,7 @@ void CockpitRenderer::console(std::uint8_t number, std::int32_t x, std::uint8_t 
                 if (target < 0 || target >= plane_bytes) {
                     throw std::invalid_argument("Console sprite exceeds planar memory");
                 }
-                surface_.write(static_cast<std::size_t>(target), std::uint8_t(1u << plane), assets_.console.at(source++));
+                write_surface(static_cast<std::size_t>(target), std::uint8_t(1u << plane), assets_.console.at(source++));
             }
         }
         instructions(work, 3);
@@ -307,7 +307,7 @@ void CockpitRenderer::bar(std::int32_t x, std::uint8_t y, unsigned height, std::
     for (unsigned row = 0; row < height; ++row) {
         instructions(work, 3);
         const auto offset = state_.back_page + panel_offset_ + std::size_t(y) * line_stride + (x >> 2) - row * line_stride;
-        surface_.write(offset, 3, color);
+        write_surface(offset, 3, color);
     }
     instructions(work, 1);
 }
@@ -418,6 +418,29 @@ void CockpitRenderer::initialize_displays(const FlightState& player, const CpuWo
     ammunition(player, work);
 }
 
+void CockpitRenderer::set_scene_tracking(bool enabled) {
+    if (enabled == !scene_coverage_.empty()) { return; }
+    scene_coverage_.assign(enabled ? plane_count * plane_bytes : 0, 0);
+    presented_coverage_.assign(enabled ? cockpit_width * cockpit_height : 0, 0);
+    for (auto& marker : markers_) { marker.coverage.clear(); }
+}
+
+const std::vector<std::uint8_t>& CockpitRenderer::scene_mask() const { return presented_coverage_; }
+
+std::uint8_t CockpitRenderer::scene_at(unsigned plane, std::size_t offset) const {
+    return scene_coverage_.empty() ? 0 : scene_coverage_.at(plane * plane_bytes + (offset & (plane_bytes - 1)));
+}
+
+void CockpitRenderer::write_surface(std::size_t offset, std::uint8_t planes, std::uint8_t color, std::uint8_t scene) {
+    surface_.write(offset, planes, color);
+    if (scene_coverage_.empty()) { return; }
+    for (unsigned plane = 0; plane < plane_count; ++plane) {
+        if ((planes & (1u << plane)) != 0) {
+            scene_coverage_.at(plane * plane_bytes + (offset & (plane_bytes - 1))) = scene;
+        }
+    }
+}
+
 void CockpitRenderer::restore_marker(const CpuWorkSink& work) {
     auto& marker = markers_[state_.back_page / page_displacement];
     instructions(work, 2);
@@ -433,8 +456,9 @@ void CockpitRenderer::restore_marker(const CpuWorkSink& work) {
                 if (work) { work(CpuOperation::repeat_copy_bytes, static_cast<unsigned>(marker.width)); }
                 instructions(work, 1);
                 for (std::size_t column = 0; column < marker.width; ++column) {
-                    surface_.write(marker.origin - row * line_stride + column, std::uint8_t(1u << plane),
-                                   marker.pixels.at(source++));
+                    write_surface(marker.origin - row * line_stride + column, std::uint8_t(1u << plane),
+                                   marker.pixels.at(source), marker.coverage.empty() ? 0 : marker.coverage.at(source));
+                    ++source;
                 }
             }
             instructions(work, 3);
@@ -491,7 +515,7 @@ void CockpitRenderer::begin_frame(const TerrainFrame& frame, std::uint8_t mode, 
                 }
                 const auto copy = [&](std::int32_t target, std::uint8_t plane_mask) {
                     const auto source = (row + 32) * scene_buffer_side + 17 + target + source_shift;
-                    surface_.write(state_.back_page + visible_row * line_stride + target, plane_mask, frame.pixels.at(source));
+                    write_surface(state_.back_page + visible_row * line_stride + target, plane_mask, frame.pixels.at(source), 1);
                 };
                 const auto previous = visible_row * cockpit_backing_width + group * 4 + pair * 2;
                 const auto start = group;
@@ -519,8 +543,9 @@ void CockpitRenderer::copy_front_page() {
     const auto height = (state_.mode == 1 ? assets_.normal_picture : assets_.crash_picture).size() / cockpit_backing_width;
     for (unsigned plane = 0; plane < plane_count; ++plane) {
         for (std::size_t offset = 0; offset < height * line_stride; ++offset) {
-            surface_.write(state_.back_page + offset, std::uint8_t(1u << plane),
-                           surface_.read(plane, (state_.back_page ^ page_displacement) + offset));
+            write_surface(state_.back_page + offset, std::uint8_t(1u << plane),
+                           surface_.read(plane, (state_.back_page ^ page_displacement) + offset),
+                           scene_at(plane, (state_.back_page ^ page_displacement) + offset));
         }
     }
 }
@@ -537,6 +562,9 @@ CockpitImage CockpitRenderer::present(const FlightState& player) {
             const auto scan_x = x + player.shake_offset;
             const auto offset = (origin + y * line_stride + scan_x / plane_count) & (plane_bytes - 1);
             image.pixels[y * cockpit_width + x] = surface_.read(scan_x % plane_count, offset);
+            if (!presented_coverage_.empty()) {
+                presented_coverage_[y * cockpit_width + x] = scene_at(scan_x % plane_count, offset);
+            }
         }
     }
     state_.back_page ^= page_displacement;
@@ -559,7 +587,7 @@ void CockpitRenderer::heading(std::uint32_t angle, const CpuWorkSink& work) {
                 const auto color = assets_.hud.at(source++);
                 if (color != 0) {
                     instructions(work, 1);
-                    surface_.write(origin + group - row * line_stride, std::uint8_t(1u << plane), color);
+                    write_surface(origin + group - row * line_stride, std::uint8_t(1u << plane), color);
                 }
                 instructions(work, 2);
             }
@@ -630,7 +658,7 @@ void CockpitRenderer::camera(const TerrainFrame& frame, const CpuWorkSink& work)
             for (unsigned column = 0; column < 20; ++column) {
                 instructions(work, 2);
                 const auto source = origins[plane] - row * 512 + column * 2;
-                surface_.write(state_.back_page + panel_offset_ + 0x37ce + row * line_stride + column,
+                write_surface(state_.back_page + panel_offset_ + 0x37ce + row * line_stride + column,
                                std::uint8_t(1u << plane), frame.pixels.at(source));
             }
             instructions(work, 4);
@@ -663,7 +691,7 @@ void CockpitRenderer::map(const TerrainFrame& frame, const FlightState& player, 
                 const auto sample_x = x + std::uint32_t(dy) * std::uint32_t(column - 10);
                 const auto sample_y = y + std::uint32_t(dx) * std::uint32_t(column - 10);
                 const auto color = terrain.color[(sample_y >> 22) * terrain_side + (sample_x >> 22)];
-                surface_.write(state_.back_page + panel_offset_ + 0x37ce + row * line_stride + column,
+                write_surface(state_.back_page + panel_offset_ + 0x37ce + row * line_stride + column,
                                std::uint8_t(1u << plane), color);
             }
             dx = static_cast<std::int32_t>(std::uint32_t(dx >> 2) << 2);
@@ -987,6 +1015,7 @@ void CockpitRenderer::target_marker(const FlightState& player, const CpuWorkSink
     marker.width = item.width >> 2;
     marker.height = item.height;
     marker.pixels.clear();
+    marker.coverage.clear();
     for (std::size_t row = 0; row < marker.height; ++row) {
         for (unsigned plane = 0; plane < plane_count; ++plane) {
             instructions(work, plane == plane_count - 1 ? 2 : 1);
@@ -996,6 +1025,9 @@ void CockpitRenderer::target_marker(const FlightState& player, const CpuWorkSink
             instructions(work, 1);
             for (std::size_t column = 0; column < marker.width; ++column) {
                 marker.pixels.push_back(surface_.read(plane, marker.origin - row * line_stride + column));
+                if (!scene_coverage_.empty()) {
+                    marker.coverage.push_back(scene_at(plane, marker.origin - row * line_stride + column));
+                }
             }
         }
         instructions(work, 3);

@@ -93,6 +93,17 @@ int main(int argc, char** argv) {
             }
             require(image.pixels == retained.pixels && image.palette == retained.palette,
                     "Presentation must preserve its immutable source image and palette");
+            const auto size = presenter.spatial_size();
+            require(size.first == 960 && size.second == 720, "Spatial rendering must use the actual drawable viewport dimensions");
+            std::vector<std::uint32_t> spatial(size.first * size.second);
+            for (unsigned y = 0; y < size.second; ++y) {
+                for (unsigned x = 0; x < size.first; ++x) { spatial[y * size.first + x] = x % 2 ? 0xff0000ff : 0xffff0000; }
+            }
+            presenter.present_spatial(spatial, size.first, size.second);
+            require(pixel(renderer, 480, 360) == 0xff0000 && pixel(renderer, 481, 360) == 0x0000ff,
+                    "Spatial textures must preserve adjacent high-resolution pixels beyond the indexed image grid");
+            presenter.present(image);
+            require(pixel(renderer, 700, 360) == 0x0000ff, "Returning to native presentation must restore the completed indexed image");
             SDL_SetRenderTarget(renderer, nullptr);
         }
         std::cout << "SDL2 palette, integer/fractional scaling and presentation ownership passed\n";

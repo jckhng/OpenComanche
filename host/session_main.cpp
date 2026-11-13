@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
             "comanche_viewer INSTALLATION PAYLOAD_DIRECTORY PROFILE_DIRECTORY"
             " [--mode faithful|enhanced] [--controller-mappings FILE]"
             " [--stick-deadzone 0..32766] [--stick-sensitivity 1..400]"
-            " [--invert-y on|off] [--scale nearest|linear|integer]";
+            " [--invert-y on|off] [--scale nearest|linear|integer] [--scene-renderer native|spatial] [--interpolation on|off]";
         if (argc == 2 && std::string(argv[1]) == "--help") {
             std::cout << usage << "\ncomanche_viewer --openxr-info (OpenXR-enabled build)\n";
             return 0;

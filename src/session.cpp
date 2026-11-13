@@ -238,6 +238,7 @@ void GameSession::consume(PilotKey key) {
         FlightMission mission{frontend_->gameplay_setup(), frontend_->mission_presentation().resources, settings_.record()};
         mission.depth_padding = depth_padding_;
         mission.back_page = menu_back_page_;
+        mission.presentation_detail = presentation_detail_;
         flight_ = std::make_unique<TrainingFlight>(installation_, std::move(mission), audio_, session_irq_.random_seed, reflections_, effects_, &session_irq_);
     } else if (request == FrontendRequest::overview) {
         auto movie = std::make_unique<KdvMovie>(installation_.load_overview());
@@ -357,6 +358,10 @@ std::vector<std::int16_t> GameSession::render_audio(std::size_t samples) {
     return result;
 }
 const CockpitImage& GameSession::image() const { return flight_ && (!frontend_ || frontend_->state().mode != FrontendMode::settings) ? flight_->cockpit_image() : menu_image_; }
+void GameSession::set_presentation_detail(PresentationDetail detail) {
+    presentation_detail_ = detail;
+    if (flight_) { flight_->set_presentation_detail(detail); }
+}
 std::shared_ptr<const SessionPresentation> GameSession::presentation() const {
     auto frame = std::make_shared<SessionPresentation>();
     frame->menu = menu_state();
@@ -368,6 +373,7 @@ std::shared_ptr<const SessionPresentation> GameSession::presentation() const {
     frame->audio_samples = elapsed_samples_;
     frame->random_seed = random_seed();
     frame->flying = flying();
+    if (frame->flying && frame->menu.mode != FrontendMode::settings) { frame->spatial = flight_->spatial_frame(); }
     frame->demo_playing = demo_playing();
     frame->quit_requested = quit_requested();
     return frame;
@@ -438,6 +444,7 @@ void GameSession::start_demo_flight() {
     FlightMission selected{parse_gameplay(mission, resources, frontend.gameplay_presets, {}), resources,
                            settings_.record(), std::make_shared<DemoRecording>(installation_.load_demo(demo_index_))};
     selected.depth_padding = depth_padding_;
+    selected.presentation_detail = presentation_detail_;
     flight_ = std::make_unique<TrainingFlight>(installation_, std::move(selected), audio_, session_irq_.random_seed, reflections_, effects_);
     demo_phase_ = DemoPhase::flight;
     demo_player_.reset();

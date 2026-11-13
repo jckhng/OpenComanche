@@ -8,6 +8,8 @@
 
 #include <array>
 #include <chrono>
+#include <cmath>
+#include <limits>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -28,6 +30,16 @@ public:
                   const SettingsProfile& settings, const std::filesystem::path& output, RouteMode mode, SdlHostOptions options = {})
         : session_(session), route_(installation), profile_(profile), settings_(settings), host_(std::move(options)), log_(output / "events.jsonl"),
           states_(output / "states.jsonl"), mode_(mode), begin_(Clock::now()) {}
+
+    // The route observes objective lifetime even when the device presents indexed frames.
+    PresentationDetail presentation_detail() const override { return PresentationDetail::spatial; }
+    void present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) override {
+        if (frame->spatial && !frame->spatial->native_effects && host_.presentation_detail() == PresentationDetail::spatial) {
+            ++spatial_presentations_;
+        }
+        host_.present_snapshot(std::move(frame), status);
+        status_ = status;
+    }
 
     void set_input_context(InputContext context) override { host_.set_input_context(context); }
 
@@ -99,12 +111,16 @@ public:
         ++control_resets_;
     }
     void verify() const {
+        if (mode_ == RouteMode::play && host_.presentation_detail() == PresentationDetail::spatial) {
+            require(spatial_presentations_ != 0, "Enhanced keyboard flight must actually present high-resolution world snapshots");
+        }
         require(finished_ && (mode_ == RouteMode::restart || debrief_seen_), "Keyboard route must finish debrief and return to operations");
         require(mode_ == RouteMode::restart || context_ == ContextCheck::complete,
                 "Keyboard route must finish its pause, focus and settings checks");
         require(mode_ != RouteMode::restart || reloaded_, "Restart must observe the saved pilot selection");
     }
     unsigned observations() const { return flight_ticks_; }
+    unsigned spatial_presentations() const { return spatial_presentations_; }
 
 private:
     using Clock = std::chrono::steady_clock;
@@ -120,7 +136,7 @@ private:
     FrontendMode previous_menu_ = FrontendMode::startup;
     std::uint8_t previous_selection_ = 0;
     PilotMode previous_pilot_mode_ = PilotMode::list;
-    unsigned name_index_ = 0, flight_ticks_ = 0, throttle_ = 0;
+    unsigned name_index_ = 0, flight_ticks_ = 0, throttle_ = 0, spatial_presentations_ = 0;
     unsigned pause_polls_ = 0, control_resets_ = 0, settings_entry_resets_ = 0;
     std::size_t unavailable_command_ = 0;
     constexpr static std::array<SDL_Scancode, 6> unavailable_commands_{
@@ -348,13 +364,49 @@ private:
         }
         return false;
     }
+    FlightControls flight_controls(const FlightState& state, unsigned tick) const {
+        const auto snapshot = session_.presentation()->spatial;
+        if (!snapshot) { return route_.controls(state, tick); }
+        const SceneEntity* objective = nullptr;
+        double nearest = std::numeric_limits<double>::infinity();
+        for (const auto& entity : snapshot->scene.entities) {
+            if (!entity.active || entity.target == 0) { continue; }
+            const auto dx = std::int32_t(entity.x - state.view.x), dy = std::int32_t(entity.y - state.view.y);
+            const double distance = double(dx) * dx + double(dy) * dy;
+            if (distance < nearest) { nearest = distance; objective = &entity; }
+        }
+        const auto slot = state.target.slot;
+        const auto& locked = snapshot->scene.entities.at(slot);
+        const bool objective_locked = slot != 0 && locked.active && locked.target != 0;
+        if (objective_locked) { objective = &locked; }
+        if (!objective) { return {}; }
+        const auto dx = std::int32_t(objective->x - state.view.x), dy = std::int32_t(objective->y - state.view.y);
+        constexpr double full_turn = 6.283185307179586;
+        auto angle = std::atan2(double(dx), -double(dy));
+        if (angle < 0) { angle += full_turn; }
+        const auto error = std::int32_t(std::uint32_t(angle * 4294967296.0 / full_turn) - state.view.heading);
+        FlightControls controls;
+        controls.throttle = 4;
+        controls.horizontal = std::clamp(error / 0x100000 - state.yaw_rate / 0x40000, -350, 350);
+        const bool approaching = !objective_locked ||
+            std::max(std::abs(std::int64_t(dx)), std::abs(std::int64_t(dy))) > 0x10000000;
+        controls.vertical = approaching ? -350 : 0;
+        controls.cycle_target = !objective_locked && tick % 4 == 0;
+        controls.weapon = state.ammunition[2] != 0 ? WeaponSelection::hellfire :
+            state.ammunition[1] != 0 ? WeaponSelection::rockets : WeaponSelection::cannon;
+        // Allow a guided round to reach its target before spending the next one.
+        const unsigned fire_interval = controls.weapon == WeaponSelection::hellfire ? 40 : 8;
+        controls.fire = objective_locked && (controls.weapon == WeaponSelection::cannon || tick % fire_interval == 0);
+        return controls;
+    }
+
     void fly() {
         const auto cycle = session_.cpu_cycles();
         if (cycle == last_flight_cycle_) { return; }
         last_flight_cycle_ = cycle;
         const auto& state = session_.flight_state();
         require(flight_ticks_ < 6000, "Keyboard route must complete within its flight bound");
-        auto desired = route_.controls(state, flight_ticks_++);
+        auto desired = flight_controls(state, flight_ticks_++);
         // Distribute steering requests across whole keyboard-control frames.
         constexpr int steering_step = 350;
         steering_carry_ += desired.horizontal;
@@ -415,6 +467,7 @@ int main(int argc, char** argv) {
         require(mode != RouteMode::restart || before == profile.read(), "Restart navigation must preserve every saved pilot byte");
         std::ofstream summary(output / "summary.json");
         summary << "{\"passed\":true,\"mode\":\"" << mode_name << "\",\"flight_observations\":" << host.observations()
+                << ",\"spatial_presentations\":" << host.spatial_presentations()
                 << ",\"pilot_writes\":" << pilot_writes << ",\"settings_writes\":" << settings_writes
                 << ",\"completed\":" << (mode != RouteMode::abort ? "true" : "false") << "}\n";
         require(bool(summary), "Keyboard route summary must be written");

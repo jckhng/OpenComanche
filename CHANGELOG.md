@@ -8,9 +8,15 @@
 - Separate image presenter with high-DPI output, integer/nearest/driver-filtered
   scaling, small-window fallback and enhanced Alt+Enter fullscreen.
 - Optional OpenXR admission retains the immutable presentation boundary.
-  Spatial scene rendering and headset frame submission remain planned.
-- The shared canonical simulation, recovered CPU/device work, indexed renderer
-  and audio source retain their RC10 implementations.
+  Headset frame submission remains planned.
+- Display-sized terrain rendering with bilinear heights, original panoramic sky,
+  distance haze and depth-tested directional/animated SG billboards.
+- Immutable opt-in world snapshots, exact native cockpit/HUD coverage and
+  presentation-only camera interpolation with toroidal wrap and pause handling.
+- Native presentation fallback for scripted effects, reflected-water scenes
+  and crashes. Optional `--scene-renderer native` and `--interpolation off`.
+- Shared canonical simulation, recovered CPU/device work, indexed rasterization
+  and audio generation across both host modes.
 
 ## 0.1.0-preview1-rc10 — 2026-11-13
 

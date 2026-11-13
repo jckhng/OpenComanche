@@ -2,6 +2,8 @@
 #include "sdl_audio.hpp"
 #include "sdl_common.hpp"
 #include "sdl_controller.hpp"
+#include "spatial_renderer.hpp"
+#include <chrono>
 
 #include <algorithm>
 #include <sstream>
@@ -78,7 +80,8 @@ using SdlPointer = std::unique_ptr<T, decltype(Destroy)>;
 
 class SdlFlightHost::Impl {
 public:
-    explicit Impl(SdlHostOptions options) : profile(options.input) {
+    explicit Impl(SdlHostOptions options) : scene_rendering(options.scene_rendering),
+        interpolation(options.interpolation), profile(options.input) {
         validate_controller_tuning(options.controller);
         const bool enhanced = profile == InputProfile::enhanced;
         if (!enhanced && ((options.scaling != ImageScaling::profile_default && options.scaling != ImageScaling::nearest) ||
@@ -245,6 +248,19 @@ public:
         return input;
     }
 
+    double presentation_time() const {
+        const auto now = playback == Playback::running ? std::chrono::steady_clock::now() : paused_at;
+        return std::chrono::duration<double>(now - epoch - paused_duration).count();
+    }
+
+    using Clock = std::chrono::steady_clock;
+    Clock::time_point epoch = Clock::now(), paused_at = epoch;
+    Clock::duration paused_duration{};
+    Playback playback = Playback::paused;
+    SceneRendering scene_rendering;
+    CameraInterpolation interpolation;
+    CameraHistory camera_history;
+    SpatialRenderer spatial_renderer;
     SdlSubsystem subsystem{SDL_INIT_VIDEO | SDL_INIT_EVENTS};
     SdlPointer<SDL_Window, SDL_DestroyWindow> window{nullptr, SDL_DestroyWindow};
     std::unique_ptr<SdlPresenter> presenter;
@@ -270,7 +286,33 @@ void SdlFlightHost::set_input_context(InputContext context) {
 }
 
 void SdlFlightHost::present(const CockpitImage& image, const FlightState& state, const std::string& status) {
+    impl_->camera_history.reset();
     impl_->presenter->present(image);
+    update_title(state, status);
+}
+
+PresentationDetail SdlFlightHost::presentation_detail() const {
+    return impl_->profile == InputProfile::enhanced && impl_->scene_rendering == SceneRendering::spatial ?
+        PresentationDetail::spatial : PresentationDetail::indexed;
+}
+
+void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) {
+    if (presentation_detail() != PresentationDetail::spatial || !frame->spatial || frame->spatial->native_effects ||
+            (frame->spatial->cockpit_mode != 1 && frame->spatial->cockpit_mode != 6 && frame->spatial->cockpit_mode != 7)) {
+        present(frame->image, frame->flight, status);
+        return;
+    }
+    const auto time = impl_->presentation_time();
+    impl_->camera_history.observe(frame->spatial, frame->cpu_cycles, time);
+    const auto camera = impl_->interpolation == CameraInterpolation::enabled ?
+        impl_->camera_history.sample(time) : spatial_camera(frame->spatial->camera);
+    const auto size = impl_->presenter->spatial_size();
+    const auto& image = impl_->spatial_renderer.render(*frame->spatial, camera, frame->image, size.first, size.second);
+    impl_->presenter->present_spatial(image.pixels, image.width, image.height);
+    update_title(frame->flight, status);
+}
+
+void SdlFlightHost::update_title(const FlightState& state, const std::string& status) {
     std::ostringstream title;
     title << (impl_->profile == InputProfile::enhanced ? "OpenCommanche enhanced | " : "Comanche CD | ")
           << status << " | throttle " << unsigned(impl_->throttle)
@@ -284,7 +326,15 @@ void SdlFlightHost::present(const CockpitImage& image, const FlightState& state,
 void SdlFlightHost::queue_audio(const std::vector<std::int16_t>& samples) { impl_->audio.queue(samples); }
 std::size_t SdlFlightHost::queued_audio_samples() const { return impl_->audio.queued_samples(); }
 void SdlFlightHost::clear_audio() { impl_->audio.clear(); }
-void SdlFlightHost::set_playback(Playback playback) { impl_->audio.set_playback(playback); }
+void SdlFlightHost::set_playback(Playback playback) {
+    if (playback != impl_->playback) {
+        const auto now = Impl::Clock::now();
+        if (playback == Playback::paused) { impl_->paused_at = now; }
+        else { impl_->paused_duration += now - impl_->paused_at; }
+        impl_->playback = playback;
+    }
+    impl_->audio.set_playback(playback);
+}
 void SdlFlightHost::idle() { SDL_Delay(1); }
 void SdlFlightHost::reset_controls() {
     if (impl_->profile == InputProfile::enhanced) { impl_->suppressed = impl_->held; }

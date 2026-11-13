@@ -107,6 +107,7 @@ std::size_t run_viewer(TrainingFlight& flight, FlightHost& host, std::size_t tic
 }
 
 void run_session(GameSession& session, FlightHost& host) {
+    session.set_presentation_detail(host.presentation_detail());
     using Clock = std::chrono::steady_clock;
     auto previous = Clock::now();
     Clock::duration accumulated{};

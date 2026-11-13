@@ -1,5 +1,6 @@
 #include "comanchecd/cockpit.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
@@ -231,6 +232,32 @@ int main() {
         const auto shifted = scanout.present(player);
         require(shifted.pixels[0] == entry.planes[3 * plane_bytes + 1 + 245 + line_stride],
                 "Scanout must combine page origin, shake address, pel pan and crash scroll");
+        {
+            auto coverage_assets = assets;
+            std::fill_n(coverage_assets.normal_picture.begin(), cockpit_backing_width * 182, 255);
+            CockpitRenderer indexed(coverage_assets, tables, {}), tracked(coverage_assets, tables, {});
+            tracked.set_scene_tracking(true);
+            for (unsigned tick = 0; tick < 8; ++tick) {
+                FlightState state;
+                state.shake_offset = tick % 4;
+                state.crash_rotation = tick % 2 ? line_stride : 0;
+                std::vector<std::pair<CpuOperation, unsigned>> indexed_work, tracked_work;
+                indexed.begin_frame(frame, 1, blank_panels, [&](auto op, auto count) { indexed_work.emplace_back(op, count); });
+                tracked.begin_frame(frame, 1, blank_panels, [&](auto op, auto count) { tracked_work.emplace_back(op, count); });
+                indexed.draw_instruments(frame, {}, state, {}, {}, tick, blank_panels);
+                tracked.draw_instruments(frame, {}, state, {}, {}, tick, blank_panels);
+                const auto original = indexed.present(state), observation = tracked.present(state);
+                require(original.pixels == observation.pixels && original.palette == observation.palette && indexed_work == tracked_work,
+                        "Scene tracking must preserve indexed scanout, page history, shake and CPU work");
+                const auto& mask = tracked.scene_mask();
+                const auto world_pixels = std::count(mask.begin(), mask.end(), 1);
+                require(mask.size() == cockpit_width * cockpit_height && world_pixels > 1000 && world_pixels < int(mask.size()),
+                        "Scene coverage must retain both the windscreen and original cockpit overlays");
+                indexed.copy_front_page(); tracked.copy_front_page();
+            }
+            tracked.set_scene_tracking(false);
+            require(tracked.scene_mask().empty(), "Disabling spatial observation must release its coverage buffers");
+        }
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

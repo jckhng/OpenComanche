@@ -70,7 +70,8 @@ recovery. Supported commands clear the notice.
 ## Enhanced SDL2 input
 
 Append `--mode enhanced` to enable SDL2 GameController input. Both input profiles
-use the same simulation and indexed renderer. Enhanced input adds analog
+use the same simulation. Enhanced flight selects spatial rendering by default.
+Enhanced input adds analog
 steering and buffers short action presses until the next simulation tick.
 Keyboard Space, Tab and Enter taps are buffered in enhanced flight. Held fire
 continues normally. Pause, focus loss and context changes cancel queued edges
@@ -105,7 +106,9 @@ uses SDL2's GameController API. [SDL2 controller documentation](https://wiki.lib
 | `--stick-deadzone 0..32766` | 8000 | Per-axis deadzone in signed SDL2 stick units |
 | `--stick-sensitivity 1..400` | 100 | Steering gain in percent, clamped to the recovered control range |
 | `--invert-y on\|off` | off | Invert gamepad pitch |
-| `--scale nearest\|linear\|integer` | integer | Image scaling policy |
+| `--scale nearest\|linear\|integer` | integer | Image scaling and viewport policy |
+| `--scene-renderer spatial\|native` | spatial | High-resolution world or recovered indexed presentation |
+| `--interpolation on\|off` | on | Presentation-only camera interpolation |
 
 These options require `--mode enhanced`. Keyboard steering takes precedence
 over analog steering. Controller neutral detection uses the selected deadzone.
@@ -116,8 +119,9 @@ Enhanced windows request high-DPI output. Integer scaling uses the largest
 whole-number multiple of 320×240 that fits the output, with letterboxing.
 Outputs smaller than the native image use fractional downscaling to keep the
 whole cockpit visible. Nearest scaling fits the 4:3 image continuously. Linear
-filtering uses the selected SDL2 driver's filtering support, including its
-software fallback behavior.
+filtering applies to indexed presentation through the selected SDL2 driver,
+including its software fallback behavior. Spatial output retains a
+nearest-scaled cockpit and HUD.
 [SDL2 integer scaling](https://wiki.libsdl.org/SDL2/SDL_RenderSetIntegerScale),
 [SDL2 texture filtering](https://wiki.libsdl.org/SDL2/SDL_HINT_RENDER_SCALE_QUALITY)
 
@@ -125,12 +129,43 @@ Alt+Enter toggles desktop fullscreen in enhanced mode. Its Enter is consumed
 by the host presentation shortcut. F1–F12 retain their instrument bindings.
 The faithful launch profile keeps nearest scaling and its existing key route.
 
-The SDL2 presenter accepts completed indexed images. Rendering does not access
-GameSession, advance its clock or mutate its snapshot. The canonical simulation,
-CPU/IRQ/RNG work, indexed renderer and PCM generation retain their shared
-implementation. Higher-resolution scene rendering, camera interpolation and
-OpenXR stereo submission remain planned. Physical controller, fullscreen and
-high-DPI qualification for this development branch remain open.
+Enhanced flight renders the 1024×1024 toroidal height/color maps directly into
+an output-sized color/depth buffer. Heights use bilinear sampling. The source
+color map retains its original texel density. Distance haze uses quarter/half
+RGB fog blends at the recovered distance-table boundaries. Panoramic and flat
+sky settings follow the selected scenery policy. SG models are directional and
+animated sprites. The spatial renderer draws depth-tested billboards using
+their original frames, origins, transparency, mirroring and rotor layers.
+
+At the default window size, the world is 960×720. The selected 4:3 viewport
+sets the resolution after high-DPI and integer-scaling rules. The CPU renderer
+caps its output at 3200×2400. The cockpit artwork, HUD and instrument monitors
+retain native resolution. A compositor coverage mask preserves their pixels,
+including HUD colors shared with the terrain. Crash presentation, scripted
+screen-effect frames and reflected-water scenes retain indexed presentation.
+`--scene-renderer native` selects that presentation throughout the session.
+
+Camera interpolation spans the previous and current world observations over
+one simulation interval. It adds one interval of visual latency. Position and
+heading interpolation follow the shortest toroidal path. Pause freezes its
+presentation clock. Mission, resource, view and discontinuous frame transitions
+reset its history. Entity transforms and native instruments update at the
+simulation cadence. `--interpolation off` displays the current scene camera.
+
+The session optionally exports immutable terrain/model resources and frame
+transforms at its original world-drawing boundary. Capturing and rendering
+these observations preserves CPU/IRQ/RNG accounting, simulation and mixed PCM.
+The spatial renderer accepts a separate camera and owns no SDL2 devices or
+session clock. This boundary can serve future eye views. OpenXR stereo
+projection, pose integration and frame submission remain planned.
+
+Automated Windows and Linux checks cover spatial rendering, camera wrapping,
+compositor coverage and continuous indexed/spatial capture parity. SDL2 route
+checks cover pause, focus, settings, mission completion, debrief, save, restart
+and abort. Physical controller, fullscreen, high-DPI and interpolated-motion
+qualification for this development branch remain open. The scripted Windows
+pilot intermittently stalls acquiring an objective. Completed route witnesses
+cover the declared flows, while that automation remains timing-sensitive.
 
 ## Optional OpenXR admission
 

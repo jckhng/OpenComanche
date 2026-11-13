@@ -35,7 +35,8 @@ void configuration() {
             options.controller.pitch == PitchDirection::inverted,
             "Enhanced options must parse independently of option order");
     for (const auto& arguments : std::vector<std::vector<std::string>>{
-            {"--scale", "linear"}, {"--mode", "enhanced", "--stick-deadzone", "32767"},
+            {"--scale", "linear"}, {"--scene-renderer", "spatial"}, {"--interpolation", "on"},
+            {"--mode", "enhanced", "--scene-renderer", "mesh"}, {"--mode", "enhanced", "--interpolation", "yes"}, {"--mode", "enhanced", "--stick-deadzone", "32767"},
             {"--mode", "enhanced", "--stick-deadzone", "-1"},
             {"--mode", "enhanced", "--stick-sensitivity", "0"},
             {"--mode", "enhanced", "--stick-sensitivity", "401"},
@@ -47,6 +48,11 @@ void configuration() {
         catch (const std::invalid_argument&) { rejected = true; }
         require(rejected, "Invalid or inactive enhanced options must be rejected");
     }
+    const auto spatial = parse_sdl_options({"--mode", "enhanced", "--scene-renderer", "spatial", "--interpolation", "on"});
+    const auto native = parse_sdl_options({"--mode", "enhanced", "--scene-renderer", "native", "--interpolation", "off"});
+    require(spatial.scene_rendering == SceneRendering::spatial && spatial.interpolation == CameraInterpolation::enabled &&
+            native.scene_rendering == SceneRendering::native && native.interpolation == CameraInterpolation::disabled,
+            "Enhanced scene and interpolation selections must reach the host boundary");
     ControllerTuning original;
     for (int value = -32768; value <= 32767; ++value) {
         const int magnitude = std::abs(value);

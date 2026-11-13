@@ -10,6 +10,7 @@ struct SessionPresentation {
     FlightState flight{};
     FlightNotice flight_notice = FlightNotice::none;
     CockpitImage image{};
+    std::shared_ptr<const SpatialFrame> spatial;
     std::uint64_t cpu_cycles = 0, irq_ticks = 0, audio_samples = 0;
     std::uint32_t random_seed = 0;
     bool flying = false, demo_playing = false, quit_requested = false;

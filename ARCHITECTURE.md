@@ -65,6 +65,26 @@ composes the native overlay for flat-screen presentation. The optional OpenXR
 host owns runtime frame timing, tracked spaces and swapchains. XR action mapping
 and 3D cockpit interaction remain future work.
 
+## Spatial cockpit ownership
+
+`host/cockpit_model.cpp` constructs authored approximate tandem-cockpit surfaces
+in metres. `host/spatial_cockpit.cpp` clips and depth-tests them with the existing
+CPU rasterizer. It maps completed native instrument pixels onto the forward
+panel and recognized HUD colors onto a distant image plane. `CockpitRenderer`
+exports the palette membership of its decoded HUD sprites and gauge colors
+through immutable `SpatialResources` metadata. Canonical drawing, storage and
+CPU work stay with the existing renderer.
+
+The body compositor owns a separate metre-scaled depth pass over completed
+world color. Native-only forward effects use an indexed image plane within that
+pass. Side/rear views and head poses continue updating. Desktop mouse look owns
+presentation angles outside native command input. The SDL2 host releases its
+relative mouse mode on button release, focus loss and context transitions.
+
+The pilot-front/copilot-aft arrangement follows the Army crew-station study.
+Mesh dimensions and the static rear crew figure are authored approximations.
+[Army Research Laboratory ARL-TR-3404](https://www.academia.edu/26413822/Evaluation_of_an_Army_Aviators_Ability_to_Conduct_Ingress_and_Egress_of_the_RAH_66_Comanche_Crew_Station_While_Wearing_the_Air_Warrior_Ensemble)
+
 ## OpenXR ownership
 
 `OpenXrHost` decorates the SDL2 device host. The simulation thread owns keyboard,
@@ -81,7 +101,9 @@ and the main thread destroys the context. Original assets and SDK binaries are
 external dependencies.
 
 `OpenXrSession` owns primary-stereo session transitions, LOCAL/VIEW spaces,
-per-eye swapchains and a separate 4:3 panel swapchain. Valid poses/FOVs are
+per-eye swapchains and a separate 4:3 panel swapchain. Spatial cockpit flight
+composes its geometry into the eye images and submits one projection layer.
+The panel handles menus and invalid tracking. Valid poses/FOVs are
 located at predicted display time. A drawing failure releases a successfully
 waited image and ends an empty frame before propagating. Hidden frames submit
 zero layers. The driver uploads top-down CPU images with an OpenGL row flip,

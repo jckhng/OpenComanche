@@ -533,6 +533,21 @@ void CockpitRenderer::begin_frame(const TerrainFrame& frame, std::uint8_t mode, 
     instructions(work, 1);
 }
 
+std::array<bool, 256> CockpitRenderer::hud_colors() const {
+    std::array<bool, 256> result{};
+    if (assets_.hud.size() >= 8) {
+        for (unsigned number = 1; number <= assets_.hud[2]; ++number) {
+            const auto item = sprite(assets_.hud, static_cast<std::uint8_t>(number));
+            for (std::size_t index = 0; index < item.width * item.height; ++index) {
+                result[assets_.hud[item.source + index]] = true;
+            }
+        }
+    }
+    for (const auto index : {5u, 6u, 8u}) { result[assets_.theme[index]] = true; }
+    result[0] = false;
+    return result;
+}
+
 void CockpitRenderer::copy_front_page() {
     const auto height = (state_.mode == 1 ? assets_.normal_picture : assets_.crash_picture).size() / cockpit_backing_width;
     for (unsigned plane = 0; plane < plane_count; ++plane) {

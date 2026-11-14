@@ -109,7 +109,8 @@ uses SDL2's GameController API. [SDL2 controller documentation](https://wiki.lib
 | `--scale nearest\|linear\|integer` | integer | Image scaling and viewport policy |
 | `--scene-renderer spatial\|native` | spatial | High-resolution world or recovered indexed presentation |
 | `--interpolation on\|off` | on | Presentation-only camera and entity interpolation |
-| `--cockpit-scale nearest\|sharp` | sharp | Native overlay sampling or mask-aware Scale2x edges |
+| `--cockpit-scale nearest\|sharp` | sharp | Flat overlay sampling or mask-aware Scale2x edges |
+| `--cockpit flat\|spatial` | spatial | Flat artwork or an authored look-around cockpit |
 
 These options require `--mode enhanced`. Keyboard steering takes precedence
 over analog steering. Controller neutral detection uses the selected deadzone.
@@ -196,11 +197,14 @@ At the default window size, the world is 960×720. The selected 4:3 viewport
 sets the resolution after high-DPI and integer-scaling rules. The CPU renderer
 caps its output at 3200×2400. The cockpit artwork, HUD and instrument monitors
 retain native source resolution. A separate compositor uses the scene coverage
-mask, including HUD colors shared with terrain. Enhanced spatial presentation
+mask, including HUD colors shared with terrain. Flat cockpit presentation
 defaults to mask-aware Scale2x edges at outputs of at least 640×480. Native-sized
 and smaller outputs use nearest sampling. `--cockpit-scale nearest` selects
-the original pixel blocks at every size. The choice persists in host preferences. Crash presentation, scripted
-screen-effect frames and reflected-water scenes retain indexed presentation.
+the original pixel blocks at every size. The choice persists in host preferences.
+Spatial cockpit flight keeps native-only effects on a distant forward image
+plane while the surrounding cockpit and side/rear world stay head-tracked.
+Flat presentation, external views, menus and crash transitions retain their
+indexed-effect screen path.
 `--scene-renderer native` selects that presentation throughout the session.
 
 Camera and entity interpolation span the previous and current world
@@ -232,6 +236,27 @@ and abort. Physical controller, fullscreen, high-DPI and interpolated-motion
 qualification for this development branch remain open. The scripted Windows
 pilot intermittently stalls acquiring an objective. Completed route witnesses
 cover the declared flows, while that automation remains timing-sensitive.
+
+## Spatial cockpit and look-around
+
+Enhanced spatial flight defaults to `--cockpit spatial`. Hold the right mouse
+button and drag to turn the desktop view. Release it to retain the direction.
+Middle mouse recenters. Pause freezes the flight while mouse look remains
+available. Focus/context changes release mouse capture. Native keyboard and
+controller flight commands keep their existing routing.
+
+The cockpit uses authored metre-scaled canopy frames, consoles, floor, seats,
+controls and a static rear crew figure. Its tandem arrangement places the pilot
+in front and the copilot behind. Geometry and proportions are approximations.
+The recovered DOS resources provide the forward panel, live displays, gauges
+and HUD pixels. Glyph palette membership is exported as read-only observation
+metadata. The spatial renderer samples that original-resolution artwork on the
+instrument panel and forward HUD image plane.
+
+Native-only effects retain their forward indexed image on a distant plane.
+Look-around continues through those frames. The effect imagery has a planar
+representation within the enhanced scene. `--cockpit flat` selects the earlier
+compositor and its screen fallback. The preference persists per native profile.
 
 ## Experimental OpenXR headset host
 
@@ -266,9 +291,11 @@ The desktop uses an indexed mirror with immediate presentation. Its keyboard
 and gamepad remain the input devices. XR focus loss releases controls and pauses
 playback. Press P after focus returns, including an initially paused startup.
 
-Flight submits a stereo world layer and a separate native cockpit/HUD quad
-fixed in aircraft reference space. Menus, indexed effects, reflected-water and
-crash scenes use a head-locked 4:3 screen. Invalid tracking suppresses the world
+Spatial cockpit flight submits one stereo projection layer containing the
+world, surrounding geometry and live instrument/HUD textures. Head rotation and
+translation move within the front crew station. Both eyes share one canonical
+observation. Flat cockpit presentation uses the separate native overlay quad.
+Menus and crash scenes use a head-locked 4:3 screen. Invalid tracking suppresses the world
 layer. Local reference-space changes reanchor tracked poses at their effective
 predicted display time. Screen transitions retain original indexed artwork.
 
@@ -276,7 +303,8 @@ Synthetic tests cover session restart, hidden frames, tracking loss, reference
 changes, frame ordering, waited-image ownership and exception cleanup. Real
 SDL2/OpenGL checks cover texture orientation, channels, alpha and color space.
 Physical headset validation, frame-rate/comfort qualification, XR actions and
-3D cockpit interaction remain open. The world renderer still runs on the CPU.
+3D cockpit interaction remain open. Flight commands use SDL2 keyboard/gamepad
+input. The new mesh and rear crew figure are visual presentation geometry. The world renderer still runs on the CPU.
 [Khronos frame submission](https://github.com/KhronosGroup/OpenXR-Guide/blob/main/chapters/frame_submission.md)
 
 ## Preview limits

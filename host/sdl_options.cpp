@@ -42,6 +42,8 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments, SdlH
             options.interpolation = value == "on" ? CameraInterpolation::enabled : CameraInterpolation::disabled;
         } else if (option == "--cockpit-scale" && (value == "nearest" || value == "sharp")) {
             options.cockpit_scaling = value == "nearest" ? CockpitScaling::nearest : CockpitScaling::sharp;
+        } else if (option == "--cockpit" && (value == "flat" || value == "spatial")) {
+            options.cockpit = value == "flat" ? CockpitPresentation::flat : CockpitPresentation::spatial;
         } else if (option == "--scale" && (value == "nearest" || value == "linear" || value == "integer")) {
             options.scaling = value == "nearest" ? ImageScaling::nearest :
                 value == "linear" ? ImageScaling::linear : ImageScaling::integer;

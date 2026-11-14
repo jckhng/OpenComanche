@@ -298,7 +298,8 @@ public:
         cockpit.set_scene_tracking(detail == PresentationDetail::spatial);
         if (detail == PresentationDetail::spatial) {
             if (!spatial_resources) {
-                spatial_resources = std::make_shared<const SpatialResources>(SpatialResources{assets, presentation_tables, renderer.projection(), presentation_scenery});
+                spatial_resources = std::make_shared<const SpatialResources>(SpatialResources{
+                    assets, presentation_tables, renderer.projection(), presentation_scenery, cockpit.hud_colors()});
             }
         } else {
             spatial_resources.reset();

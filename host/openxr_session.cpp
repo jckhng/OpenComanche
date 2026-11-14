@@ -166,7 +166,7 @@ public:
             std::array<const XrCompositionLayerBaseHeader*, 2> layers{};
             if (frame.shouldRender) {
                 bool world_visible = false;
-                if (scene == OpenXrScene::world) {
+                if (scene != OpenXrScene::panel) {
                     XrViewLocateInfo locate{XR_TYPE_VIEW_LOCATE_INFO};
                     locate.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
                     locate.displayTime = frame.predictedDisplayTime;
@@ -205,28 +205,30 @@ public:
                         layers[end.layerCount++] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&projection);
                     }
                 }
-                // Tracking loss keeps a readable head-locked panel and suppresses the world.
-                draw(panel_, panel);
-                quad.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-                quad.space = view_space_;
-                quad.eyeVisibility = XR_EYE_VISIBILITY_BOTH;
-                quad.subImage = subimage(panel_);
-                quad.pose.orientation.w = 1;
-                quad.pose.position.z = -panel_distance;
-                quad.size = {menu_width, menu_width * 0.75f};
-                if (world_visible && cockpit_origin_) {
-                    // Place the original 4:3 panel at its native angular size in aircraft space.
-                    const auto width = panel_distance / spatial_units::focal_ratio;
-                    const auto height = width * 0.75;
-                    const auto center_y = height * (spatial_units::horizon_ratio - 0.5);
-                    const auto cockpit = eye_view({*cockpit_origin_, {}}, {{0, center_y, -panel_distance}, {}}, {}, 1).pose;
-                    quad.space = local_space_;
-                    quad.pose.position = {float(cockpit.position.x), float(cockpit.position.y), float(cockpit.position.z)};
-                    quad.pose.orientation = {float(cockpit.orientation.x), float(cockpit.orientation.y),
-                        float(cockpit.orientation.z), float(cockpit.orientation.w)};
-                    quad.size = {float(width), float(height)};
+                // A spatial cockpit is already in the eye images. Tracking loss keeps the screen fallback.
+                if (scene != OpenXrScene::cockpit || !world_visible) {
+                    draw(panel_, panel);
+                    quad.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+                    quad.space = view_space_;
+                    quad.eyeVisibility = XR_EYE_VISIBILITY_BOTH;
+                    quad.subImage = subimage(panel_);
+                    quad.pose.orientation.w = 1;
+                    quad.pose.position.z = -panel_distance;
+                    quad.size = {menu_width, menu_width * 0.75f};
+                    if (world_visible && cockpit_origin_) {
+                        // Place the original 4:3 panel at its native angular size in aircraft space.
+                        const auto width = panel_distance / spatial_units::focal_ratio;
+                        const auto height = width * 0.75;
+                        const auto center_y = height * (spatial_units::horizon_ratio - 0.5);
+                        const auto cockpit = eye_view({*cockpit_origin_, {}}, {{0, center_y, -panel_distance}, {}}, {}, 1).pose;
+                        quad.space = local_space_;
+                        quad.pose.position = {float(cockpit.position.x), float(cockpit.position.y), float(cockpit.position.z)};
+                        quad.pose.orientation = {float(cockpit.orientation.x), float(cockpit.orientation.y),
+                            float(cockpit.orientation.z), float(cockpit.orientation.w)};
+                        quad.size = {float(width), float(height)};
+                    }
+                    layers[end.layerCount++] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&quad);
                 }
-                layers[end.layerCount++] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&quad);
                 end.layers = layers.data();
             }
             frame_open = false;

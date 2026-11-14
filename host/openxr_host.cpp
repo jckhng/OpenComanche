@@ -13,6 +13,7 @@ namespace comanchecd::host {
 namespace {
 SdlHostOptions desktop_options(SdlHostOptions options) {
     options.pacing = DisplayPacing::immediate;
+    options.cockpit = CockpitPresentation::flat;
     return options;
 }
 }
@@ -21,6 +22,7 @@ public:
     Impl(SdlHostOptions options, OpenXrOptions xr) : desktop_(desktop_options(options)), options_(options), xr_(xr),
         loader_(xr.loader), runtime_(loader_.entry()), graphics_(runtime_.capabilities()) {
         if (!xr.enabled || options.input != InputProfile::enhanced) { throw std::invalid_argument("XR requires enhanced mode"); }
+        if (options.cockpit == CockpitPresentation::spatial) { cockpit_ = std::make_unique<SpatialCockpit>(); }
         graphics_.release();
         std::promise<void> ready;
         auto initialized = ready.get_future();
@@ -94,14 +96,13 @@ private:
         try { graphics_.release(); } catch (...) {}
     }
     void render(OpenXrSession& session, const std::shared_ptr<const SessionPresentation>& frame) {
-        const bool spatial = options_.scene_rendering == SceneRendering::spatial && frame->spatial &&
-            !frame->spatial->native_effects && (frame->spatial->cockpit_mode == 1 ||
-                frame->spatial->cockpit_mode == 6 || frame->spatial->cockpit_mode == 7);
+        const bool spatial = options_.scene_rendering == SceneRendering::spatial && spatial_presentation(*frame, options_.cockpit);
+        const bool body = spatial && options_.cockpit == CockpitPresentation::spatial && frame->spatial->cockpit_mode == 1;
         if (spatial) { history_.observe(frame->spatial, frame->cpu_cycles, time()); }
         else { history_.reset(); }
         std::optional<SpatialCamera> camera;
         EntityPoses entities{};
-        session.submit(spatial ? OpenXrScene::world : OpenXrScene::panel,
+        session.submit(body ? OpenXrScene::cockpit : spatial ? OpenXrScene::world : OpenXrScene::panel,
             [&](const OpenXrEye& eye) {
                 if (!origin_ || tracking_epoch_ != eye.tracking_epoch) {
                     origin_ = eye.head;
@@ -115,14 +116,20 @@ private:
                         history_.sample_entities(display_time) : entity_poses(*frame->spatial);
                 }
                 const auto base = camera_view(*camera, eye.target.width, eye.target.height);
-                const auto view = eye_view(base, relative_pose(*origin_, eye.pose), eye.frustum, xr_.world_scale);
-                graphics_.upload(eye.target, renderer_.render_world(*frame->spatial, view, entities,
-                    frame->image.palette, eye.target.width, eye.target.height));
+                const auto tracked = relative_pose(*origin_, eye.pose);
+                const auto view = eye_view(base, tracked, eye.frustum, xr_.world_scale);
+                const auto& world = renderer_.render_world(*frame->spatial, view, entities,
+                    frame->image.palette, eye.target.width, eye.target.height);
+                if (body) {
+                    cockpit_image_ = world;
+                    cockpit_->draw(cockpit_image_, cockpit_view(tracked, eye.frustum), frame->image, *frame->spatial);
+                    graphics_.upload(eye.target, cockpit_image_);
+                } else { graphics_.upload(eye.target, world); }
             },
             [&](const OpenXrTarget& target) {
                 SpatialImage panel{target.width, target.height,
                     std::vector<std::uint32_t>(std::size_t(target.width) * target.height, 0), {}};
-                const auto mask = spatial ? frame->spatial->scene_mask :
+                const auto mask = spatial && !body ? frame->spatial->scene_mask :
                     std::vector<std::uint8_t>(frame->image.pixels.size(), 0);
                 composite_cockpit(panel, frame->image, mask, options_.cockpit_scaling);
                 graphics_.upload(target, panel);
@@ -141,6 +148,8 @@ private:
     std::mutex error_mutex_;
     std::exception_ptr error_;
     SpatialRenderer renderer_;
+    std::unique_ptr<SpatialCockpit> cockpit_;
+    SpatialImage cockpit_image_;
     CameraHistory history_;
     std::optional<CameraPose> origin_;
     std::uint64_t tracking_epoch_ = 0;

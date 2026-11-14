@@ -20,8 +20,11 @@ and Alt+Enter desktop fullscreen. Build this branch to try these features.
 Enhanced flight renders terrain and directional SG models into a display-sized
 color/depth buffer, with stitched terrain detail and camera/entity interpolation.
 The default window renders the world at 960×720. The recovered cockpit and HUD
-retain their original artwork, with optional sharp edge scaling.
-Use `--cockpit-scale nearest` for native pixel blocks.
+supply the live instrument and HUD artwork for an authored spatial cockpit.
+Hold right mouse and drag to look around. Middle mouse recenters the view.
+The canopy, consoles, seats and static rear crew figure are approximate enhanced
+geometry. `--cockpit flat` selects the earlier overlay presentation.
+Use `--cockpit-scale nearest` for native pixel blocks in flat presentation.
 Use `--scene-renderer native` for the indexed
 presentation or `--interpolation off` for discrete camera steps.
 

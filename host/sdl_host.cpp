@@ -12,6 +12,7 @@ namespace comanchecd::host {
 namespace {
 constexpr std::int32_t keyboard_control = 350;
 constexpr std::uint8_t maximum_throttle = 15;
+constexpr double mouse_look_radians_per_pixel = 0.003;
 
 std::uint8_t menu_scan(SDL_Scancode key) {
     constexpr std::array<std::uint8_t, 26> letters{
@@ -81,7 +82,7 @@ using SdlPointer = std::unique_ptr<T, decltype(Destroy)>;
 class SdlFlightHost::Impl {
 public:
     explicit Impl(SdlHostOptions options) : scene_rendering(options.scene_rendering),
-        interpolation(options.interpolation), cockpit_scaling(options.cockpit_scaling), profile(options.input) {
+        interpolation(options.interpolation), cockpit_scaling(options.cockpit_scaling), cockpit(options.cockpit), profile(options.input) {
         validate_controller_tuning(options.controller);
         validate_controller_bindings(options.bindings);
         const bool enhanced = profile == InputProfile::enhanced;
@@ -102,10 +103,37 @@ public:
         presenter = std::make_unique<SdlPresenter>(window.get(), scaling, options.pacing);
         if (enhanced) {
             controller = std::make_unique<SdlController>(options.controller_mappings, options.controller, options.bindings);
+            if (cockpit == CockpitPresentation::spatial && scene_rendering == SceneRendering::spatial) {
+                spatial_cockpit = std::make_unique<SpatialCockpit>();
+            }
         }
     }
+    ~Impl() { stop_look(); }
 
 private:
+    bool look_event(const SDL_Event& event) {
+        if (profile != InputProfile::enhanced || external_focus != HostFocus::active || !look_available ||
+                (context != InputContext::flight && context != InputContext::training)) { return false; }
+        if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_MIDDLE) {
+            look.reset();
+            return true;
+        }
+        if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_RIGHT) {
+            looking = true;
+            relative_mouse = SDL_SetRelativeMouseMode(SDL_TRUE) == 0;
+            return true;
+        }
+        if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_RIGHT) {
+            stop_look();
+            return true;
+        }
+        if (event.type == SDL_MOUSEMOTION && looking) {
+            look.move(-event.motion.xrel * mouse_look_radians_per_pixel, -event.motion.yrel * mouse_look_radians_per_pixel);
+            return true;
+        }
+        return false;
+    }
+
     bool presentation_key(const SDL_KeyboardEvent& event) {
         if (profile != InputProfile::enhanced || event.keysym.scancode != SDL_SCANCODE_RETURN) { return false; }
         if (fullscreen_key_held) {
@@ -124,7 +152,12 @@ private:
     }
 
 public:
+    void stop_look() {
+        if (relative_mouse) { SDL_SetRelativeMouseMode(SDL_FALSE); }
+        looking = relative_mouse = false;
+    }
     void release_input(HostInput& input) {
+        stop_look();
         for (std::size_t key = 0; key < held.size(); ++key) {
             if (held[key] && !controller_held[key]) { key_bytes(input.scan_bytes, static_cast<SDL_Scancode>(key), false); }
         }
@@ -158,6 +191,7 @@ public:
         const bool flight_input = context == InputContext::flight || context == InputContext::training;
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
+            if (look_event(event)) { continue; }
             if (controller) {
                 controller->event(event, input, throttle);
                 flush_controller_keys(input);
@@ -272,6 +306,11 @@ public:
     SceneRendering scene_rendering;
     CameraInterpolation interpolation;
     CockpitScaling cockpit_scaling;
+    CockpitPresentation cockpit;
+    CockpitLook look;
+    std::unique_ptr<SpatialCockpit> spatial_cockpit;
+    SpatialImage cockpit_image;
+    bool look_available = false, looking = false, relative_mouse = false;
     CameraHistory camera_history;
     SpatialRenderer spatial_renderer;
     SdlSubsystem subsystem{SDL_INIT_VIDEO | SDL_INIT_EVENTS};
@@ -301,12 +340,15 @@ void SdlFlightHost::set_focus(HostFocus focus) {
 }
 HostInput SdlFlightHost::poll() { return impl_->poll(); }
 void SdlFlightHost::set_input_context(InputContext context) {
+    if (context != impl_->context) { impl_->stop_look(); }
     if (context != impl_->context && impl_->profile == InputProfile::enhanced) { impl_->suppressed = impl_->held; }
     impl_->context = context;
     if (impl_->controller) { impl_->controller->set_context(context); }
 }
 
 void SdlFlightHost::present(const CockpitImage& image, const FlightState& state, const std::string& status) {
+    impl_->look_available = false;
+    impl_->stop_look();
     impl_->camera_history.reset();
     impl_->presenter->present(image);
     update_title(state, status);
@@ -318,8 +360,7 @@ PresentationDetail SdlFlightHost::presentation_detail() const {
 }
 
 void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) {
-    if (presentation_detail() != PresentationDetail::spatial || !frame->spatial || frame->spatial->native_effects ||
-            (frame->spatial->cockpit_mode != 1 && frame->spatial->cockpit_mode != 6 && frame->spatial->cockpit_mode != 7)) {
+    if (presentation_detail() != PresentationDetail::spatial || !spatial_presentation(*frame, impl_->cockpit)) {
         present(frame->image, frame->flight, status);
         return;
     }
@@ -331,6 +372,18 @@ void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> 
     const auto poses = impl_->interpolation == CameraInterpolation::enabled ?
         impl_->camera_history.sample_entities(time) : entity_poses(*frame->spatial);
     const auto view = camera_view(camera, size.first, size.second);
+    impl_->look_available = impl_->cockpit == CockpitPresentation::spatial && frame->spatial->cockpit_mode == 1;
+    if (impl_->look_available) {
+        const auto pose = impl_->look.pose();
+        const auto looked = eye_view(view, pose, view.frustum, 1);
+        impl_->cockpit_image = impl_->spatial_renderer.render_world(*frame->spatial, looked, poses,
+            frame->image.palette, size.first, size.second);
+        impl_->spatial_cockpit->draw(impl_->cockpit_image, cockpit_view(pose, view.frustum), frame->image, *frame->spatial);
+        impl_->presenter->present_spatial(impl_->cockpit_image.pixels, size.first, size.second);
+        update_title(frame->flight, status);
+        return;
+    }
+    impl_->stop_look();
     const auto& image = impl_->spatial_renderer.render(*frame->spatial, view, poses, frame->image,
         size.first, size.second, impl_->cockpit_scaling);
     impl_->presenter->present_spatial(image.pixels, image.width, image.height);
@@ -362,6 +415,8 @@ void SdlFlightHost::set_playback(Playback playback) {
 }
 void SdlFlightHost::idle() { SDL_Delay(1); }
 void SdlFlightHost::reset_controls() {
+    impl_->stop_look();
+    impl_->look.reset();
     if (impl_->profile == InputProfile::enhanced) { impl_->suppressed = impl_->held; }
     if (impl_->controller) { impl_->controller->reset(); }
     impl_->held.fill(false);

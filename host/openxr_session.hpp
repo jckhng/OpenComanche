@@ -8,7 +8,7 @@
 
 namespace comanchecd::host {
 enum class OpenXrColorSpace { srgb, linear };
-enum class OpenXrScene { panel, world };
+enum class OpenXrScene { panel, world, cockpit };
 
 struct OpenXrTarget {
     std::uint32_t texture = 0, width = 0, height = 0;

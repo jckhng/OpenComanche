@@ -1,4 +1,5 @@
 #include "spatial_renderer.hpp"
+#include "spatial_cockpit.hpp"
 #include "training_route.hpp"
 
 #include <chrono>
@@ -66,6 +67,9 @@ int main(int argc, char** argv) {
         verify();
         const training_test::Route route(indexed_installation);
         host::SpatialRenderer renderer;
+        host::SpatialCockpit cockpit;
+        require(std::any_of(first->resources->hud_colors.begin(), first->resources->hud_colors.end(), [](bool color) { return color; }),
+                "Spatial resources must retain palette membership from recovered HUD glyphs");
         host::CameraHistory history;
         history.observe(first, spatial_audio->execution_clock().cycles(), 0);
         double render_seconds = 0;
@@ -118,6 +122,10 @@ int main(int argc, char** argv) {
                     observed.cockpit_image(), 960, 720, host::CockpitScaling::sharp);
                 require(enhanced.width == 960 && enhanced.height == 720, "Interpolated sharp presentation must produce the selected viewport");
                 if (argc == 4) { save(std::filesystem::path(argv[3]) / ("sharp-interpolated-" + std::to_string(tick) + ".ppm"), enhanced); }
+                auto cockpit_image = renderer.render_world(*snapshot, view, history.sample_entities(display_time),
+                    observed.cockpit_image().palette, 960, 720);
+                cockpit.draw(cockpit_image, host::cockpit_view({}, view.frustum), observed.cockpit_image(), *snapshot);
+                if (argc == 4) { save(std::filesystem::path(argv[3]) / ("spatial-cockpit-" + std::to_string(tick) + ".ppm"), cockpit_image); }
                 verify();
             }
         }

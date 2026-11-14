@@ -50,7 +50,7 @@ int main() {
             "--bind", "flight.x=fire", "--bind", "flight.lefttrigger=settings", "--bind", "menu.b=accept",
             "--steer-x", "rightx", "--steer-y", "righty", "--stick-deadzone", "4000",
             "--stick-sensitivity", "150", "--invert-y", "on", "--scale", "linear",
-            "--scene-renderer", "native", "--interpolation", "off", "--cockpit-scale", "nearest"});
+            "--scene-renderer", "native", "--interpolation", "off", "--cockpit-scale", "nearest", "--cockpit", "flat"});
         preferences.write(configured);
         const auto path = directory / "host-preferences.cfg";
         const auto original = text(path);
@@ -62,7 +62,7 @@ int main() {
                 loaded.bindings.vertical == ControllerAxis::righty && loaded.controller.deadzone == 4000 &&
                 loaded.controller.sensitivity == 150 && loaded.controller.pitch == PitchDirection::inverted &&
                 loaded.scaling == ImageScaling::linear && loaded.scene_rendering == SceneRendering::native &&
-                loaded.interpolation == CameraInterpolation::disabled && loaded.cockpit_scaling == CockpitScaling::nearest,
+                loaded.interpolation == CameraInterpolation::disabled && loaded.cockpit_scaling == CockpitScaling::nearest && loaded.cockpit == CockpitPresentation::flat,
                 "Restart must restore bindings, axes, tuning and presentation preferences");
         require(restarted.resolve({}).input == InputProfile::faithful &&
                 restarted.resolve({}).controller.deadzone == ControllerTuning{}.deadzone,

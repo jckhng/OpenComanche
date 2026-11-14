@@ -35,7 +35,8 @@ void configuration() {
             options.controller.pitch == PitchDirection::inverted,
             "Enhanced options must parse independently of option order");
     for (const auto& arguments : std::vector<std::vector<std::string>>{
-            {"--scale", "linear"}, {"--scene-renderer", "spatial"}, {"--interpolation", "on"},
+            {"--scale", "linear"}, {"--scene-renderer", "spatial"}, {"--interpolation", "on"}, {"--cockpit", "spatial"},
+            {"--mode", "enhanced", "--cockpit", "paper"},
             {"--mode", "enhanced", "--scene-renderer", "mesh"}, {"--mode", "enhanced", "--interpolation", "yes"}, {"--mode", "enhanced", "--stick-deadzone", "32767"},
             {"--mode", "enhanced", "--stick-deadzone", "-1"},
             {"--mode", "enhanced", "--stick-sensitivity", "0"},
@@ -195,6 +196,39 @@ int main() {
         host.present_snapshot(next_snapshot, "Paused view fixture");
         require(scene->camera.x == 0 && next_scene->camera.x == 4194304 && snapshot->cpu_cycles == 100,
                 "The live SDL2 presentation path must consume immutable views without advancing their clock");
+        SDL_Renderer* renderer = SDL_GetRenderer(window);
+        int width = 0, height = 0;
+        require(renderer && SDL_GetRendererOutputSize(renderer, &width, &height) == 0, "Mouse-look fixture needs its SDL2 output");
+        const auto pixels = [&] {
+            std::vector<std::uint32_t> result(std::size_t(width) * height);
+            require(SDL_RenderReadPixels(renderer, nullptr, SDL_PIXELFORMAT_ARGB8888, result.data(), width * 4) == 0,
+                "Mouse-look output must be readable");
+            return result;
+        };
+        const auto centered = pixels();
+        SDL_Event mouse{};
+        mouse.type = SDL_MOUSEBUTTONDOWN;
+        mouse.button.button = SDL_BUTTON_RIGHT;
+        SDL_PushEvent(&mouse);
+        host.poll();
+        mouse.type = SDL_MOUSEMOTION;
+        mouse.motion.xrel = 300;
+        mouse.motion.yrel = 50;
+        SDL_PushEvent(&mouse);
+        input = host.poll();
+        require(input.scan_bytes.empty() && !input.pressed.fire, "Mouse look must stay outside native command input");
+        host.present_snapshot(next_snapshot, "Looking around");
+        require(pixels() != centered, "The SDL2 mouse route must change spatial cockpit presentation");
+        mouse.type = SDL_MOUSEBUTTONUP;
+        mouse.button.button = SDL_BUTTON_RIGHT;
+        SDL_PushEvent(&mouse);
+        host.poll();
+        mouse.type = SDL_MOUSEBUTTONDOWN;
+        mouse.button.button = SDL_BUTTON_MIDDLE;
+        SDL_PushEvent(&mouse);
+        host.poll();
+        host.present_snapshot(next_snapshot, "Recentered");
+        require(pixels() == centered, "Middle mouse must restore the same centered cockpit view");
         std::cout << "Enhanced keyboard buffering and input boundaries passed\n";
         return 0;
     } catch (const std::exception& error) {

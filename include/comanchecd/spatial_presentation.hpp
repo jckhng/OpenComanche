@@ -11,6 +11,7 @@ struct SpatialResources {
     TerrainTables tables;
     std::vector<std::uint8_t> model_projection;
     SceneryPolicy scenery;
+    std::array<bool, 256> hud_colors{};
 };
 
 // Immutable world observations at the original world-drawing boundary.

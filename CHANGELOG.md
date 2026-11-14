@@ -2,6 +2,12 @@
 
 ## Enhanced SDL2 development
 
+- Add an authored look-around cockpit with canopy, consoles, seats and a static
+  rear crew figure. Reuse live DOS instrument pixels and exact HUD colors.
+- Add desktop mouse look/recenter and a persistent flat/spatial cockpit choice.
+  Compose the spatial cockpit in XR eye images and retain look-around during
+  native-only effects through a forward indexed image plane.
+
 - Reduce CPU raster work through clipping fast paths, incremental barycentric
   weights and reused terrain vertex rows.
 - Add an optional threaded SDL2/OpenGL OpenXR host with stereo session/frame

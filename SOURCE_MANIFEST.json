@@ -20,8 +20,8 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "bytes": 12091,
-      "sha256": "e42ba7a571dc41f863b2df72e6bb043a05939cdaf823a0209d771e3b5c7245e4"
+      "bytes": 13541,
+      "sha256": "b53c392362eba8f5a9e849d9ea4ecc8d1088ed8d141631eaede0358f94ea39d2"
     },
     {
       "path": "BUILDING.md",
@@ -30,8 +30,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 4299,
-      "sha256": "aa56256fea0570b18fd46f8cae428e27b33a7a7290cd0251823160a5e09e7123"
+      "bytes": 4673,
+      "sha256": "df7eac05f2b9a2ba10107bd9d18a63273f90ba693a30b0bdd78b2c39978f6e92"
     },
     {
       "path": "cmake/Diagnostics.cmake",
@@ -50,8 +50,8 @@
     },
     {
       "path": "cmake/SdlHost.cmake",
-      "bytes": 5581,
-      "sha256": "38f24bc7e0e6b931b708b8f58f6e721c0a4d06fc67b8582c948748f2d4ed865a"
+      "bytes": 5853,
+      "sha256": "b6db5b48a18fe1a7dbd089f129d98e91df8541c2d4e4f5e395936d2a3fa7c98c"
     },
     {
       "path": "cmake/Tests.cmake",
@@ -77,6 +77,16 @@
       "path": "host/camera_view.hpp",
       "bytes": 1843,
       "sha256": "b017c3ee027ad344012b485c32234a1f6153b0dc13ae939f77db14cdf1229c44"
+    },
+    {
+      "path": "host/cockpit_model.cpp",
+      "bytes": 7137,
+      "sha256": "9265199549db6b5b1edaf731682063ace32f3804919f744f542708bb76e9b1ec"
+    },
+    {
+      "path": "host/cockpit_model.hpp",
+      "bytes": 256,
+      "sha256": "97cdd18fafba1ac6d02d8165988aa6b215d99211eabd752d36ca30d5fd05bc17"
     },
     {
       "path": "host/cockpit_scaling.cpp",
@@ -110,8 +120,8 @@
     },
     {
       "path": "host/host_preferences.cpp",
-      "bytes": 10122,
-      "sha256": "0e3f001bc3fc622cff85995f3134e8d491bf24b42203384877bd4f30b966953d"
+      "bytes": 10423,
+      "sha256": "aa550cd1f75ba46279e81eb8bb00d585b125865f616c368b5ca85e26e21122a2"
     },
     {
       "path": "host/host_preferences.hpp",
@@ -135,8 +145,8 @@
     },
     {
       "path": "host/openxr_host.cpp",
-      "bytes": 8102,
-      "sha256": "d7d4a44694e4315995a6365380616a00fb184da1754187b69e164303a409819d"
+      "bytes": 8727,
+      "sha256": "53bfa8a7600a845fe813c5175687bcf38b3d92f23d8cc25497b792880d440976"
     },
     {
       "path": "host/openxr_host.hpp",
@@ -165,13 +175,13 @@
     },
     {
       "path": "host/openxr_session.cpp",
-      "bytes": 20619,
-      "sha256": "ec277fe885047796681ccb9d6d771f30de9130d2d899b3c0fd31ac402a936d5e"
+      "bytes": 20808,
+      "sha256": "a4451e405c6a8b56f6f28ade17c35407e1a4d4497b2cbbb488aa5681221fb9f9"
     },
     {
       "path": "host/openxr_session.hpp",
-      "bytes": 1256,
-      "sha256": "dcc8e73e2338310ca6068174b46403d2e24bff00578b7a2f2d14999772904cfe"
+      "bytes": 1265,
+      "sha256": "8be5dbf9d2dde27873cf6ffd7308ca588e605813f122e3b760223f025034880f"
     },
     {
       "path": "host/pending_input.hpp",
@@ -215,18 +225,18 @@
     },
     {
       "path": "host/sdl_host.cpp",
-      "bytes": 18429,
-      "sha256": "eabdf4ad706da0aa2854b237a0c59b6cc842d3fe7c9d98d2a96ed1b0868641f2"
+      "bytes": 20955,
+      "sha256": "c1591163d194550909ec12db347a466bcbd5048c7192def3b98f60a8ba82400e"
     },
     {
       "path": "host/sdl_host.hpp",
-      "bytes": 1829,
-      "sha256": "d56b8040630974e881b1fe712e21e723e7a1b76ad052422bc2ddc2bb33a40304"
+      "bytes": 1924,
+      "sha256": "b0ff02c1bb0f6e0216a6890f1ad07ee18acd91a5be43aa951b72aa3723dab1ed"
     },
     {
       "path": "host/sdl_options.cpp",
-      "bytes": 3181,
-      "sha256": "c60f4c21a4302f15099c512d9efcc9e8e1e2f6c79898ac9104080500dff1a17f"
+      "bytes": 3374,
+      "sha256": "55e52dc4003c9998e357be5ec2323e844d868506b26467b60542c34969644243"
     },
     {
       "path": "host/sdl_options.hpp",
@@ -245,13 +255,23 @@
     },
     {
       "path": "host/session_main.cpp",
-      "bytes": 4674,
-      "sha256": "660cba4bc88a7387eededa7325cf4248207af24d9492a5832d1764c09abf133b"
+      "bytes": 4699,
+      "sha256": "828b378846bd6192b658879e41dc5325dd2db9712cc25cfed1716f4aa9f7a3f8"
     },
     {
       "path": "host/settings_profile.hpp",
       "bytes": 1625,
       "sha256": "7f25689f7c2a1fa15760d409ae6cedd8518e90b9479ea44152e96c8f17f8a007"
+    },
+    {
+      "path": "host/spatial_cockpit.cpp",
+      "bytes": 5913,
+      "sha256": "84403cb63bc2ee9e64215095c883d19ec26773322d9109f4b48254fba1d8bf73"
+    },
+    {
+      "path": "host/spatial_cockpit.hpp",
+      "bytes": 823,
+      "sha256": "087c2b518a0f8ebbc6a804f7d59b19eab3b594d63bb56fc8af9fc7d7c65a2a27"
     },
     {
       "path": "host/spatial_draw.hpp",
@@ -320,8 +340,8 @@
     },
     {
       "path": "include/comanchecd/cockpit.hpp",
-      "bytes": 6474,
-      "sha256": "38199ef8c71c13b123dec14bec77a076a2198f222e84073dfb10ad8326208c64"
+      "bytes": 6521,
+      "sha256": "b8e73cffef0810648be788522e769e164556c1815fe135d21325d943cf5fe7c2"
     },
     {
       "path": "include/comanchecd/cpu_work.hpp",
@@ -410,8 +430,8 @@
     },
     {
       "path": "include/comanchecd/spatial_presentation.hpp",
-      "bytes": 676,
-      "sha256": "643310b395b44dcb16f5a5bdc2b97dcbb2fbe9da3335016d5718d06e5345341f"
+      "bytes": 716,
+      "sha256": "d5d13c7a3f36c1f7c1e81cad7a52c9760a114b50759ce372af7ddc361e932f7b"
     },
     {
       "path": "include/comanchecd/timing.hpp",
@@ -440,13 +460,13 @@
     },
     {
       "path": "PREVIEW.md",
-      "bytes": 17737,
-      "sha256": "5108f8f8352c1c37f8d85583b92c214c34d4f9ba84e4251ee8caede7eb0f2260"
+      "bytes": 19480,
+      "sha256": "d82d55845e20010caa16feb4c58338041ed5c386d1f0daa6da98bb9e28373b47"
     },
     {
       "path": "README.md",
-      "bytes": 5803,
-      "sha256": "da2af2397dafba4159eaaf93fc995cd6d6b0f56c444564b681b3812250938996"
+      "bytes": 6060,
+      "sha256": "e58d7cd0a464c4e1f177f6684cb2a5aa3a4d7d489024f2643b2a6d1bce6965d1"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -510,8 +530,8 @@
     },
     {
       "path": "src/cockpit.cpp",
-      "bytes": 49020,
-      "sha256": "70b109852e6ece8eeba449d0bfce33b2f49a3c17a4d193a1df15470def75cbbf"
+      "bytes": 49632,
+      "sha256": "f57a65cde69e34bf82ccb7a5c9605f8331e8380aae5b1eee4af7b1b9c0a6f699"
     },
     {
       "path": "src/color_metric.hpp",
@@ -835,8 +855,8 @@
     },
     {
       "path": "src/training.cpp",
-      "bytes": 42716,
-      "sha256": "61bf44e10d5ded8d9049677216597372ffc0b9858efdaa01a6e8a429b89c02d0"
+      "bytes": 42760,
+      "sha256": "ddf218f9e1135d06d802eed0f3fc80d9ba6709aa4c2869520995778797590a2f"
     },
     {
       "path": "src/video_clock.hpp",
@@ -970,8 +990,8 @@
     },
     {
       "path": "tests/enhanced_host_tests.cpp",
-      "bytes": 11179,
-      "sha256": "8220d899812878f6592a06530a3a98fbf8aabbf7568df61f60f2ed3aa4fb1a61"
+      "bytes": 12910,
+      "sha256": "4b565e9e3627c8dc47b08bcd9fe6cc492288823667e36ac1a6d5c4c09a393577"
     },
     {
       "path": "tests/entity_clock_tests.cpp",
@@ -1015,8 +1035,8 @@
     },
     {
       "path": "tests/host_preferences_tests.cpp",
-      "bytes": 9502,
-      "sha256": "a66fb6c09be81b66c918a54454e82571cb008dc90813521e0cebac8919168a0f"
+      "bytes": 9570,
+      "sha256": "4a67ba5256ec81376608b9dff7fe1e064914622a27fe1db62cf8cef6c6ccd3ad"
     },
     {
       "path": "tests/irq7_wave_tests.cpp",
@@ -1105,8 +1125,8 @@
     },
     {
       "path": "tests/openxr_session_tests.cpp",
-      "bytes": 17343,
-      "sha256": "3415631aa3b0151dc9d1935cad65066c24877aee2bff5af9dc1c4d7f868d4c18"
+      "bytes": 18414,
+      "sha256": "30724f96cd8d7e3008d8e9ba200a63a4489f8bb8102ba4c6bf4c0fde2b1b8286"
     },
     {
       "path": "tests/options_probe.cpp",
@@ -1230,8 +1250,13 @@
     },
     {
       "path": "tests/spatial_capture_tests.cpp",
-      "bytes": 9482,
-      "sha256": "16df381bb1dc2c082364ce7cc4262ac96fc945d248abaec715340ad6d16ab171"
+      "bytes": 10226,
+      "sha256": "c3c8a0810b352dd30ad8c6a829e543bb9806ecb08f684e7093afe6812cc0a784"
+    },
+    {
+      "path": "tests/spatial_cockpit_tests.cpp",
+      "bytes": 5949,
+      "sha256": "3b9039fa787356d043c77a83cfbad4ecd2770ab1fc425b974655fc77cb59e55b"
     },
     {
       "path": "tests/spatial_tests.cpp",

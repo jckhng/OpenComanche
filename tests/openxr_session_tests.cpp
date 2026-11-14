@@ -134,23 +134,24 @@ XrResult XRAPI_CALL end_frame(XrSession, const XrFrameEndInfo* info) {
     require(mock->frame_stage == 2 && mock->chain_stage == 0 && info->displayTime == 12345 &&
         info->environmentBlendMode == XR_ENVIRONMENT_BLEND_MODE_OPAQUE, "End frame must balance image ownership and use predicted display time");
     mock->last_layers = info->layerCount;
-    if (info->layerCount == 2) {
-        const auto* projection = reinterpret_cast<const XrCompositionLayerProjection*>(info->layers[0]);
-        require(projection->type == XR_TYPE_COMPOSITION_LAYER_PROJECTION && projection->viewCount == 2 &&
-            projection->space == handle<XrSpace>(3), "Stereo projection must use the located local reference space");
-        for (unsigned i = 0; i < 2; ++i) {
-            require(projection->views[i].type == XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW &&
-                projection->views[i].subImage.swapchain == handle<XrSwapchain>(11 + i) &&
-                projection->views[i].subImage.imageRect.extent.width == 800 &&
-                projection->views[i].pose.position.x == (i ? 0.032f : -0.032f),
-                "Projection views must retain their per-eye pose and released swapchain");
+    for (unsigned layer = 0; layer < info->layerCount; ++layer) {
+        if (info->layers[layer]->type == XR_TYPE_COMPOSITION_LAYER_PROJECTION) {
+            const auto* projection = reinterpret_cast<const XrCompositionLayerProjection*>(info->layers[layer]);
+            require(projection->viewCount == 2 && projection->space == handle<XrSpace>(3),
+                "Stereo projection must use the located local reference space");
+            for (unsigned i = 0; i < 2; ++i) {
+                require(projection->views[i].type == XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW &&
+                    projection->views[i].subImage.swapchain == handle<XrSwapchain>(11 + i) &&
+                    projection->views[i].subImage.imageRect.extent.width == 800 &&
+                    projection->views[i].pose.position.x == (i ? 0.032f : -0.032f),
+                    "Projection views must retain their per-eye pose and released swapchain");
+            }
+        } else {
+            const auto* panel = reinterpret_cast<const XrCompositionLayerQuad*>(info->layers[layer]);
+            require(panel->type == XR_TYPE_COMPOSITION_LAYER_QUAD && panel->subImage.swapchain == handle<XrSwapchain>(13) &&
+                panel->pose.orientation.w == 1 && panel->size.width / panel->size.height > 1.33f,
+                "Cockpit/menu composition must use its independent 4:3 quad");
         }
-    }
-    if (info->layerCount) {
-        const auto* panel = reinterpret_cast<const XrCompositionLayerQuad*>(info->layers[info->layerCount - 1]);
-        require(panel->type == XR_TYPE_COMPOSITION_LAYER_QUAD && panel->subImage.swapchain == handle<XrSwapchain>(13) &&
-            panel->pose.orientation.w == 1 && panel->size.width / panel->size.height > 1.33f,
-            "Cockpit/menu composition must use its independent 4:3 quad");
     }
     mock->frame_stage = 0; ++mock->frames; return XR_SUCCESS;
 }
@@ -264,10 +265,23 @@ int main() {
                             require(eye.tracking_epoch == 1, "Reference-space changes must reset the tracked origin at display time");
                         }, [](const auto&) {});
                     }
+                    if (scenario == 0) {
+                        const auto released = state.releases;
+                        active->submit(OpenXrScene::cockpit, [](const auto&) {}, [](const auto&) {
+                            throw std::runtime_error("A tracked spatial cockpit must omit the flat panel");
+                        });
+                        require(state.last_layers == 1 && state.releases == released + 2,
+                            "Spatial cockpit submission must release two eye images and submit one projection layer");
+                        state.tracking = false;
+                        active->submit(OpenXrScene::cockpit, [](const auto&) {}, [](const auto&) {});
+                        require(state.last_layers == 1 && state.releases == released + 3,
+                            "Tracking loss must retain the complete screen fallback for a spatial cockpit");
+                        state.tracking = true;
+                    }
                     state.events = {XR_SESSION_STATE_STOPPING, XR_SESSION_STATE_IDLE};
                     require(!active->poll().running && state.ended == 1, "STOPPING must end the running session");
                     active->submit(OpenXrScene::panel, {}, {});
-                    require(state.waits == (scenario == 0 ? 2u : 1u), "Stopped sessions must not wait for frames");
+                    require(state.waits == (scenario == 0 ? 4u : 1u), "Stopped sessions must not wait for frames");
                     state.events = {XR_SESSION_STATE_READY, XR_SESSION_STATE_VISIBLE};
                     require(active->poll().running && state.begun == 2, "A stopped session must restart on READY");
                     active->submit(OpenXrScene::panel, {}, [](const auto&) {});

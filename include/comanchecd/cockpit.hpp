@@ -77,6 +77,7 @@ public:
     void copy_front_page();
     void set_scene_tracking(bool enabled);
     const std::vector<std::uint8_t>& scene_mask() const;
+    std::array<bool, 256> hud_colors() const;
 
     void apply_settings(const MenuSettings& settings);
     void refresh_stores(const FlightState& player, const CpuWorkSink& work = {});

@@ -112,6 +112,11 @@ void WaterReflections::draw(TerrainFrame& frame, ReflectionState& state, const C
         instructions(6);
     }
     state.random = random;
+    if (frame.effects.enabled) {
+        frame.effects.reflections = true;
+        frame.effects.reflection_colors.assign(colors_.begin(), colors_.end());
+        frame.effects.reflection_phase = random;
+    }
     instructions(1);
 }
 

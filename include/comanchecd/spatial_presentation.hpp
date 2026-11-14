@@ -21,6 +21,7 @@ struct SpatialFrame {
     SceneView camera;
     SceneCamera native_camera;
     bool native_effects = false;
+    EffectObservation effects;
     std::vector<std::uint8_t> scene_mask;
     std::uint64_t serial = 0;
     std::uint8_t cockpit_mode = 1;

@@ -74,6 +74,7 @@ void ScriptedEffects::draw(TerrainFrame& frame, const SceneView& view, std::uint
     if (setup_.lights.empty()) {
         return;
     }
+    if (frame.effects.enabled) { frame.effects.tint.assign(colors_.begin(), colors_.end()); }
     if (layer == EffectLayer::foreground) {
         particles(frame, view, (yaw >> 23) + (side_speed >> 20), random, 2, clock);
         return;
@@ -140,6 +141,10 @@ void ScriptedEffects::particles(TerrainFrame& frame, const SceneView& view, std:
         x = static_cast<std::uint8_t>(x + state_.drift[group == 2 ? 0 : particle.speed + 1]);
         particle.x = x;
         particle.y = static_cast<std::uint8_t>(particle.y - descent);
+        if (frame.effects.enabled && particle.depth_level >= 0) {
+            frame.effects.particles.push_back({particle.x, particle.y, static_cast<std::uint8_t>(group), type_,
+                                               solid_color_, particle.depth_level});
+        }
         const auto depth = particle.depth_level < 0 ? 0 : frame.depth.at(std::size_t(particle.depth_level) * 256 + x);
         instructions(6);
         if (particle.y < depth) {

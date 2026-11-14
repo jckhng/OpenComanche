@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
         host::CameraHistory history;
         history.observe(first, spatial_audio->execution_clock().cycles(), 0);
         double render_seconds = 0;
-        unsigned rendered = 0, compared = 0;
+        unsigned rendered = 0, compared = 0, weather_frames = 0, reflection_frames = 0;
         for (unsigned tick = 0; tick < training_test::victory_tick_limit && !indexed.state().ended; ++tick) {
             const auto controls = route.controls(indexed.state(), tick);
             indexed.advance(controls);
@@ -86,6 +86,17 @@ int main(int argc, char** argv) {
             history.observe(snapshot, spatial_audio->execution_clock().cycles(), (tick + 1) / double(training_ticks_per_second));
             require(snapshot && snapshot->resources == first->resources && (indexed.state().ended || snapshot->serial == tick + 1),
                     "Mission frames must share immutable asset ownership with monotonically advancing identities");
+            require(snapshot->effects.enabled && snapshot->effects.particles.size() <= 288,
+                    "Spatial snapshots must contain bounded draw-boundary effect observations");
+            weather_frames += unsigned(!snapshot->effects.particles.empty());
+            reflection_frames += unsigned(snapshot->effects.reflections);
+            if (!indexed.state().ended && indexed.state().armor > 0 && !indexed.state().exit_requested && !indexed.state().crash_rotation) {
+                SessionPresentation presentation;
+                presentation.spatial = snapshot;
+                presentation.flight = observed.state();
+                require(host::spatial_presentation(presentation, host::CockpitPresentation::flat),
+                        "Observed weather and reflections must retain per-eye world rendering in flat and spatial cockpit modes");
+            }
             if (!indexed.state().ended && ((tick < 128 && tick % 16 == 0) || tick % 128 == 0)) {
                 ++rendered;
                 const auto start = std::chrono::steady_clock::now();
@@ -134,6 +145,7 @@ int main(int argc, char** argv) {
         require(indexed.state().ended && observed.state().ended && indexed.objectives_remaining() == 0 &&
                 observed.objectives_remaining() == 0, "Both capture modes must reach natural training victory");
         std::cout << compared << " continuous frames through victory preserve CPU, IRQ, RNG, images, combat and mixed PCM\n"
+                  << "Effect observation frames weather " << weather_frames << " reflections " << reflection_frames << '\n'
                   << "960x720 mean render milliseconds " << render_seconds * 1000 / rendered << '\n';
         observed.set_presentation_detail(PresentationDetail::indexed);
         require(!observed.spatial_frame() && first->resources->assets.terrain.height.size() == terrain_side * terrain_side,

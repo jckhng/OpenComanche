@@ -22,6 +22,18 @@ std::uint32_t rgba(const Palette& palette, std::uint8_t index) {
 spatial_draw::Colors colors(const SpatialFrame& frame, const Palette& palette) {
     spatial_draw::Colors result;
     result.haze = frame.resources->scenery.haze;
+    const auto& models = frame.resources->assets.models;
+    if (!models.empty() && frame.resources->scenery.clouds == CloudMode::panoramic) {
+        const auto& bytes = models.back().bytes;
+        std::size_t source = 0;
+        if (bytes.size() >= 16) {
+            for (unsigned i = 0; i < 4; ++i) { source |= std::size_t(bytes[12 + i]) << (8 * i); }
+            if (source <= bytes.size() && bytes.size() - source == sky_columns * sky_rows) {
+                result.panorama = &bytes;
+                result.panorama_offset = source;
+            }
+        }
+    }
     const auto fog = rgba(palette, 255);
     const auto blend = [&](std::uint32_t color, unsigned weight) {
         std::uint32_t output = 0xff000000u;
@@ -46,26 +58,13 @@ spatial_draw::Colors colors(const SpatialFrame& frame, const Palette& palette) {
     return result;
 }
 
-void sky(SpatialImage& image, const SpatialFrame& frame, const CameraProjection& projection, const spatial_draw::Colors& palette) {
-    const auto& models = frame.resources->assets.models;
-    const auto* bytes = models.empty() ? nullptr : &models.back().bytes;
-    std::size_t source = 0;
-    if (bytes && bytes->size() >= 16) {
-        for (unsigned i = 0; i < 4; ++i) { source |= std::size_t((*bytes)[12 + i]) << (8 * i); }
-    }
-    const bool panorama = bytes && source <= bytes->size() && bytes->size() - source == sky_columns * sky_rows &&
-        frame.resources->scenery.clouds == CloudMode::panoramic;
-    if (!panorama) { std::fill(image.pixels.begin(), image.pixels.end(), palette.base[255]); return; }
-    constexpr double sky_horizon = 118, sky_focal = 200;
+void sky(SpatialImage& image, const CameraProjection& projection, const spatial_draw::Colors& palette) {
+    if (!palette.panorama) { std::fill(image.pixels.begin(), image.pixels.end(), palette.base[255]); return; }
     const auto block = std::max(1u, std::min(image.width / unsigned(cockpit_width), image.height / unsigned(cockpit_height)));
     for (unsigned y = 0; y < image.height; y += block) {
         for (unsigned x = 0; x < image.width; x += block) {
             const auto ray = projection.ray(x + block * 0.5, y + block * 0.5);
-            const auto azimuth = std::atan2(ray.x, -ray.z);
-            const auto elevation = std::atan2(ray.y, std::hypot(ray.x, ray.z));
-            const auto column = int(std::floor(sky_columns - 8 - azimuth * sky_columns / spatial_units::tau)) & (sky_columns - 1);
-            const auto row = int(std::clamp(sky_horizon - elevation * sky_focal, 0.0, double(sky_rows - 1)));
-            const auto color = palette.base[(*bytes)[source + column * sky_rows + row]];
+            const auto color = palette.base[palette.sky_index(ray)];
             for (unsigned dy = y; dy < std::min(y + block, image.height); ++dy) {
                 std::fill_n(image.pixels.begin() + std::size_t(dy) * image.width + x, std::min(block, image.width - x), color);
             }
@@ -110,13 +109,16 @@ const SpatialImage& SpatialRenderer::render_world(const SpatialFrame& frame, con
         std::fill(image_.depth.begin(), image_.depth.end(), static_cast<float>(view.frustum.near_clip));
         return image_;
     }
-    sky(image_, frame, projection, palette_tables);
+    sky(image_, projection, palette_tables);
     const auto& tables = frame.resources->tables;
     const auto scene_distance = tables.levels > 0 && tables.levels <= terrain_distance_capacity ?
         std::clamp(tables.distance[4][tables.levels - 1] / spatial_units::distance_table_units_per_cell, 16.0, maximum_scene_distance) : maximum_scene_distance;
     view.frustum.far_clip = std::min(view.frustum.far_clip, scene_distance);
     spatial_draw::terrain(image_, frame, view, projection, palette_tables);
+    spatial_draw::reflections(image_, reflected_, frame, view, projection, poses, palette_tables);
+    spatial_draw::weather(image_, frame, view, projection, palette_tables, spatial_draw::WeatherLayer::background);
     spatial_draw::models(image_, frame, view, projection, poses, palette_tables);
+    spatial_draw::weather(image_, frame, view, projection, palette_tables, spatial_draw::WeatherLayer::foreground);
     return image_;
 }
 

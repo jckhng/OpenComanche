@@ -2,11 +2,15 @@
 
 ## Enhanced SDL2 development
 
+- Render weather and water reflections per eye from read-only native draw
+  observations. Extend weather around the aircraft and reflect terrain/models
+  at visible water heights using recovered tint tables and reflection phase.
+  Keep interpolation active through effects in cockpit and external views.
+
 - Add an authored look-around cockpit with canopy, consoles, seats and a static
   rear crew figure. Reuse live DOS instrument pixels and exact HUD colors.
 - Add desktop mouse look/recenter and a persistent flat/spatial cockpit choice.
-  Compose the spatial cockpit in XR eye images and retain look-around during
-  native-only effects through a forward indexed image plane.
+  Compose the spatial cockpit in XR eye images.
 
 - Reduce CPU raster work through clipping fast paths, incremental barycentric
   weights and reused terrain vertex rows.

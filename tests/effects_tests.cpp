@@ -66,6 +66,37 @@ int main() {
         }
         require(a.pixels == b.pixels && ra == rb,
                 "The first interval's AL overwrite must affect later interval comparisons");
+        ScriptedEffects unobserved(setup, palette, tables), observed(setup, palette, tables);
+        TerrainFrame plain, captured;
+        plain.depth.assign(32 * scene_buffer_side, 0);
+        captured.depth = plain.depth;
+        captured.effects.enabled = true;
+        std::uint32_t plain_random = 0x12345678, observed_random = plain_random;
+        LoadingClock plain_clock, observed_clock;
+        for (unsigned tick = 0; tick < 8; ++tick) {
+            for (const auto layer : {EffectLayer::background, EffectLayer::foreground}) {
+                unobserved.draw(plain, {}, tick, 0, 0, plain_random, layer, &plain_clock);
+                observed.draw(captured, {}, tick, 0, 0, observed_random, layer, &observed_clock);
+            }
+        }
+        require(!captured.effects.particles.empty() && plain.effects.particles.empty() &&
+                plain.pixels == captured.pixels && plain.write_mask == captured.write_mask &&
+                plain_random == observed_random && plain_clock.accounting().dispatches == observed_clock.accounting().dispatches,
+                "Optional particle observations must preserve pixels, coverage, RNG and instruction accounting");
+        TerrainFrame plain_water, observed_water;
+        plain_water.pixels.fill(251);
+        observed_water.pixels = plain_water.pixels;
+        observed_water.effects.enabled = true;
+        ReflectionState plain_reflection{0x12345678}, observed_reflection = plain_reflection;
+        const WaterReflections water(palette, tables.transfer);
+        LoadingClock plain_water_clock, observed_water_clock;
+        water.draw(plain_water, plain_reflection, [&](CpuOperation operation, unsigned count) { plain_water_clock.execute(operation, count); });
+        water.draw(observed_water, observed_reflection, [&](CpuOperation operation, unsigned count) { observed_water_clock.execute(operation, count); });
+        require(observed_water.effects.reflections && !plain_water.effects.reflections &&
+                observed_water.effects.reflection_phase == observed_reflection.random &&
+                plain_water.pixels == observed_water.pixels && plain_reflection.random == observed_reflection.random &&
+                plain_water_clock.accounting().dispatches == observed_water_clock.accounting().dispatches,
+                "Reflection metadata must preserve native pixels, carried RNG and CPU accounting");
         setup.waypoints = {{5, 6, 0, 50}};
         tables.gust.fill(4);
         tables.sine[0] = tables.sine[128] = 0x7fffffff;

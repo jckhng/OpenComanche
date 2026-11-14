@@ -51,6 +51,6 @@ public:
     const SpatialImage& render_world(const SpatialFrame& frame, const CameraView& view, const EntityPoses& poses,
                                     const Palette& palette, unsigned width, unsigned height);
 private:
-    SpatialImage image_;
+    SpatialImage image_, reflected_;
 };
 }

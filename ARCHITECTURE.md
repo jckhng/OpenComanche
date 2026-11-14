@@ -54,6 +54,7 @@ Tracked-pose composition requires an explicit world-units-per-metre factor.
 | `host/spatial_renderer.cpp` | World color/depth ownership, sky, palette and view admission |
 | `host/spatial_terrain.cpp` | Stitched distance rings and original-density terrain color sampling |
 | `host/spatial_models.cpp` | Directional SG frames, rotor layers and perspective billboard placement |
+| `host/spatial_effects.cpp` | Per-eye weather, mirrored water views and recovered tint remapping |
 | `host/spatial_raster.hpp` | Six-plane triangle clipping, perspective attributes and depth testing |
 | `host/cockpit_scaling.cpp` | Coverage-aware nearest/Scale2x overlay composition |
 
@@ -76,9 +77,15 @@ through immutable `SpatialResources` metadata. Canonical drawing, storage and
 CPU work stay with the existing renderer.
 
 The body compositor owns a separate metre-scaled depth pass over completed
-world color. Native-only forward effects use an indexed image plane within that
-pass. Side/rear views and head poses continue updating. Desktop mouse look owns
-presentation angles outside native command input. The SDL2 host releases its
+world color. Weather and reflections belong to the world renderer. Optional
+`EffectObservation` data records particles before native forward occlusion,
+color maps and the completed reflection phase at the original draw boundary.
+The renderer extends the forward particle field through four surrounding
+sectors and depth-tests each eye independently. Water uses half-resolution
+mirrored sky/terrain/model views for every visible water height, with submerged
+geometry clipped and recovered water tints applied. Camera interpolation stays
+active through observed effects. Rendering consumes no canonical RNG or clock.
+Desktop mouse look owns presentation angles outside native command input. The SDL2 host releases its
 relative mouse mode on button release, focus loss and context transitions.
 
 The pilot-front/copilot-aft arrangement follows the Army crew-station study.

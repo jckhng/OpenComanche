@@ -3,6 +3,7 @@
 #include "comanchecd/scene.hpp"
 #include "comanchecd/options.hpp"
 #include "comanchecd/cpu_work.hpp"
+#include "comanchecd/effect_observation.hpp"
 
 namespace comanchecd {
 constexpr std::size_t scene_columns = 192;
@@ -55,6 +56,7 @@ struct TerrainFrame {
     TargetingFrame targeting;
     std::array<std::uint8_t, scene_buffer_side * scene_buffer_side> sky{}, pixels{}, write_mask{};
     std::vector<std::uint8_t> depth;
+    EffectObservation effects;
 };
 
 struct ReflectionState {

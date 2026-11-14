@@ -410,6 +410,7 @@ private:
         if (work) { work(CpuOperation::instructions, 4); } // GS setup and sky callback in e3e0.
         std::unique_ptr<TerrainFrame> frame(new TerrainFrame(renderer.render(assets, view,
             external_clock ? audio->cpu_work() : CpuWorkSink{})));
+        frame->effects.enabled = bool(spatial_resources);
         if (work) { work(CpuOperation::instructions, 2); } // b8f9 fog callback.
         renderer.shade_distance(*frame, assets, terrain_variant, work);
         if (work) { work(CpuOperation::instructions, 2); } // b900 background callback.
@@ -448,6 +449,7 @@ private:
             pending_spatial->native_camera = frame->camera;
             pending_spatial->native_effects = (reflections_enabled && terrain_variant != 0) ||
                 std::any_of(frame->write_mask.begin(), frame->write_mask.end(), [](auto mask) { return (mask & 4) != 0; });
+            pending_spatial->effects = frame->effects;
             pending_spatial->cockpit_mode = controller.state().cockpit_mode;
         }
         return frame;

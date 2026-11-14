@@ -55,7 +55,8 @@ void CameraHistory::observe(std::shared_ptr<const SpatialFrame> frame, std::uint
     if (frame == current_) { return; }
     previous_ = current_;
     if (!current_ || current_->resources != frame->resources || current_->camera.mode != frame->camera.mode ||
-            current_->cockpit_mode != frame->cockpit_mode || frame->native_effects || current_->native_effects || time < arrival_ ||
+            current_->cockpit_mode != frame->cockpit_mode || (frame->native_effects && !frame->effects.enabled) ||
+            (current_->native_effects && !current_->effects.enabled) || time < arrival_ ||
             std::abs(int(frame->camera.height) - int(current_->camera.height)) * entity_height > discontinuity_height ||
             std::abs(wrap_delta(double(std::int32_t(frame->camera.x - current_->camera.x)) / fixed_cell, terrain_side)) > discontinuity_distance ||
             std::abs(wrap_delta(double(std::int32_t(frame->camera.y - current_->camera.y)) / fixed_cell, terrain_side)) > discontinuity_distance ||

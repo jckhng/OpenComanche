@@ -11,7 +11,7 @@ namespace comanchecd::host {
 namespace {
 constexpr unsigned instrument_top = 145;
 constexpr double desktop_pitch_limit = 1.45;
-constexpr double hud_distance = 24, effect_distance = 48;
+constexpr double hud_distance = 24;
 constexpr double native_focal = cockpit_width * spatial_units::focal_ratio;
 constexpr double native_horizon = cockpit_height * spatial_units::horizon_ratio;
 
@@ -56,6 +56,9 @@ bool spatial_presentation(const SessionPresentation& frame, CockpitPresentation 
         return false;
     }
     if (!frame.spatial->native_effects) { return true; }
+    if (frame.spatial->effects.enabled) {
+        return frame.flight.armor > 0 && !frame.flight.ended && !frame.flight.exit_requested && !frame.flight.crash_rotation;
+    }
     return cockpit==CockpitPresentation::spatial && frame.spatial->cockpit_mode==1 &&
         frame.spatial->camera.mode==SceneViewMode::cockpit && frame.flight.armor>0 &&
         !frame.flight.ended && !frame.flight.exit_requested && !frame.flight.crash_rotation;
@@ -82,14 +85,6 @@ public:
             return std::size_t(std::clamp(int(v),0,int(cockpit_height)-1))*cockpit_width+
                 std::clamp(int(u),0,int(cockpit_width)-1);
         };
-        if (frame.native_effects) {
-            // Native-only effects retain their forward image while side/rear views stay spatial.
-            quad(image,eye,projection,native_plane(effect_distance,0,instrument_top),0,0,cockpit_width,instrument_top,
-                [&](double u,double v,double) {
-                    const auto pixel=index(u,v);
-                    return frame.scene_mask[pixel] ? palette[source.pixels[pixel]] : 0u;
-                });
-        }
         quad(image,eye,projection,native_plane(hud_distance,0,instrument_top),0,0,cockpit_width,instrument_top,
             [&](double u,double v,double) {
                 const auto pixel=index(u,v);

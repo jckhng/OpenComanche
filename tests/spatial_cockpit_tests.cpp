@@ -87,6 +87,7 @@ int main(int argc,char** argv) {
         require(render({}).pixels!=front.pixels,"Native instrument changes must update the spatial panel");
         source=retained;
         frame.native_effects=true;
+        require(render({}).pixels==front.pixels,"Native effects must preserve the independently rendered world instead of copying a flat scene plane");
         const auto effect_rear=render({{},camera_orientation(3.141592653589793,0.2,0)});
         require(effect_rear.pixels==rear.pixels,"Forward indexed effects must preserve rear look-around geometry");
         SessionPresentation snapshot;

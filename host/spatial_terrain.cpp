@@ -16,7 +16,7 @@ double surface_height(const Terrain& terrain, double x, double z) {
 }
 
 void terrain(SpatialImage& image, const SpatialFrame& frame, const CameraView& view,
-             const CameraProjection& projection, const Colors& colors) {
+             const CameraProjection& projection, const Colors& colors, double minimum_height) {
     const auto& terrain = frame.resources->assets.terrain;
     const double center_x = std::floor(view.pose.position.x), center_z = std::floor(view.pose.position.z);
     const auto vertex = [&](double x, double z) {
@@ -25,6 +25,7 @@ void terrain(SpatialImage& image, const SpatialFrame& frame, const CameraView& v
     };
     const auto sample = [&](double x, double z, double depth) {
         const auto cell = std::size_t(int(std::floor(z)) & (terrain_side - 1)) * terrain_side + (int(std::floor(x)) & (terrain_side - 1));
+        if (std::isfinite(minimum_height) && surface_height(terrain, x, z) <= minimum_height) { return 0u; }
         return colors.terrain(terrain.color[cell], depth);
     };
     constexpr int ring_cells = 16;

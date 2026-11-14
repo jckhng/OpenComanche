@@ -201,10 +201,13 @@ mask, including HUD colors shared with terrain. Flat cockpit presentation
 defaults to mask-aware Scale2x edges at outputs of at least 640×480. Native-sized
 and smaller outputs use nearest sampling. `--cockpit-scale nearest` selects
 the original pixel blocks at every size. The choice persists in host preferences.
-Spatial cockpit flight keeps native-only effects on a distant forward image
-plane while the surrounding cockpit and side/rear world stay head-tracked.
-Flat presentation, external views, menus and crash transitions retain their
-indexed-effect screen path.
+Spatial flight renders weather and water reflections separately for each eye.
+Weather uses observed native particle coordinates, depth levels and tint tables,
+extended around the aircraft for look-around. Water reflects sky, terrain and
+models from a mirrored eye at each visible water height. The reflection target
+uses half the eye dimensions and the recovered water remap/phase for tint and
+ripple sampling. Flat cockpit and external views use the same spatial effects.
+Menus and crash transitions retain their indexed screen presentation.
 `--scene-renderer native` selects that presentation throughout the session.
 
 Camera and entity interpolation span the previous and current world
@@ -253,10 +256,11 @@ and HUD pixels. Glyph palette membership is exported as read-only observation
 metadata. The spatial renderer samples that original-resolution artwork on the
 instrument panel and forward HUD image plane.
 
-Native-only effects retain their forward indexed image on a distant plane.
-Look-around continues through those frames. The effect imagery has a planar
-representation within the enhanced scene. `--cockpit flat` selects the earlier
-compositor and its screen fallback. The preference persists per native profile.
+Weather and water remain spatial while looking around. Their observation data
+comes from the canonical draw calls without extra RNG or device execution.
+The surrounding weather field and reflected geometry are enhanced presentation
+extensions. `--cockpit flat` selects the original overlay compositor over the
+spatial world. The preference persists per native profile.
 
 ## Experimental OpenXR headset host
 

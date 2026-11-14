@@ -18,7 +18,7 @@ std::uint32_t integer(const std::vector<std::uint8_t>& bytes, std::size_t offset
 }
 
 void models(SpatialImage& image, const SpatialFrame& frame, const CameraView& view,
-            const CameraProjection& projection, const EntityPoses& poses, const Colors& colors) {
+            const CameraProjection& projection, const EntityPoses& poses, const Colors& colors, double minimum_height) {
     using namespace spatial_units;
     const auto& assets = frame.resources->assets;
     const auto& tables = frame.resources->tables;
@@ -106,6 +106,7 @@ void models(SpatialImage& image, const SpatialFrame& frame, const CameraView& vi
                 return spatial_raster::Vertex{projection.to_camera(bottom + right * (u * sprite_width) + CameraVector{0, v * sprite_height, 0}), u, v};
             };
             const auto sample = [&](double u, double v, double) {
+                if (bottom.y + v * sprite_height <= minimum_height) { return 0u; }
                 auto x = std::clamp(int(u), 0, int(width) - 1);
                 if (mirror) { x = int(width) - 1 - x; }
                 const auto y = std::clamp(int(v), 0, int(height) - 1);

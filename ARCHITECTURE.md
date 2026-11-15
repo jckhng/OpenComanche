@@ -92,6 +92,30 @@ The pilot-front/copilot-aft arrangement follows the Army crew-station study.
 Mesh dimensions and the static rear crew figure are authored approximations.
 [Army Research Laboratory ARL-TR-3404](https://www.academia.edu/26413822/Evaluation_of_an_Army_Aviators_Ability_to_Conduct_Ingress_and_Egress_of_the_RAH_66_Comanche_Crew_Station_While_Wearing_the_Air_Warrior_Ensemble)
 
+## GPU presentation
+
+`SpatialGeometry` accepts material-tagged triangles from the SG model, particle
+and cockpit emitters. Software images have an empty geometry
+sink and continue through the CPU rasterizer. The OpenGL driver batches the same
+geometry and renders fixed native-cell terrain tiles through vertex texture
+fetches. Terrain shape is independent of aircraft and eye motion. Frustum tests
+select tiles and instanced batches share one immutable grid. The driver owns
+indexed asset textures and color/depth targets, and applies palette,
+fog, native HUD coverage and effect maps in shaders. It caches immutable resources
+and changed instrument/color tables across eyes and frames.
+
+`GlScene` belongs to the SDL2/OpenGL graphics driver. It renders per-eye mirrored
+water views at half resolution, clips submerged geometry, then renders native
+instruments and the surrounding cockpit in a separate metre-scaled depth pass.
+The final shader performs the XR format's color-space conversion. Rendering
+uses the immutable presentation mailbox. Canonical sources and device clocks
+have no dependency on this driver.
+
+`--xr-renderer gpu|cpu` selects the XR backend. `--xr-profile CSV` records pacing,
+image waits, CPU submission and end-frame durations through `OpenXrFrameTiming`.
+The GPU is asynchronous. Completed-work measurements require an explicit GPU
+synchronization or an external profiler.
+
 ## OpenXR ownership
 
 `OpenXrHost` decorates the SDL2 device host. The simulation thread owns keyboard,

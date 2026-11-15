@@ -2,6 +2,7 @@
 
 #include "comanchecd/presentation.hpp"
 #include "camera_view.hpp"
+#include "spatial_geometry.hpp"
 #include "cockpit_scaling.hpp"
 
 namespace comanchecd::host {
@@ -39,6 +40,7 @@ struct SpatialImage {
     unsigned width = 0, height = 0;
     std::vector<std::uint32_t> pixels;
     std::vector<float> depth;
+    SpatialGeometry* geometry = nullptr;
 };
 
 // CPU presentation backend. Rendering never advances the session or its devices.

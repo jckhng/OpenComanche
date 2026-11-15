@@ -113,6 +113,19 @@ void models(SpatialImage& image, const SpatialFrame& frame, const CameraView& vi
                 const auto color = bytes[source + x * height + y];
                 return color ? colors.base[color] : 0u;
             };
+            if (image.geometry) {
+                GeometryMaterial material;
+                material.kind = GeometryKind::sprite;
+                material.bytes = &bytes;
+                material.source = source;
+                material.width = width;
+                material.height = height;
+                material.mirror = mirror;
+                material.minimum_height = minimum_height;
+                material.bottom = bottom.y;
+                material.vertical_scale = sprite_height;
+                image.geometry->material(material);
+            }
             const auto a = vertex(0, 0), b = vertex(width, 0), c = vertex(width, height), d = vertex(0, height);
             spatial_raster::triangle(image, projection, view.frustum, a, b, c, sample);
             spatial_raster::triangle(image, projection, view.frustum, a, c, d, sample);

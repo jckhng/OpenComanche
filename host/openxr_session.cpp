@@ -1,6 +1,7 @@
 #define XR_USE_GRAPHICS_API_OPENGL
 #include <openxr/openxr_platform.h>
 #include "openxr_session.hpp"
+#include <chrono>
 #include "spatial_units.hpp"
 
 #include <algorithm>
@@ -144,10 +145,14 @@ public:
 
     void submit(OpenXrScene scene, const std::function<void(const OpenXrEye&)>& world,
                 const std::function<void(const OpenXrTarget&)>& panel) {
+        timing_ = {};
         if (!status_.running || status_.exit_requested) { return; }
         XrFrameState frame{XR_TYPE_FRAME_STATE};
         XrFrameWaitInfo wait{XR_TYPE_FRAME_WAIT_INFO};
+        const auto wait_started = std::chrono::steady_clock::now();
         check(wait_frame_(session_, &wait, &frame), "xrWaitFrame");
+        timing_.wait_ms = milliseconds(wait_started);
+        timing_.period_ms = frame.predictedDisplayPeriod / 1000000.0;
         while (!reference_changes_.empty() && frame.predictedDisplayTime >= reference_changes_.front()) {
             ++tracking_epoch_;
             cockpit_origin_.reset();
@@ -185,6 +190,7 @@ public:
                     if (world_visible) {
                         if (!cockpit_origin_) { cockpit_origin_ = pose(head.pose); }
                         for (unsigned index = 0; index < eye_count; ++index) {
+                            ++timing_.eyes;
                             OpenXrEye eye;
                             eye.pose = pose(views[index].pose);
                             eye.head = pose(head.pose);
@@ -232,7 +238,9 @@ public:
                 end.layers = layers.data();
             }
             frame_open = false;
+            const auto end_started = std::chrono::steady_clock::now();
             check(end_frame_(session_, &end), "xrEndFrame");
+            timing_.end_ms = milliseconds(end_started);
         } catch (...) {
             if (frame_open) {
                 end.layerCount = 0;
@@ -243,7 +251,11 @@ public:
         }
     }
 
+    OpenXrFrameTiming timing() const { return timing_; }
 private:
+    static double milliseconds(std::chrono::steady_clock::time_point started) {
+        return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
+    }
     struct Chain {
         XrSwapchain handle = XR_NULL_HANDLE;
         std::uint32_t width = 0, height = 0;
@@ -280,6 +292,7 @@ private:
         return {chain.handle, {{0, 0}, {std::int32_t(chain.width), std::int32_t(chain.height)}}, 0};
     }
     void draw(Chain& chain, const std::function<void(const OpenXrTarget&)>& callback) {
+        const auto wait_started = std::chrono::steady_clock::now();
         XrSwapchainImageAcquireInfo acquire{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
         std::uint32_t index = 0;
         check(acquire_(chain.handle, &acquire, &index), "xrAcquireSwapchainImage");
@@ -288,11 +301,14 @@ private:
         XrResult result;
         do { result = wait_image_(chain.handle, &wait); } while (result == XR_TIMEOUT_EXPIRED);
         check(result, "xrWaitSwapchainImage");
+        timing_.image_wait_ms += milliseconds(wait_started);
         XrSwapchainImageReleaseInfo release{XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
         try {
             if (index >= chain.images.size()) { throw std::runtime_error("XR acquired image index exceeds swapchain"); }
+            const auto render_started = std::chrono::steady_clock::now();
             callback({chain.images[index].image, chain.width, chain.height,
                 format_ == srgb_alpha8 ? OpenXrColorSpace::srgb : OpenXrColorSpace::linear});
+            timing_.render_ms += milliseconds(render_started);
         } catch (...) {
             release_(chain.handle, &release);
             throw;
@@ -305,6 +321,7 @@ private:
     XrSpace local_space_ = XR_NULL_HANDLE, view_space_ = XR_NULL_HANDLE;
     XrSessionState state_ = XR_SESSION_STATE_UNKNOWN;
     OpenXrStatus status_;
+    OpenXrFrameTiming timing_;
     std::deque<XrTime> reference_changes_;
     std::optional<CameraPose> cockpit_origin_;
     std::uint64_t tracking_epoch_ = 0;
@@ -333,6 +350,7 @@ OpenXrSession::OpenXrSession(PFN_xrGetInstanceProcAddr loader, XrInstance instan
 }
 OpenXrSession::~OpenXrSession() = default;
 OpenXrStatus OpenXrSession::poll() { return impl_->poll(); }
+OpenXrFrameTiming OpenXrSession::timing() const { return impl_->timing(); }
 void OpenXrSession::submit(OpenXrScene scene, const std::function<void(const OpenXrEye&)>& world,
     const std::function<void(const OpenXrTarget&)>& panel) { impl_->submit(scene, world, panel); }
 }

@@ -220,11 +220,17 @@ XrResult XRAPI_CALL entry(XrInstance, const char* name, PFN_xrVoidFunction* out)
 void options() {
     std::vector<std::string> arguments{"--mode", "enhanced", "--xr", "on", "--xr-world-scale", "8", "--xr-render-scale", "0.5"};
     const auto selected = take_openxr_options(arguments);
+    require(selected.renderer == XrRenderer::gpu, "XR must default to the GPU presentation path");
+    std::vector<std::string> profiling{"--xr", "on", "--xr-world-scale", "8", "--xr-renderer", "cpu", "--xr-profile", "timing.csv"};
+    const auto profiled = take_openxr_options(profiling);
+    require(profiling.empty() && profiled.renderer == XrRenderer::cpu && profiled.profile == "timing.csv",
+            "XR renderer and profiling options must be launch-only device choices");
     require(selected.enabled && selected.world_scale == 8 && selected.render_scale == 0.5 &&
         arguments == std::vector<std::string>{"--mode", "enhanced"}, "XR options must remain launch-only");
     for (auto invalid : std::vector<std::vector<std::string>>{{"--xr", "on"}, {"--xr", "yes"},
         {"--xr", "on", "--xr-world-scale", "nan"}, {"--xr", "on", "--xr-world-scale", "8junk"},
-        {"--xr-world-scale", "8"}, {"--xr", "on", "--xr-world-scale", "8", "--xr-render-scale", "2"}}) {
+        {"--xr", "on", "--xr-world-scale", "8", "--xr-renderer", "invalid"},
+        {"--xr-profile", "timing.csv"}, {"--xr-world-scale", "8"}, {"--xr", "on", "--xr-world-scale", "8", "--xr-render-scale", "2"}}) {
         bool rejected = false;
         try { take_openxr_options(invalid); } catch (const std::exception&) { rejected = true; }
         require(rejected, "Invalid XR launch options must fail before device initialization");
@@ -258,6 +264,10 @@ int main() {
                     }, [&](const auto& target) { require(target.width == 640, "Panel must use its own image"); });
                     require(state.frames == 1 && state.last_layers == (!state.render ? 0u : state.tracking ? 2u : 1u),
                         "Hidden frames and invalid tracking must omit world submission");
+                    const auto timing = active->timing();
+                    require(timing.wait_ms >= 0 && timing.image_wait_ms >= 0 && timing.render_ms >= 0 &&
+                            timing.eyes == (state.render && state.tracking ? 2u : 0u),
+                            "XR timings must describe only this frame's actual eye callbacks");
                     if (scenario == 0) {
                         state.reference_change = true;
                         active->poll();

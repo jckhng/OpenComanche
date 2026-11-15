@@ -6,7 +6,7 @@
 #include <cmath>
 
 namespace comanchecd::host::spatial_raster {
-struct Vertex { CameraVector point; double u = 0, v = 0; };
+using Vertex = GeometryVertex;
 inline Vertex mix(const Vertex& a, const Vertex& b, double amount) {
     return {a.point + (b.point - a.point) * amount, a.u + (b.u - a.u) * amount, a.v + (b.v - a.v) * amount};
 }
@@ -63,6 +63,7 @@ void draw_triangle(SpatialImage& image, const CameraProjection& projection, cons
 template<class Sample>
 void triangle(SpatialImage& image, const CameraProjection& projection, const CameraFrustum& frustum,
               Vertex a, Vertex b, Vertex c, const Sample& sample) {
+    if (image.geometry) { image.geometry->triangle(frustum, a, b, c); return; }
     constexpr unsigned frustum_planes = 6, maximum_vertices = 12;
     unsigned crossings = 0;
     for (unsigned plane = 0; plane < frustum_planes; ++plane) {

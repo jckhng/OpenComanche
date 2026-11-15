@@ -185,8 +185,10 @@ by the host presentation shortcut. F1–F12 retain their instrument bindings.
 The faithful launch profile keeps nearest scaling and its existing key route.
 
 Enhanced flight renders the 1024×1024 toroidal height/color maps into an
-output-sized color/depth buffer. The CPU terrain mesh uses distance-dependent
-rings with stitched detail boundaries and bilinear vertex heights. Perspective
+output-sized color/depth buffer. The terrain mesh uses distance-dependent
+rings with stitched detail boundaries and bilinear vertex heights. The grid
+anchor follows the aircraft camera, so tracked eye movement keeps shared terrain
+topology across both eyes. Perspective
 texture sampling retains the original color-map density. Distance haze uses
 quarter/half RGB fog blends at the recovered distance-table boundaries.
 Panoramic and flat sky settings follow the selected scenery policy. SG models
@@ -288,6 +290,13 @@ locally built loader explicitly. The information query also accepts that option.
 Install and select a vendor runtime and connect its headset before launching.
 On Linux, select `SDL_VIDEODRIVER=x11` when the desktop uses Wayland.
 
+Append `--xr-profile /path/to/xr-frames.csv` to record per-frame eye dimensions,
+runtime period, frame pacing wait, swapchain wait, render callback time and
+frame-end/total time. The CSV uses milliseconds. `wait_ms` includes the runtime's
+intentional pacing. GPU commands are asynchronous, so callback time measures
+CPU submission. A GPU-completion benchmark or external GPU profiler is needed
+to measure completed GPU work. The file is flushed every 120 submitted frames.
+
 The XR thread owns session events, frame waits, predicted-time view location,
 image acquire/wait/release and layer submission. An immutable mailbox holds one
 scene across both eyes while the simulation and SDL2 audio continue separately.
@@ -308,7 +317,14 @@ changes, frame ordering, waited-image ownership and exception cleanup. Real
 SDL2/OpenGL checks cover texture orientation, channels, alpha and color space.
 Physical headset validation, frame-rate/comfort qualification, XR actions and
 3D cockpit interaction remain open. Flight commands use SDL2 keyboard/gamepad
-input. The new mesh and rear crew figure are visual presentation geometry. The world renderer still runs on the CPU.
+input. The new mesh and rear crew figure are visual presentation geometry. The XR spatial renderer uses OpenGL 3.2 through SDL2 to rasterize sky, terrain,
+SG sprites, weather, mirrored water views and the surrounding cockpit directly
+into eye images. GPU terrain uses fixed world-aligned tiles at native map-cell spacing. Vertex
+shaders fetch the original height map, avoiding a camera-dependent moving LOD
+mesh. Frustum-culling and instanced batches bound submission work. Sprite,
+particle and cockpit geometry share the software renderer's emission path. Native instrument pixels remain dynamic textures.
+`--xr-renderer cpu` selects the software diagnostic path. Both choices are
+launch-only. The desktop enhanced renderer continues using its CPU backend.
 [Khronos frame submission](https://github.com/KhronosGroup/OpenXR-Guide/blob/main/chapters/frame_submission.md)
 
 ## Preview limits

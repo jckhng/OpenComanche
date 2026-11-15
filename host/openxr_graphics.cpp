@@ -1,5 +1,6 @@
 #include "openxr_graphics.hpp"
 #include "sdl_common.hpp"
+#include "gl_scene.hpp"
 #include <SDL_syswm.h>
 #include <SDL_opengl.h>
 #if defined(_WIN32)
@@ -72,6 +73,18 @@ public:
         }
     }
 
+    ~Impl() {
+        if (scene_) {
+            SDL_GL_MakeCurrent(window_.get(), context_.get());
+            scene_.reset();
+        }
+    }
+    void render_eye(const OpenXrTarget& target, const SpatialFrame& frame, const CameraView& view,
+                    const EntityPoses& poses, const CockpitImage& source, const std::optional<CameraView>& cockpit) {
+        current();
+        if (!scene_) { scene_ = std::make_unique<GlScene>(); }
+        scene_->draw(target, frame, view, poses, source, cockpit);
+    }
     void current() {
         if (SDL_GL_MakeCurrent(window_.get(), context_.get()) != 0) { throw sdl_error("XR OpenGL context activation failed"); }
     }
@@ -150,6 +163,7 @@ private:
     std::unique_ptr<void, decltype(&SDL_GL_DeleteContext)> context_{nullptr, SDL_GL_DeleteContext};
     std::array<std::uint8_t, 256> linear_{};
     std::vector<std::uint32_t> pixels_;
+    std::unique_ptr<GlScene> scene_;
 };
 
 OpenXrGraphics::OpenXrGraphics(const OpenXrCapabilities& requirements) : impl_(std::make_unique<Impl>(requirements)) {}
@@ -160,4 +174,8 @@ std::unique_ptr<OpenXrSession> OpenXrGraphics::create_session(const OpenXrRuntim
     return impl_->create_session(runtime, scale);
 }
 void OpenXrGraphics::upload(const OpenXrTarget& target, const SpatialImage& image) { impl_->upload(target, image); }
+void OpenXrGraphics::render_eye(const OpenXrTarget& target, const SpatialFrame& frame, const CameraView& view,
+                               const EntityPoses& poses, const CockpitImage& source, const std::optional<CameraView>& cockpit) {
+    impl_->render_eye(target, frame, view, poses, source, cockpit);
+}
 }

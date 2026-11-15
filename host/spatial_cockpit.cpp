@@ -73,18 +73,22 @@ CameraView cockpit_view(const CameraPose& pose, CameraFrustum frustum) {
 class SpatialCockpit::Impl {
 public:
     void draw(SpatialImage& image, const CameraView& eye, const CockpitImage& source, const SpatialFrame& frame) const {
-        if (!image.width || !image.height || image.pixels.size()!=std::size_t(image.width)*image.height ||
+        if (!image.width || !image.height || (!image.geometry && image.pixels.size()!=std::size_t(image.width)*image.height) ||
                 frame.scene_mask.size()!=source.pixels.size() || !frame.resources) {
             throw std::invalid_argument("Spatial cockpit requires a complete image, coverage mask and scene resources");
         }
         const CameraProjection projection(eye,image.width,image.height);
         const auto palette=colors(source.palette);
         // Cockpit depth is measured in metres and composites over the completed world.
-        image.depth.assign(image.pixels.size(),std::numeric_limits<float>::infinity());
+        if (!image.geometry) { image.depth.assign(image.pixels.size(),std::numeric_limits<float>::infinity()); }
         const auto index=[&](double u,double v) {
             return std::size_t(std::clamp(int(v),0,int(cockpit_height)-1))*cockpit_width+
                 std::clamp(int(u),0,int(cockpit_width)-1);
         };
+        if (image.geometry) {
+            GeometryMaterial material; material.kind=GeometryKind::hud;
+            image.geometry->material(material);
+        }
         quad(image,eye,projection,native_plane(hud_distance,0,instrument_top),0,0,cockpit_width,instrument_top,
             [&](double u,double v,double) {
                 const auto pixel=index(u,v);
@@ -92,7 +96,15 @@ public:
                 return !frame.scene_mask[pixel] && frame.resources->hud_colors[color] ? palette[color] : 0u;
             });
         for (const auto& face : faces_) {
+            if (image.geometry) {
+                GeometryMaterial material; material.kind=GeometryKind::solid; material.color=face.color;
+                image.geometry->material(material);
+            }
             quad(image,eye,projection,face.vertices,0,0,1,1,[&](double,double,double) { return face.color; });
+        }
+        if (image.geometry) {
+            GeometryMaterial material; material.kind=GeometryKind::instruments;
+            image.geometry->material(material);
         }
         quad(image,eye,projection,native_plane(0.64,instrument_top,cockpit_height),0,instrument_top,cockpit_width,cockpit_height,
             [&](double u,double v,double) { return palette[source.pixels[index(u,v)]]; });

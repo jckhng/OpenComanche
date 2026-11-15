@@ -2,6 +2,12 @@
 
 ## Enhanced SDL2 development
 
+- Add an SDL2/OpenGL XR scene renderer for sky, terrain, SG models, weather,
+  water reflections and cockpit geometry. Share the existing geometry emitters
+  and cache indexed resources, palette maps and native instrument textures.
+  Use fixed world-aligned terrain tiles to prevent moving LOD height warping.
+- Add launch-only XR GPU/CPU selection and frame-timing CSV output.
+
 - Render weather and water reflections per eye from read-only native draw
   observations. Extend weather around the aircraft and reflect terrain/models
   at visible water heights using recovered tint tables and reflection phase.

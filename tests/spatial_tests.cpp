@@ -1,4 +1,5 @@
 #include "spatial_renderer.hpp"
+#include "spatial_draw.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -56,6 +57,39 @@ void camera_tests() {
     bool rejected = false;
     try { history.sample(0); } catch (const std::logic_error&) { rejected = true; }
     require(rejected, "An empty history must reject sampling");
+}
+
+void terrain_anchor_tests() {
+    using namespace comanchecd;
+    using namespace comanchecd::host;
+    struct Capture final : SpatialGeometry {
+        std::vector<std::pair<double, double>> positions;
+        void material(const GeometryMaterial&) override {}
+        void weather_background() override {}
+        void triangle(const CameraFrustum&, const GeometryVertex& a, const GeometryVertex& b,
+                      const GeometryVertex& c) override {
+            for (const auto* vertex : {&a, &b, &c}) { positions.emplace_back(vertex->u, vertex->v); }
+        }
+    };
+    auto resources = std::make_shared<SpatialResources>();
+    resources->assets.terrain.height.assign(terrain_side * terrain_side, 0);
+    resources->assets.terrain.color.assign(terrain_side * terrain_side, 1);
+    SpatialFrame frame;
+    frame.resources = resources;
+    frame.camera.x = frame.camera.y = 128u * 4194304u;
+    frame.camera.height = 40;
+    auto view = camera_view(spatial_camera(frame.camera), 128, 128);
+    view.frustum.far_clip = 64;
+    const auto capture = [&](double x) {
+        auto tracked = view;
+        tracked.pose.position.x = x;
+        Capture result;
+        SpatialImage image{128, 128, {}, {}, &result};
+        spatial_draw::terrain(image, frame, tracked, CameraProjection(tracked, 128, 128), {});
+        return result.positions;
+    };
+    require(capture(127.99) == capture(128.01),
+            "Head movement across a cell boundary must preserve terrain topology and texture coordinates");
 }
 
 void renderer_tests() {
@@ -144,6 +178,6 @@ void renderer_tests() {
 }
 
 int main() {
-    try { camera_tests(); renderer_tests(); return 0; }
+    try { camera_tests(); terrain_anchor_tests(); renderer_tests(); return 0; }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

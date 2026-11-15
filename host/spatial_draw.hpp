@@ -15,6 +15,7 @@ struct Colors {
         return !haze || depth < quarter_distance ? base[index] : depth < half_distance ? quarter[index] : half[index];
     }
 };
+Colors colors(const SpatialFrame& frame, const Palette& palette);
 double surface_height(const Terrain& terrain, double x, double z);
 void terrain(SpatialImage& image, const SpatialFrame& frame, const CameraView& view,
              const CameraProjection& projection, const Colors& colors,

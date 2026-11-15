@@ -21,6 +21,10 @@ struct OpenXrEye {
     XrTime display_time = 0;
     std::uint64_t tracking_epoch = 0;
 };
+struct OpenXrFrameTiming {
+    double period_ms = 0, wait_ms = 0, image_wait_ms = 0, render_ms = 0, end_ms = 0;
+    unsigned eyes = 0;
+};
 struct OpenXrStatus { bool running = false, focused = false, exit_requested = false; };
 
 // The runtime and its current graphics context outlive this session.
@@ -28,6 +32,7 @@ class OpenXrSession {
 public:
     ~OpenXrSession();
     OpenXrStatus poll();
+    OpenXrFrameTiming timing() const;
     void submit(OpenXrScene scene, const std::function<void(const OpenXrEye&)>& world,
                 const std::function<void(const OpenXrTarget&)>& panel);
 private:

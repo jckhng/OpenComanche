@@ -30,6 +30,14 @@ OpenXrOptions take_openxr_options(std::vector<std::string>& arguments) {
         } else if (key == "--xr-render-scale") {
             result.render_scale = number(value);
             scaled = true;
+        } else if (key == "--xr-renderer") {
+            if (value != "gpu" && value != "cpu") { throw std::invalid_argument("XR renderer requires gpu or cpu"); }
+            result.renderer = value == "gpu" ? XrRenderer::gpu : XrRenderer::cpu;
+            scaled = true;
+        } else if (key == "--xr-profile") {
+            if (value.empty()) { throw std::invalid_argument("XR profile path must be nonempty"); }
+            result.profile = value;
+            scaled = true;
         } else if (key == "--xr-loader") {
             if (value.empty()) { throw std::invalid_argument("XR loader path must be nonempty"); }
             result.loader = value;
@@ -41,7 +49,7 @@ OpenXrOptions take_openxr_options(std::vector<std::string>& arguments) {
     }
     if (result.render_scale < 0.1 || result.render_scale > 1) { throw std::invalid_argument("XR render scale must be between 0.1 and 1"); }
     if (result.enabled && result.world_scale == 0) { throw std::invalid_argument("XR requires an explicit --xr-world-scale in map cells per metre"); }
-    if (scaled && !result.enabled) { throw std::invalid_argument("XR scale options require --xr on"); }
+    if (scaled && !result.enabled) { throw std::invalid_argument("XR device options require --xr on"); }
     arguments = std::move(retained);
     return result;
 }

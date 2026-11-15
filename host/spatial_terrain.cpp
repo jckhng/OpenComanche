@@ -18,7 +18,18 @@ double surface_height(const Terrain& terrain, double x, double z) {
 void terrain(SpatialImage& image, const SpatialFrame& frame, const CameraView& view,
              const CameraProjection& projection, const Colors& colors, double minimum_height) {
     const auto& terrain = frame.resources->assets.terrain;
-    const double center_x = std::floor(view.pose.position.x), center_z = std::floor(view.pose.position.z);
+    if (image.geometry) {
+        GeometryMaterial material;
+        material.kind = GeometryKind::terrain;
+        material.minimum_height = minimum_height;
+        image.geometry->material(material);
+    }
+    // Keep both eyes on the aircraft's grid while their tracked view moves independently.
+    const auto anchor_x = view.pose.position.x + spatial_units::wrap_delta(
+        frame.camera.x / spatial_units::fixed_cell - view.pose.position.x, terrain_side);
+    const auto anchor_z = view.pose.position.z + spatial_units::wrap_delta(
+        frame.camera.y / spatial_units::fixed_cell - view.pose.position.z, terrain_side);
+    const double center_x = std::floor(anchor_x), center_z = std::floor(anchor_z);
     const auto vertex = [&](double x, double z) {
         const auto world_x = center_x + x, world_z = center_z + z;
         return spatial_raster::Vertex{projection.to_camera({world_x, surface_height(terrain, world_x, world_z), world_z}), world_x, world_z};

@@ -8,6 +8,7 @@
 #include <thread>
 #include <chrono>
 #include <optional>
+#include <fstream>
 
 namespace comanchecd::host {
 namespace {
@@ -22,7 +23,12 @@ public:
     Impl(SdlHostOptions options, OpenXrOptions xr) : desktop_(desktop_options(options)), options_(options), xr_(xr),
         loader_(xr.loader), runtime_(loader_.entry()), graphics_(runtime_.capabilities()) {
         if (!xr.enabled || options.input != InputProfile::enhanced) { throw std::invalid_argument("XR requires enhanced mode"); }
-        if (options.cockpit == CockpitPresentation::spatial) { cockpit_ = std::make_unique<SpatialCockpit>(); }
+        if (xr.renderer == XrRenderer::cpu && options.cockpit == CockpitPresentation::spatial) { cockpit_ = std::make_unique<SpatialCockpit>(); }
+        if (!xr.profile.empty()) {
+            profile_.open(xr.profile, std::ios::out | std::ios::trunc);
+            if (!profile_) { throw std::runtime_error("Cannot open XR profiling CSV"); }
+            profile_ << "frame,renderer,scene_serial,width,height,eyes,period_ms,wait_ms,image_wait_ms,render_ms,end_ms,total_ms\n";
+        }
         graphics_.release();
         std::promise<void> ready;
         auto initialized = ready.get_future();
@@ -102,8 +108,11 @@ private:
         else { history_.reset(); }
         std::optional<SpatialCamera> camera;
         EntityPoses entities{};
+        const auto started = Clock::now();
+        unsigned eye_width = 0, eye_height = 0;
         session.submit(body ? OpenXrScene::cockpit : spatial ? OpenXrScene::world : OpenXrScene::panel,
             [&](const OpenXrEye& eye) {
+                eye_width = eye.target.width; eye_height = eye.target.height;
                 if (!origin_ || tracking_epoch_ != eye.tracking_epoch) {
                     origin_ = eye.head;
                     tracking_epoch_ = eye.tracking_epoch;
@@ -118,6 +127,11 @@ private:
                 const auto base = camera_view(*camera, eye.target.width, eye.target.height);
                 const auto tracked = relative_pose(*origin_, eye.pose);
                 const auto view = eye_view(base, tracked, eye.frustum, xr_.world_scale);
+                if (xr_.renderer == XrRenderer::gpu) {
+                    graphics_.render_eye(eye.target, *frame->spatial, view, entities, frame->image,
+                        body ? std::optional<CameraView>(cockpit_view(tracked, eye.frustum)) : std::nullopt);
+                    return;
+                }
                 const auto& world = renderer_.render_world(*frame->spatial, view, entities,
                     frame->image.palette, eye.target.width, eye.target.height);
                 if (body) {
@@ -134,8 +148,20 @@ private:
                 composite_cockpit(panel, frame->image, mask, options_.cockpit_scaling);
                 graphics_.upload(target, panel);
             });
+        if (profile_.is_open()) {
+            const auto timing = session.timing();
+            profile_ << profile_frame_++ << ',' << (xr_.renderer == XrRenderer::gpu ? "gpu" : "cpu") << ','
+                << (frame->spatial ? frame->spatial->serial : 0) << ',' << eye_width << ',' << eye_height << ','
+                << timing.eyes << ',' << timing.period_ms << ',' << timing.wait_ms << ',' << timing.image_wait_ms << ','
+                << timing.render_ms << ',' << timing.end_ms << ','
+                << std::chrono::duration<double, std::milli>(Clock::now() - started).count() << '\n';
+            if (profile_frame_ % 120 == 0) { profile_.flush(); }
+            if (!profile_) { throw std::runtime_error("XR profiling CSV write failed"); }
+        }
     }
     using Clock = std::chrono::steady_clock;
+    std::ofstream profile_;
+    std::uint64_t profile_frame_ = 0;
     SdlHostOptions options_;
     OpenXrOptions xr_;
     SdlOpenXrLoader loader_;

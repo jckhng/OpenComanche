@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
             " [--stick-deadzone 0..32766] [--stick-sensitivity 1..400]"
             " [--invert-y on|off] [--scale nearest|linear|integer] [--scene-renderer native|spatial] [--interpolation on|off]"
             " [--cockpit-scale nearest|sharp] [--cockpit flat|spatial]"
-            " [--xr on|off] [--xr-world-scale CELLS_PER_METRE] [--xr-render-scale 0.1..1] [--xr-loader FILE]";
+            " [--xr on|off] [--xr-world-scale CELLS_PER_METRE] [--xr-render-scale 0.1..1] [--xr-loader FILE] [--xr-renderer gpu|cpu] [--xr-profile CSV]";
         if (argc == 2 && std::string(argv[1]) == "--help") {
             std::cout << usage << "\ncomanche_viewer --openxr-info [--xr-loader FILE] (OpenXR-enabled build)\n";
             return 0;

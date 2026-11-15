@@ -19,7 +19,8 @@ std::uint32_t rgba(const Palette& palette, std::uint8_t index) {
     return 0xff000000u | ((c[0] * 255u / 63u) << 16) | ((c[1] * 255u / 63u) << 8) | (c[2] * 255u / 63u);
 }
 
-spatial_draw::Colors colors(const SpatialFrame& frame, const Palette& palette) {
+}
+spatial_draw::Colors spatial_draw::colors(const SpatialFrame& frame, const Palette& palette) {
     spatial_draw::Colors result;
     result.haze = frame.resources->scenery.haze;
     const auto& models = frame.resources->assets.models;
@@ -58,6 +59,7 @@ spatial_draw::Colors colors(const SpatialFrame& frame, const Palette& palette) {
     return result;
 }
 
+namespace {
 void sky(SpatialImage& image, const CameraProjection& projection, const spatial_draw::Colors& palette) {
     if (!palette.panorama) { std::fill(image.pixels.begin(), image.pixels.end(), palette.base[255]); return; }
     const auto block = std::max(1u, std::min(image.width / unsigned(cockpit_width), image.height / unsigned(cockpit_height)));
@@ -101,7 +103,7 @@ const SpatialImage& SpatialRenderer::render_world(const SpatialFrame& frame, con
     image_.width = width; image_.height = height;
     image_.pixels.resize(std::size_t(width) * height);
     image_.depth.assign(image_.pixels.size(), std::numeric_limits<float>::infinity());
-    const auto palette_tables = colors(frame, palette);
+    const auto palette_tables = spatial_draw::colors(frame, palette);
     if (view.pose.position.y < spatial_draw::surface_height(terrain, view.pose.position.x, view.pose.position.z)) {
         const auto cell = std::size_t(int(std::floor(view.pose.position.z)) & (terrain_side - 1)) * terrain_side +
             (int(std::floor(view.pose.position.x)) & (terrain_side - 1));

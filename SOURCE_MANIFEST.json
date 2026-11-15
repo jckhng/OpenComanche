@@ -20,8 +20,8 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "bytes": 14120,
-      "sha256": "21fc155dbb01c3df16228251934aa4f02b4141ad19fdaa0308f5f9dce85e8225"
+      "bytes": 15520,
+      "sha256": "820096b23747c57ef2e5b0c6d09f9c6ad3ba4953277620467edd0f88d78be59b"
     },
     {
       "path": "BUILDING.md",
@@ -30,8 +30,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 4888,
-      "sha256": "493dd92fea9e53f59dce8bd4166bf1b66063eb793aa092484f7a882f8faff73d"
+      "bytes": 5267,
+      "sha256": "e503cdd518b02e6eeafc442f177f62e03a4756d9f399750e704e413afd6e116b"
     },
     {
       "path": "cmake/Diagnostics.cmake",
@@ -40,8 +40,8 @@
     },
     {
       "path": "cmake/OpenXr.cmake",
-      "bytes": 1822,
-      "sha256": "c7c8f3aa5562b2caeba7540d04ac631916afd342c59a67fa24efcb6251567fbf"
+      "bytes": 1840,
+      "sha256": "8c9707f3d1a853bef94989e20c27ff3cdf33e1e851a8bd49f3e24b87fc8f10c5"
     },
     {
       "path": "cmake/Runtime.cmake",
@@ -119,6 +119,16 @@
       "sha256": "2706beb6c31330ac7a18d035603a034415f672c2d7907386d95ed6cece1f3f10"
     },
     {
+      "path": "host/gl_scene.cpp",
+      "bytes": 46799,
+      "sha256": "ee6f177c3af4227c6ae081ee379dbe39813b351dfff76762da0bed9c004bf199"
+    },
+    {
+      "path": "host/gl_scene.hpp",
+      "bytes": 520,
+      "sha256": "abf8335fcb9066e9243ab4b61b1a7e121e5bf5cc51ce59c1e4b2b3e891f9e4b7"
+    },
+    {
       "path": "host/host_preferences.cpp",
       "bytes": 10423,
       "sha256": "aa550cd1f75ba46279e81eb8bb00d585b125865f616c368b5ca85e26e21122a2"
@@ -135,18 +145,18 @@
     },
     {
       "path": "host/openxr_graphics.cpp",
-      "bytes": 8128,
-      "sha256": "293b52c4035abbeac8b97ff932bc065b34ea375959570f60b91be8a77a8ae4a0"
+      "bytes": 9032,
+      "sha256": "9888089488d5bb2cf82ca96d90f08b6d088e01cebac544670a37aab612083d98"
     },
     {
       "path": "host/openxr_graphics.hpp",
-      "bytes": 632,
-      "sha256": "9ee9d2c2f8f3b92d2a9dfba5754467a935b749af9ee8a43c34ae59c91bc7ee05"
+      "bytes": 902,
+      "sha256": "5c87a9e1031c9669e8026bd8f81e0b780b1c5655a75862628e72674c6b702146"
     },
     {
       "path": "host/openxr_host.cpp",
-      "bytes": 8727,
-      "sha256": "53bfa8a7600a845fe813c5175687bcf38b3d92f23d8cc25497b792880d440976"
+      "bytes": 10451,
+      "sha256": "a1525d13774496014e25532b760a488718e1893c4952620abed5d749d68c20c2"
     },
     {
       "path": "host/openxr_host.hpp",
@@ -155,13 +165,13 @@
     },
     {
       "path": "host/openxr_options.cpp",
-      "bytes": 2081,
-      "sha256": "eddfdd374b461f434439e191d51f73ad98b11453d69ee0e3d733b0fa47060a04"
+      "bytes": 2569,
+      "sha256": "f27d6d906e24e4a23eb78083bbcf06a6aa10e04027bb6fb4b18fc5b4887534ab"
     },
     {
       "path": "host/openxr_options.hpp",
-      "bytes": 373,
-      "sha256": "43973d9f4f4c720ee6ee5a8365b25352a1c14eb76b74269ba3a12436a4056452"
+      "bytes": 463,
+      "sha256": "ee7579c68102f75e6b3827466ec0efb4b6ebcdf4e19ed8e6dc21b86f241d38d6"
     },
     {
       "path": "host/openxr_runtime.cpp",
@@ -175,13 +185,13 @@
     },
     {
       "path": "host/openxr_session.cpp",
-      "bytes": 20808,
-      "sha256": "a4451e405c6a8b56f6f28ade17c35407e1a4d4497b2cbbb488aa5681221fb9f9"
+      "bytes": 21855,
+      "sha256": "d137a1b217a563dd25c0caec8694efa11cb1b781da218d4986126097a727f362"
     },
     {
       "path": "host/openxr_session.hpp",
-      "bytes": 1265,
-      "sha256": "8be5dbf9d2dde27873cf6ffd7308ca588e605813f122e3b760223f025034880f"
+      "bytes": 1446,
+      "sha256": "9a167ecf8e5b76c0a0193d3d2b9878382880cc65818cdd10743e56b5330df733"
     },
     {
       "path": "host/pending_input.hpp",
@@ -255,8 +265,8 @@
     },
     {
       "path": "host/session_main.cpp",
-      "bytes": 4699,
-      "sha256": "828b378846bd6192b658879e41dc5325dd2db9712cc25cfed1716f4aa9f7a3f8"
+      "bytes": 4742,
+      "sha256": "81136e0bb41b8348bacf697018a23a7308e2fa71fa74bb78abae6473bbbe4b72"
     },
     {
       "path": "host/settings_profile.hpp",
@@ -265,8 +275,8 @@
     },
     {
       "path": "host/spatial_cockpit.cpp",
-      "bytes": 5591,
-      "sha256": "0a209418839347af5087cec041688b0bd4bccde5ba790caf35c892dc2ee44d89"
+      "bytes": 6182,
+      "sha256": "3d195b10bc4db54e759687b3c493c4b0679a4a46ae69be961fd4e9def62429ac"
     },
     {
       "path": "host/spatial_cockpit.hpp",
@@ -275,13 +285,18 @@
     },
     {
       "path": "host/spatial_draw.hpp",
-      "bytes": 1650,
-      "sha256": "2fb66e3578f06f6b6ce814fc4e9ce9cdd1f09be19edb52f554e5b09cf304f716"
+      "bytes": 1717,
+      "sha256": "d2b8cf4d8eaacccd68d0e6273614e6125bda631b74380ed5427a3c11135df62f"
     },
     {
       "path": "host/spatial_effects.cpp",
-      "bytes": 10328,
-      "sha256": "0478203f79bb1c45e130f2c91d1689250c81458e04d842e2cfebd02106888b1a"
+      "bytes": 10817,
+      "sha256": "1462c97f5c6d2680258dd8eebff55dcd6391a413566ca332df4fcc0057c000d8"
+    },
+    {
+      "path": "host/spatial_geometry.hpp",
+      "bytes": 1220,
+      "sha256": "d399e2192d384ed66acf311c087301b843b4a01307b5ab43c3ee81f610d7aae6"
     },
     {
       "path": "host/spatial_history.cpp",
@@ -290,28 +305,28 @@
     },
     {
       "path": "host/spatial_models.cpp",
-      "bytes": 8331,
-      "sha256": "22c896436ed21ef35fd2374b078980a705ee3fb6719c56d693757da4775e5d1f"
+      "bytes": 8907,
+      "sha256": "355e6a743780ac51c58d8bb502c6aa37b282fdccdc6134462da158031839c819"
     },
     {
       "path": "host/spatial_raster.hpp",
-      "bytes": 5028,
-      "sha256": "a17850f8885cd442e43e0ff6456413c184dcfa984c7b8cab811c573bdf4d31a5"
+      "bytes": 5080,
+      "sha256": "e1adb07bb24877d3820e0e5da85aa6f50aba45e58ecdd7aee7bafe717ae58a9a"
     },
     {
       "path": "host/spatial_renderer.cpp",
-      "bytes": 7593,
-      "sha256": "56469e6dcf15489a48adc3aad478656caee6838400b7ac2def0c9e82323d7425"
+      "bytes": 7635,
+      "sha256": "5cb1dffbcb5184226ca47acff1ce66a7915ec6dea84b4e215ca7939b34a2a59d"
     },
     {
       "path": "host/spatial_renderer.hpp",
-      "bytes": 2081,
-      "sha256": "c8511957bd77ad884c36aa15d586a0e0734a8a2fe25120ca47f7b582061e8c9a"
+      "bytes": 2154,
+      "sha256": "b2b86142933b97366887cb7445c1acd91db753d25fd603ada207053b451d84e1"
     },
     {
       "path": "host/spatial_terrain.cpp",
-      "bytes": 4615,
-      "sha256": "e0dac9a82ec3a7a281cd38d136e10f2ee9a67572f403b046e40c498dad82f32b"
+      "bytes": 5233,
+      "sha256": "10cf6064608b8fc68f39ec1be101e66860533fac7e59f470aafbe1379de5aa96"
     },
     {
       "path": "host/spatial_units.hpp",
@@ -470,8 +485,8 @@
     },
     {
       "path": "PREVIEW.md",
-      "bytes": 19827,
-      "sha256": "2e64dc1b265395d4bbe231da54f08394b2c07ed15b0cb83b2997f6502a7dddc2"
+      "bytes": 21055,
+      "sha256": "9cee54e91a903abe70ee646eb8bf437edb8fb00979dd77a90f11a721836a3d54"
     },
     {
       "path": "README.md",
@@ -1125,8 +1140,8 @@
     },
     {
       "path": "tests/openxr_graphics_tests.cpp",
-      "bytes": 3076,
-      "sha256": "b20d6e5a8c2580e150cf27093d9a6a8e7d6bebebdb7f4d526acfa3b9cc4d4a23"
+      "bytes": 11140,
+      "sha256": "3a44f001a8cb221b78980bc640340ed1376eb48cfb1584ed0143c7ab39ff480d"
     },
     {
       "path": "tests/openxr_runtime_tests.cpp",
@@ -1135,8 +1150,8 @@
     },
     {
       "path": "tests/openxr_session_tests.cpp",
-      "bytes": 18414,
-      "sha256": "30724f96cd8d7e3008d8e9ba200a63a4489f8bb8102ba4c6bf4c0fde2b1b8286"
+      "bytes": 19361,
+      "sha256": "47f81d6a451751b88d4de48f7a5ec62573e276b3907611c0eec61b6746efd5c9"
     },
     {
       "path": "tests/options_probe.cpp",
@@ -1275,8 +1290,8 @@
     },
     {
       "path": "tests/spatial_tests.cpp",
-      "bytes": 8052,
-      "sha256": "a1400e991610c7697f56ca370be7f1ce927ce0c3f521e0c19f0b2a65b757dbff"
+      "bytes": 9618,
+      "sha256": "770288b67092a0a67a2030259f044dec38c2e0043ce97bb4b1c3daf702615ede"
     },
     {
       "path": "tests/startup_input_tests.cpp",

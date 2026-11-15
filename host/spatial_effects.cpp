@@ -122,6 +122,7 @@ void weather(SpatialImage& image, const SpatialFrame& frame, const CameraView& v
              const CameraProjection& projection, const Colors& colors, WeatherLayer layer) {
     const auto& effects = frame.effects;
     if (effects.particles.empty()) { return; }
+    if (image.geometry) { image.geometry->weather_background(); }
     const auto& tables = frame.resources->tables;
     const auto anchor = camera_view(spatial_camera(frame.camera), cockpit_width, cockpit_height);
     const CameraProjection body(anchor, cockpit_width, cockpit_height);
@@ -150,13 +151,21 @@ void weather(SpatialImage& image, const SpatialFrame& frame, const CameraView& v
             const auto center_pixel = projection.project(local_center);
             const auto ix = std::clamp(int(center_pixel.x), 0, int(image.width) - 1);
             const auto iy = std::clamp(int(center_pixel.y), 0, int(image.height) - 1);
-            const auto original = image.pixels[std::size_t(iy) * image.width + ix];
+            const auto original = image.geometry ? 0u : image.pixels[std::size_t(iy) * image.width + ix];
             const auto color = particle.type == 0 && particle.group != 0 ? particle.solid_color :
                 effects.tint[particle.type][nearest_color(original, colors)];
             const auto vertex = [&](CameraVector position) {
                 const auto local = projection.to_camera(position);
                 return spatial_raster::Vertex{local, 0, 0};
             };
+            if (image.geometry) {
+                GeometryMaterial material;
+                material.kind = GeometryKind::weather;
+                material.color = particle.solid_color;
+                material.weather_type = particle.type;
+                material.weather_solid = particle.type == 0 && particle.group != 0;
+                image.geometry->material(material);
+            }
             const auto a = vertex(center - half_width - half_height), b = vertex(center + half_width - half_height);
             const auto c = vertex(center + half_width + half_height), d = vertex(center - half_width + half_height);
             const auto sample = [&](double, double, double depth) {

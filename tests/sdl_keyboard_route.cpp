@@ -1,3 +1,4 @@
+#include "keyboard_pilot.hpp"
 #include "sdl_host.hpp"
 #include "sdl_options.hpp"
 #include "profile.hpp"
@@ -55,6 +56,7 @@ public:
             pilot(menu);
         } else if (menu.mode == FrontendMode::main) {
             if (debrief_seen_ || mode_ == RouteMode::restart) {
+                if (mode_ == RouteMode::restart) { verify_loaded_pilot(menu); }
                 const auto record = profile_.read();
                 const PilotStorage saved(record);
                 require(saved.completed(saved.selected(), 0, 0) == (mode_ != RouteMode::abort),
@@ -148,8 +150,8 @@ private:
         settings_resumed, save_select, save_wait, settings_leave, commands, command_wait, command_clear, complete };
     ContextCheck context_ = ContextCheck::setup;
     std::uint64_t paused_cycle_ = 0;
-    std::int32_t steering_carry_ = 0;
-    std::uint64_t last_flight_cycle_ = 0;
+    keyboard_test::Pilot pilot_;
+    std::optional<std::uint64_t> last_flight_frame_;
     std::array<bool, SDL_NUM_SCANCODES> held_{};
     Clock::time_point begin_, last_menu_key_{};
 
@@ -189,14 +191,17 @@ private:
             menu.selection == row ? SDL_SCANCODE_RETURN : SDL_SCANCODE_UP);
         awaiting_menu_ = true;
     }
+    void verify_loaded_pilot(const FrontendState& menu) {
+        const PilotStorage saved(profile_.read());
+        const auto name = saved.name(saved.selected());
+        require(std::string(name.begin(), name.begin() + 4) == "RPED", "Restart must load the keyboard-entered pilot name");
+        require(menu.selected_pilot == saved.selected(), "Restart must restore the saved pilot identity");
+        reloaded_ = true;
+    }
     void pilot(const FrontendState& menu) {
         changed(menu);
         if (mode_ == RouteMode::restart) {
-            const PilotStorage saved(profile_.read());
-            const auto name = saved.name(saved.selected());
-            require(std::string(name.begin(), name.begin() + 4) == "RPED", "Restart must load the keyboard-entered pilot name");
-            require(menu.selected_pilot == saved.selected(), "Restart must restore the saved pilot identity");
-            reloaded_ = true;
+            verify_loaded_pilot(menu);
             if (!awaiting_menu_) { tap(SDL_SCANCODE_RETURN); awaiting_menu_ = true; }
             return;
         }
@@ -364,55 +369,21 @@ private:
         }
         return false;
     }
-    FlightControls flight_controls(const FlightState& state, unsigned tick) const {
-        const auto snapshot = session_.presentation()->spatial;
-        if (!snapshot) { return route_.controls(state, tick); }
-        const SceneEntity* objective = nullptr;
-        double nearest = std::numeric_limits<double>::infinity();
-        for (const auto& entity : snapshot->scene.entities) {
-            if (!entity.active || entity.target == 0) { continue; }
-            const auto dx = std::int32_t(entity.x - state.view.x), dy = std::int32_t(entity.y - state.view.y);
-            const double distance = double(dx) * dx + double(dy) * dy;
-            if (distance < nearest) { nearest = distance; objective = &entity; }
-        }
-        const auto slot = state.target.slot;
-        const auto& locked = snapshot->scene.entities.at(slot);
-        const bool objective_locked = slot != 0 && locked.active && locked.target != 0;
-        if (objective_locked) { objective = &locked; }
-        if (!objective) { return {}; }
-        const auto dx = std::int32_t(objective->x - state.view.x), dy = std::int32_t(objective->y - state.view.y);
-        constexpr double full_turn = 6.283185307179586;
-        auto angle = std::atan2(double(dx), -double(dy));
-        if (angle < 0) { angle += full_turn; }
-        const auto error = std::int32_t(std::uint32_t(angle * 4294967296.0 / full_turn) - state.view.heading);
-        FlightControls controls;
-        controls.throttle = 4;
-        controls.horizontal = std::clamp(error / 0x100000 - state.yaw_rate / 0x40000, -350, 350);
-        const bool approaching = !objective_locked ||
-            std::max(std::abs(std::int64_t(dx)), std::abs(std::int64_t(dy))) > 0x10000000;
-        controls.vertical = approaching ? -350 : 0;
-        controls.cycle_target = !objective_locked && tick % 4 == 0;
-        controls.weapon = state.ammunition[2] != 0 ? WeaponSelection::hellfire :
-            state.ammunition[1] != 0 ? WeaponSelection::rockets : WeaponSelection::cannon;
-        // Allow a guided round to reach its target before spending the next one.
-        const unsigned fire_interval = controls.weapon == WeaponSelection::hellfire ? 40 : 8;
-        controls.fire = objective_locked && (controls.weapon == WeaponSelection::cannon || tick % fire_interval == 0);
-        return controls;
+    FlightControls flight_controls(const FlightState& state, unsigned tick) {
+        const auto frame = session_.presentation()->spatial;
+        return frame ? pilot_.controls(state, *frame) : route_.controls(state, tick);
     }
 
     void fly() {
         const auto cycle = session_.cpu_cycles();
-        if (cycle == last_flight_cycle_) { return; }
-        last_flight_cycle_ = cycle;
+        const auto frame = session_.presentation()->spatial;
+        const auto serial = frame ? frame->serial : cycle;
+        if (last_flight_frame_ && serial == *last_flight_frame_) { return; }
+        last_flight_frame_ = serial;
         const auto& state = session_.flight_state();
         require(flight_ticks_ < 6000, "Keyboard route must complete within its flight bound");
         auto desired = flight_controls(state, flight_ticks_++);
-        // Distribute steering requests across whole keyboard-control frames.
-        constexpr int steering_step = 350;
-        steering_carry_ += desired.horizontal;
-        const auto steering = steering_carry_ > steering_step / 2 ? steering_step :
-            steering_carry_ < -steering_step / 2 ? -steering_step : 0;
-        steering_carry_ -= steering;
+        const auto steering = desired.horizontal;
         hold(SDL_SCANCODE_RIGHT, steering > 0);
         hold(SDL_SCANCODE_LEFT, steering < 0);
         hold(SDL_SCANCODE_UP, desired.vertical < 0);
@@ -423,6 +394,9 @@ private:
         for (unsigned value = throttle_; value > desired.throttle; --value) { tap(SDL_SCANCODE_D); }
         if (unsigned(desired.weapon) != state.weapon) { tap(SDL_SCANCODE_LEFTBRACKET); }
         states_ << "{\"observation\":" << flight_ticks_ << ",\"cycle\":" << cycle << ",\"x\":" << state.view.x
+                << ",\"serial\":" << serial << ",\"remaining\":" << (frame ? unsigned(frame->scene.remaining_targets) : 0)
+                << ",\"forward_speed\":" << state.forward_speed << ",\"horizontal\":" << desired.horizontal
+                << ",\"vertical\":" << desired.vertical
                 << ",\"y\":" << state.view.y << ",\"heading\":" << state.view.heading
                 << ",\"armor\":" << state.armor << ",\"height\":" << unsigned(state.view.height)
                 << ",\"weapon\":" << unsigned(state.weapon) << ",\"target\":" << state.target.slot << "}\n";

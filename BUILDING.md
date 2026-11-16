@@ -116,6 +116,22 @@ Khronos SDK headers. VR development is deferred pending further physical
 testing. See PREVIEW.md for build options. The initial release defaults to
 SDL2 keyboard play.
 
+## Keyboard mission smoke test
+
+The `sdl_keyboard_route` diagnostic exercises pilot entry, pause/focus recovery,
+settings, a training mission, debrief and profile persistence using SDL2 key
+events. Keep its window focused. Use fresh profile/output directories for play.
+
+```sh
+./build/sdl_keyboard_route INSTALLATION PAYLOAD_DIRECTORY TEST_PROFILE PLAY_OUTPUT play --mode enhanced --renderer gpu --fps 75
+./build/sdl_keyboard_route INSTALLATION PAYLOAD_DIRECTORY TEST_PROFILE RESTART_OUTPUT restart --mode enhanced --renderer gpu --fps 75
+```
+
+Its test-only pilot samples completed flight frames, retains a live objective
+and brakes toward a stand-off range even without a target lock. Unit regressions
+cover lost-lock braking, pursuit changes and keyboard press/release scheduling.
+Keep generated profiles and traces outside the source tree.
+
 ## Source and redistribution
 
 SOURCE_MANIFEST.json lists this branch's file hashes, excluding the manifest

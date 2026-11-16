@@ -25,8 +25,8 @@
     },
     {
       "path": "BUILDING.md",
-      "bytes": 5364,
-      "sha256": "dd971b339539df64004a1d15042e2e3221c72a8f4c4e72aee890339f7aeb3fc2"
+      "bytes": 6208,
+      "sha256": "df59b3afa6c500c37da5b5c94ad84ce981edb03a8937cf7f7bc7c27eb6a999ac"
     },
     {
       "path": "CHANGELOG.md",
@@ -40,8 +40,8 @@
     },
     {
       "path": "cmake/EnhancedSdl.cmake",
-      "bytes": 7332,
-      "sha256": "f4831726928536dbe7c0fe6d9406ecb56e5d1864ccf0bb54e3f5b695961fc1f2"
+      "bytes": 7552,
+      "sha256": "ba04d2048dde1545f67c4d8d30e84216d9a8cc63aa8dadaf2f72a61b3664469c"
     },
     {
       "path": "cmake/OpenGl.cmake",
@@ -1249,6 +1249,16 @@
       "sha256": "2373dc7018beb932b06f9cf642684b9f40e2a72d962cf67d1a144e86df2e0f50"
     },
     {
+      "path": "tests/keyboard_pilot.hpp",
+      "bytes": 6563,
+      "sha256": "2d94dd19e3fb6bd161b1795b6bdffef9190500c3e05f8f0cffddcc2e147b20a0"
+    },
+    {
+      "path": "tests/keyboard_pilot_tests.cpp",
+      "bytes": 4471,
+      "sha256": "a8414b5cd0e4ebf722c39d435de271cf396926d36b5dc2d6e8d3f127721ffb9b"
+    },
+    {
       "path": "tests/keyboard_tests.cpp",
       "bytes": 5378,
       "sha256": "acf4e7e6488860fba711eb89cc34a56757ae956ae47a9342680ff139b88eb8cb"
@@ -1445,8 +1455,8 @@
     },
     {
       "path": "tests/sdl_keyboard_route.cpp",
-      "bytes": 24887,
-      "sha256": "7a659fee643b59a7addecf9ccb896cb826fc53a5d40138c5bd4e0b6f0ad7fc46"
+      "bytes": 23107,
+      "sha256": "58b09c859ba9ae19017241ea2f207b6bfb335e708381b4bc8351e921b44f5616"
     },
     {
       "path": "tests/sdl_presenter_tests.cpp",

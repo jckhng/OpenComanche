@@ -1,4 +1,9 @@
+#ifdef COMANCHECD_TEST_FAITHFUL
+#include "faithful_sdl_host.hpp"
+namespace comanchecd::host { using SdlFlightHost = FaithfulSdlHost; }
+#else
 #include "sdl_host.hpp"
+#endif
 #include "sdl_audio.hpp"
 #include "sdl_common.hpp"
 

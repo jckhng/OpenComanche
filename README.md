@@ -9,12 +9,26 @@ Other selectable missions remain experimental.
 
 ## Enhanced SDL2 development
 
+Current source builds produce dedicated players. Each executable fixes its
+mode and accepts the original installation, CD payload and native profile paths.
+
+| Executable | Role |
+|---|---|
+| `comanche_faithful` | Recovered indexed presentation, DOS keyboard routing and audio |
+| `comanche_enhanced` | Desktop GPU/CPU rendering, widescreen and configurable SDL2 controls |
+| `comanche_openxr` | Optional OpenXR headset host |
+
+Windows adds `.exe`. The faithful player links its own SDL2 host. Enhanced
+rendering, controller bindings and OpenXR runtime code have separate link
+dependencies. Simulation and audio are shared and covered by fidelity checks.
+Published RC10 archives retain their `comanche_viewer` filename.
+
 The `enhanced-sdl2` branch adds configurable gamepad response, buffered
 keyboard fire/target taps, high-DPI integer scaling, optional filtered scaling
 and Alt+Enter desktop fullscreen. Build this branch to try these features.
 
 ```sh
-./build/comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile --mode enhanced --scale integer --stick-deadzone 4000 --stick-sensitivity 150 --invert-y off
+./build/comanche_enhanced /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile --scale integer --stick-deadzone 4000 --stick-sensitivity 150 --invert-y off
 ```
 
 Enhanced desktop flight uses SDL2/OpenGL 3.2 for terrain, directional SG models,
@@ -39,7 +53,7 @@ Enhanced controller bindings and tuning/display preferences persist in
 for a saved action override.
 [Controller configuration](PREVIEW.md#controller-bindings-and-preferences)
 
-The default launch profile remains faithful. Immutable world observations feed
+The faithful player uses its dedicated indexed SDL2 host. Enhanced world observations feed
 portable GPU and CPU renderers through a full-pose, asymmetric-projection camera
 interface and separate cockpit composition. SDL2 owns device output.
 Optional OpenXR builds add an experimental SDL2/OpenGL headset host with

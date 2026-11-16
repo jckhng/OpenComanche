@@ -43,6 +43,7 @@ public:
         if (!texture) { throw sdl_error("SDL2 texture creation failed"); }
     }
 
+#ifndef COMANCHECD_INDEXED_ONLY
     std::pair<unsigned, unsigned> spatial_size() const {
         int width = 0, height = 0;
         if (SDL_GetRendererOutputSize(renderer.get(), &width, &height) != 0) {
@@ -76,6 +77,8 @@ public:
         }
         SDL_RenderPresent(renderer.get());
     }
+
+#endif
 
     void present(const CockpitImage& image) {
         if (SDL_RenderSetLogicalSize(renderer.get(), cockpit_width, cockpit_height) != 0) {
@@ -117,8 +120,10 @@ SdlPresenter::SdlPresenter(SDL_Window* window, ImageScaling scaling, DisplayPaci
     : impl_(std::make_unique<Impl>(window, scaling, pacing, aspect)) {}
 SdlPresenter::~SdlPresenter() = default;
 void SdlPresenter::present(const CockpitImage& image) { impl_->present(image); }
+#ifndef COMANCHECD_INDEXED_ONLY
 std::pair<unsigned, unsigned> SdlPresenter::spatial_size() const { return impl_->spatial_size(); }
 void SdlPresenter::present_spatial(const std::vector<std::uint32_t>& pixels, unsigned width, unsigned height) {
     impl_->present_spatial(pixels, width, height);
 }
+#endif
 }

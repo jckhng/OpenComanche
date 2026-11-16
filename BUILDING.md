@@ -24,12 +24,11 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-CMake copies SDL2.dll beside comanche_viewer.exe when using its imported SDL2
-target. The MinGW player statically links its compiler runtimes. Keep the
+CMake copies SDL2.dll beside each player when using its imported SDL2 target. The MinGW player statically links its compiler runtimes. Keep the
 shared SDL2 DLL beside the player.
 
 ```powershell
-./build/comanche_viewer.exe "D:/Games/Comanche" "E:/COMANCHE" "./profile"
+./build/comanche_faithful.exe "D:/Games/Comanche" "E:/COMANCHE" "./profile"
 ```
 
 ## Linux x86-64
@@ -44,11 +43,39 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
   -DCOMANCHECD_BUILD_DIAGNOSTICS=OFF
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
-./build/comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile
+./build/comanche_faithful /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile
 ```
 
 The runtime uses the installed SDL2 and C++ libraries. Original resources keep
 their uppercase filenames on case-sensitive filesystems.
+
+## Player targets
+
+Default desktop builds provide `comanche_faithful` and `comanche_enhanced`.
+The enhanced player selects enhanced controls/preferences on launch.
+
+```sh
+./build/comanche_enhanced /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile
+```
+
+A faithful-only build excludes enhanced sources, OpenGL discovery and OpenXR.
+
+```sh
+cmake -S . -B build-faithful -DCMAKE_BUILD_TYPE=Release \
+  -DCOMANCHECD_BUILD_ENHANCED=OFF -DCOMANCHECD_BUILD_OPENXR=OFF \
+  -DCOMANCHECD_BUILD_DIAGNOSTICS=OFF
+cmake --build build-faithful --target comanche_faithful
+```
+
+Set `COMANCHECD_BUILD_OPENXR=ON` and provide
+`COMANCHECD_OPENXR_INCLUDE_DIR` to add `comanche_openxr`. That executable
+selects headset presentation automatically. `COMANCHECD_BUILD_ENHANCED=OFF`
+can omit the enhanced desktop executable while building XR support.
+Install copies each configured player, notices and matching source.
+
+The executable determines its mode. Matching legacy `--mode`/`--xr on`
+arguments remain accepted. Cross-mode selections fail before resource loading
+or profile writes. The published RC10 executable keeps its original name.
 
 ## Tests and installation
 
@@ -77,8 +104,8 @@ Build and test artifacts belong in ignored output directories.
 
 ## Optional input and OpenXR
 
-Append `--mode enhanced` when launching to enable experimental SDL2
-GameController input and presentation options. PREVIEW.md describes stick
+Run `comanche_enhanced` to enable experimental SDL2 GameController input
+and presentation options. PREVIEW.md describes stick
 tuning, high-resolution terrain/model presentation, camera interpolation,
 integer/filtered scaling and the fullscreen shortcut. Physical
 controller, fullscreen and high-DPI qualification remains open.

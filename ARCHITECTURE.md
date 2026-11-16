@@ -22,6 +22,28 @@ Additional rendering reads those observations. `MissionAudio` produces PCM
 through a separate ordered path. Both presentation modes share the canonical
 session, simulation and audio implementation.
 
+## Player boundaries
+
+`comanche_faithful`, `comanche_enhanced` and optional `comanche_openxr` have
+separate entry points and fixed launch modes. `launch_options.cpp` rejects
+cross-mode selections before loading game resources or writing profiles.
+`session_app.cpp` shares profile validation, cold session construction and
+the established session loop.
+
+The faithful target links `FaithfulSdlHost`, the indexed-only SDL presenter,
+raw DOS key conversion and the SDL audio device. It requests indexed
+observations and reads original-format pilot/menu settings. Enhanced renderer,
+controller, host-preference and XR objects are outside this link graph.
+The enhanced player links `SdlFlightHost` and desktop preferences. XR runtime
+and platform graphics bindings belong to `comanche_openxr`.
+
+`COMANCHECD_BUILD_ENHANCED=OFF` with OpenXR disabled builds the faithful host
+independently of enhanced sources and graphics development packages. Shared
+simulation, native drawing and audio retain their DOS parity checks. The
+faithful host runs the existing keyboard/display/audio regression fixture.
+Enhanced behavior belongs in enhanced adapters or explicit enhanced policies.
+Changes to shared simulation/audio retain the faithful comparison requirements.
+
 ## Host input and preferences
 
 `host/controller_bindings.hpp` defines logical controller slots and `HostAction`

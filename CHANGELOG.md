@@ -2,6 +2,12 @@
 
 ## Enhanced SDL2 development
 
+- Split fixed-mode faithful, enhanced desktop and optional OpenXR players.
+  Give faithful a separate indexed SDL2 host and link graph. Support a
+  faithful-only build without enhanced sources or OpenGL discovery.
+- Share native session/profile startup and DOS key conversion. Validate
+  executable mode boundaries before resource loading and profile writes.
+
 - Add GPU desktop rendering through SDL2/OpenGL with automatic CPU fallback,
   persistent renderer selection and SDK-independent graphics targets.
 - Add widescreen flight with fixed vertical framing, proportional render

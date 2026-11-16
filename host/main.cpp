@@ -1,4 +1,4 @@
-#include "sdl_host.hpp"
+#include "faithful_sdl_host.hpp"
 
 #include <iostream>
 #include <limits>
@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
             tick_limit = static_cast<std::size_t>(value);
         }
         comanchecd::TrainingFlight flight(comanchecd::Installation(argv[1], argv[2]));
-        comanchecd::host::SdlFlightHost host;
+        comanchecd::host::FaithfulSdlHost host;
         std::cout << "Arrows steer | E/D throttle | Space fires | F1-F6 left display | F7-F12 right display | P pauses | R resets | Esc quits\n";
         const auto ticks = comanchecd::host::run_viewer(flight, host, tick_limit);
         std::cout << "Completed " << ticks << " training preview ticks\n";

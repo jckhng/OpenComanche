@@ -10,6 +10,11 @@ have bounded native checks. Other selectable missions remain experimental.
 
 ## Run
 
+Current source/install builds provide `comanche_faithful`,
+`comanche_enhanced` and optional `comanche_openxr`, with `.exe` on Windows.
+Choose the executable for the desired mode. It rejects cross-mode flags.
+The published RC10 archives retain the older `comanche_viewer` filename.
+
 Extract the entire archive. Windows needs its supplied SDL2.dll beside the
 executable and the Windows Universal C Runtime. Both binaries target x86-64.
 The Linux binary requires glibc 2.29 or later, libstdc++ providing
@@ -25,13 +30,13 @@ The supported COMANCHE.EXE is the 67,221-byte packed CD specimen with SHA-256
 From PowerShell in the extracted directory, use your own paths.
 
 ```powershell
-./comanche_viewer.exe "D:/Games/Comanche" "E:/COMANCHE" "./profile"
+./comanche_faithful.exe "D:/Games/Comanche" "E:/COMANCHE" "./profile"
 ```
 
 On Linux, use the corresponding directories.
 
 ```sh
-./comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile
+./comanche_faithful /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile
 ```
 
 The separate profile directory stores COMANCHE.NAM and COMANCHE.MNU. Existing
@@ -69,7 +74,7 @@ recovery. Supported commands clear the notice.
 
 ## Enhanced SDL2 input
 
-Append `--mode enhanced` to enable SDL2 GameController input. Both input profiles
+Run `comanche_enhanced` to enable SDL2 GameController input. Both players
 use the same simulation. Enhanced flight selects spatial rendering by default.
 Enhanced input adds analog
 steering and buffers short action presses until the next simulation tick.
@@ -78,7 +83,7 @@ continues normally. Pause, focus loss and context changes cancel queued edges
 and require held actions to be released before rearming.
 
 ```sh
-./comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile --mode enhanced
+./comanche_enhanced /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile
 ```
 
 | Context | Controller input | Action |
@@ -114,7 +119,7 @@ uses SDL2's GameController API. [SDL2 controller documentation](https://wiki.lib
 | `--cockpit-scale nearest\|sharp` | sharp | Flat overlay sampling or mask-aware Scale2x edges |
 | `--cockpit flat\|spatial` | spatial | Flat artwork or an authored look-around cockpit |
 
-These options require `--mode enhanced`. Keyboard steering takes precedence
+These options belong to `comanche_enhanced` and `comanche_openxr`. Keyboard steering takes precedence
 over analog steering. Controller neutral detection uses the selected deadzone.
 
 ## Controller bindings and preferences
@@ -123,11 +128,12 @@ Enhanced launches load `host-preferences.cfg` from the native profile directory.
 Command-line values override saved values and persist after successful SDL2
 host initialization. An initial enhanced launch creates the file. It stores
 bindings, steering axes, stick tuning, mapping-file location, scaling, scene
-renderer, desktop backend, aspect and interpolation. Select `--mode enhanced`
-on each launch to use it.
+renderer, desktop backend, aspect and interpolation. The enhanced and XR
+players load it from their supplied profile. Faithful launches use original-format
+pilot/settings files through the dedicated host.
 
 ```sh
-./comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile --mode enhanced --bind flight.a=target --bind flight.x=fire --steer-x rightx --steer-y righty
+./comanche_enhanced /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile --bind flight.a=target --bind flight.x=fire --steer-x rightx --steer-y righty
 ```
 
 Repeat `--bind CONTEXT.CONTROL=ACTION` to change individual controls. Contexts
@@ -282,13 +288,13 @@ Graphics requirements are queried before context/session creation.
 
 ```sh
 cmake -S source -B build -DCOMANCHECD_BUILD_OPENXR=ON -DCOMANCHECD_OPENXR_INCLUDE_DIR=/path/to/OpenXR-SDK/include
-cmake --build build --target comanche_viewer
-./build/comanche_viewer --openxr-info
-./build/comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./xr-profile --mode enhanced --xr on --xr-world-scale 8 --xr-render-scale 0.5
+cmake --build build --target comanche_openxr
+./build/comanche_openxr --openxr-info
+./build/comanche_openxr /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./xr-profile --xr-world-scale 8 --xr-render-scale 0.5
 ```
 
-`--xr-world-scale` explicitly supplies map cells per metre. The example's value
-of 8 is a trial scale. The reconstructed renderer has no qualified physical
+`--xr-world-scale` supplies map cells per metre and defaults to the existing
+playtest value of 8. It is a trial scale. The reconstructed renderer has no qualified physical
 metre conversion. `--xr-render-scale` accepts 0.1 through 1 and defaults to 0.5.
 Each eye uses the runtime's recommended aspect ratio with a 1024-pixel dimension
 cap. Both values are launch-only. Use a separate native profile when testing XR.
@@ -368,7 +374,7 @@ a C++17 compiler and SDL2 development files.
 
 ```sh
 cmake -S source -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --target comanche_viewer
+cmake --build build --target comanche_faithful
 ```
 
 When SDL2 is outside CMake's search path, add

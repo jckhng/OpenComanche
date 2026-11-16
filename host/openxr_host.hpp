@@ -11,6 +11,7 @@ public:
     ~OpenXrHost() override;
     HostInput poll() override;
     PresentationDetail presentation_detail() const override;
+    AudioOutputTransform audio_output_transform() const override;
     void present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) override;
     void present(const CockpitImage& image, const FlightState& state, const std::string& status) override;
     void set_input_context(InputContext context) override;

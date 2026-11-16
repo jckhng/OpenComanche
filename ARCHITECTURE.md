@@ -335,3 +335,21 @@ For a behavior-preserving refactor, compare fixed-input baseline and candidate
 state/clock/RNG checkpoints, indexed images, palettes, PCM and saved bytes.
 Retained DOSBox-X evidence continues to define its original qualification
 scope. Physical input/output and OpenXR checks have their own qualification.
+
+### Presentation audio gain
+
+`AudioOutputTransform` receives FM and digital fixed-point accumulators plus
+the canonical clipped stereo sample at the final device-output boundary.
+The empty callback follows the canonical output path. The enhanced host's
+`AudioVolume` callback reads one packed atomic set of gains per frame and
+returns canonical PCM directly at unity. Source gains apply before clipping
+and master gain follows clipping. This callback has no SDL or device-timing
+operations. The producer retains FM sequencing, DMA ownership and IRQ work.
+
+`run_session_app` constructs the host before the cold session so saved output
+levels cover startup audio. The callback retains shared gain state across the
+simulation producer boundary. The SDL main thread owns the paused audio page,
+preference validation and persistence. Apply publishes gains after a successful
+save. Audio and controller pages share input-release and pause acknowledgment.
+The enhanced library owns volume preferences and UI. The faithful host supplies
+an empty output callback.

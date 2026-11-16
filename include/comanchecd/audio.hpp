@@ -1,5 +1,7 @@
 #pragma once
 
+#include "comanchecd/audio_output.hpp"
+
 #include "comanchecd/gameplay.hpp"
 #include "comanchecd/timing.hpp"
 #include "comanchecd/execution_clock.hpp"
@@ -93,6 +95,7 @@ struct AudioEntry {
     // PIT input cycles times output sample rate, below IrqClock::period.
     std::uint64_t irq_phase = 0;
     std::function<void(const CpuWorkSink&)> interrupt;
+    AudioOutputTransform output_transform;
     AudioEntry() {
         frequency_high.fill(0x1f);
         echo.fill(128);

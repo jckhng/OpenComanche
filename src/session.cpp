@@ -3,10 +3,10 @@
 
 namespace comanchecd {
 GameSession::GameSession(Installation installation, PilotWriter writer, std::vector<std::uint8_t> pilots,
-                         std::vector<std::uint8_t> settings, SettingsWriter settings_writer, SessionStart start)
+                         std::vector<std::uint8_t> settings, SettingsWriter settings_writer, SessionStart start, AudioOutputTransform output)
     : installation_(std::move(installation)),
       settings_(settings.empty() ? installation_.load_menu_settings() : MenuSettings(std::move(settings))),
-      settings_writer_(std::move(settings_writer)), pilot_writer_(std::move(writer)), pilot_bytes_(std::move(pilots)),
+      settings_writer_(std::move(settings_writer)), output_transform_(std::move(output)), pilot_writer_(std::move(writer)), pilot_bytes_(std::move(pilots)),
       startup_(start == SessionStart::cold) {
     if (startup_) {
         begin_startup();
@@ -21,6 +21,7 @@ void GameSession::start_menu_audio(MusicPlaylist playlist) {
         audio_->leave_mission(std::move(playlist));
     } else {
         AudioEntry entry;
+        entry.output_transform = output_transform_;
         entry.execution = AudioExecution::scheduled;
         if (startup_) {
             entry.startup = AudioStartup::cold;

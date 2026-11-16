@@ -11,7 +11,7 @@ class GameSession {
 public:
     GameSession(Installation installation, PilotWriter writer, std::vector<std::uint8_t> pilots = {},
                 std::vector<std::uint8_t> settings = {}, SettingsWriter settings_writer = {},
-                SessionStart start = SessionStart::pilot_menu);
+                SessionStart start = SessionStart::pilot_menu, AudioOutputTransform output = {});
     void consume(PilotKey key);
     void set_presentation_detail(PresentationDetail detail);
     void queue_key_byte(std::uint8_t scan);
@@ -38,6 +38,7 @@ private:
     Installation installation_;
     MenuSettings settings_;
     SettingsWriter settings_writer_;
+    AudioOutputTransform output_transform_;
     PilotWriter pilot_writer_;
     std::vector<std::uint8_t> pilot_bytes_;
     bool startup_ = false, startup_skip_ = false, hardware_input_ = false;

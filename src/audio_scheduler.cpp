@@ -28,7 +28,7 @@ constexpr unsigned keyboard_buffer_bytes = 96;
 class AudioScheduler::Impl {
     enum class DiskWait { none, transfer };
 public:
-    Impl(unsigned rate, unsigned budget) : device_(rate), rate_(rate), budget_(budget), next_mix_(budget) {
+    Impl(unsigned rate, unsigned budget, AudioOutputTransform output) : device_(rate), rate_(rate), budget_(budget), next_mix_(budget), output_transform_(std::move(output)) {
         if (rate < milliseconds_per_second || rate > 192000 || !budget || budget > 1000000) {
             throw std::invalid_argument("Unsupported audio scheduler clock");
         }
@@ -660,8 +660,16 @@ private:
         });
         auto fm = device_.service(AudioChannel::fm, through);
         for (std::size_t i = 0; i < fm.size(); ++i) {
+            AudioOutputFrame frame;
+            if (output_transform_) {
+                for (unsigned c = 0; c < fm[i].size(); ++c) {
+                    frame.fm[c] = fm[i][c];
+                    frame.digital[c] = digital[i][c];
+                }
+            }
             for (unsigned c = 0; c < fm[i].size(); ++c) { fm[i][c] += digital[i][c]; }
-            output_.push_back(CallbackAudio::output(fm[i], {audio_gain_one, audio_gain_one}));
+            frame.mixed = CallbackAudio::output(fm[i], {audio_gain_one, audio_gain_one});
+            output_.push_back(output_transform_ ? output_transform_(frame) : frame.mixed);
         }
         rendered_ = through;
         if (through == frames_) { complete_frame(); }
@@ -828,6 +836,7 @@ private:
     std::size_t dma_cursor_ = 0;
     bool dma_active_ = false;
     std::vector<std::array<std::int16_t, 2>> output_;
+    AudioOutputTransform output_transform_;
     std::uint64_t core_end_ = no_deadline;
     CpuAccounting accounting_;
     unsigned instruction_depth_ = 0;
@@ -844,7 +853,8 @@ private:
     bool dsp_reset_held_ = false, dsp_reset_ready_ = false;
 };
 
-AudioScheduler::AudioScheduler(unsigned rate, unsigned budget) : impl_(std::make_unique<Impl>(rate, budget)) {}
+AudioScheduler::AudioScheduler(unsigned output_rate, unsigned cycles_per_ms, AudioOutputTransform output)
+    : impl_(std::make_unique<Impl>(output_rate, cycles_per_ms, std::move(output))) {}
 AudioScheduler::~AudioScheduler() = default;
 void AudioScheduler::run_cycles(std::uint64_t cycles) { impl_->run(cycles); }
 void AudioScheduler::execute(CpuOperation operation, unsigned count) { impl_->execute(operation, count); }

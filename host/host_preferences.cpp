@@ -112,6 +112,7 @@ SdlHostOptions parse_preferences(const std::string& text, const std::filesystem:
 
 std::string serialize(const SdlHostOptions& options) {
     if (options.input != InputProfile::enhanced) { throw std::invalid_argument("Host preferences require enhanced mode"); }
+    validate_volume(options.volume);
     validate_frame_limit(options.frame_limit);
     validate_window_placement(options.window);
     if (options.pacing != DisplayPacing::vertical_sync && options.pacing != DisplayPacing::immediate) {
@@ -148,6 +149,9 @@ std::string serialize(const SdlHostOptions& options) {
         output << "calibration." << axis_name(static_cast<ControllerAxis>(axis + 1)) << '='
             << axis_calibration_name(options.calibration.axes[axis]) << '\n';
     }
+    output << "volume-master=" << options.volume.master << '\n'
+        << "volume-music=" << options.volume.music << '\n'
+        << "volume-effects=" << options.volume.effects << '\n';
     switch (options.renderer) {
     case DesktopRenderer::automatic: output << "renderer=auto\n"; break;
     case DesktopRenderer::gpu: output << "renderer=gpu\n"; break;

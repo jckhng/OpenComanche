@@ -65,64 +65,119 @@ int main() {
             key(SDL_KEYUP, SDL_SCANCODE_SPACE);
             neutral(host.poll());
 
-            for (const auto context : {InputContext::menu, InputContext::name_entry, InputContext::flight}) {
-                host.set_input_context(context);
-                host.set_playback(Playback::running);
-                require(tap(host, SDL_SCANCODE_F3, KMOD_CTRL).pause == PauseAction::pause,
-                        "Controller setup must pause every native input context");
+            for (const auto shortcut : {SDL_SCANCODE_F3, SDL_SCANCODE_F4}) {
+                for (const auto context :
+                     {InputContext::menu, InputContext::name_entry, InputContext::flight}) {
+                    host.set_input_context(context);
+                    host.set_playback(Playback::running);
+                    require(tap(host, shortcut, KMOD_CTRL).pause == PauseAction::pause,
+                            "Controller setup must pause every native input context");
+                    host.set_playback(Playback::paused);
+                    input = tap(host, SDL_SCANCODE_ESCAPE);
+                    neutral(input);
+                    require(input.pause == PauseAction::resume,
+                            "Name entry must retain its host-owned resume route");
+                }
                 host.set_playback(Playback::paused);
-                input = tap(host, SDL_SCANCODE_ESCAPE);
-                neutral(input);
-                require(input.pause == PauseAction::resume,
-                        "Name entry must retain its host-owned resume route");
-            }
-            host.set_playback(Playback::paused);
-            tap(host, SDL_SCANCODE_F3, KMOD_CTRL);
-            host.set_playback(Playback::paused);
-            require(tap(host, SDL_SCANCODE_ESCAPE).pause == PauseAction::pause,
-                    "An already paused session must retain pause on editor close");
+                tap(host, shortcut, KMOD_CTRL);
+                host.set_playback(Playback::paused);
+                require(tap(host, SDL_SCANCODE_ESCAPE).pause == PauseAction::pause,
+                        "An already paused session must retain pause on editor close");
 
-            host.set_playback(Playback::running);
-            tap(host, SDL_SCANCODE_F3, KMOD_CTRL);
-            host.set_playback(Playback::paused);
-            SDL_Event focus{};
-            focus.type = SDL_WINDOWEVENT;
-            focus.window.event = SDL_WINDOWEVENT_FOCUS_LOST;
-            SDL_PushEvent(&focus);
-            host.poll();
-            focus.window.event = SDL_WINDOWEVENT_FOCUS_GAINED;
-            SDL_PushEvent(&focus);
-            host.poll();
-            require(tap(host, SDL_SCANCODE_ESCAPE).pause == PauseAction::pause,
-                    "Focus loss during editing must preserve pause after closing");
-        }
-        unsigned attempts = 0;
-        SdlHostOptions saved;
-        SdlFlightHost storage(options, [&](const SdlHostOptions& candidate) {
-            saved = candidate;
-            if (++attempts == 1) {
-                throw std::runtime_error("Synthetic write failure");
+                host.set_playback(Playback::running);
+                tap(host, shortcut, KMOD_CTRL);
+                host.set_playback(Playback::paused);
+                SDL_Event focus{};
+                focus.type = SDL_WINDOWEVENT;
+                focus.window.event = SDL_WINDOWEVENT_FOCUS_LOST;
+                SDL_PushEvent(&focus);
+                host.poll();
+                focus.window.event = SDL_WINDOWEVENT_FOCUS_GAINED;
+                SDL_PushEvent(&focus);
+                host.poll();
+                require(tap(host, SDL_SCANCODE_ESCAPE).pause == PauseAction::pause,
+                        "Focus loss during editing must preserve pause after closing");
             }
-        });
-        storage.poll();
-        storage.set_playback(Playback::running);
-        tap(storage, SDL_SCANCODE_F3, KMOD_CTRL);
-        storage.set_playback(Playback::paused);
-        for (unsigned row = 0; row < 5; ++row) {
-            neutral(tap(storage, SDL_SCANCODE_DOWN));
         }
-        neutral(tap(storage, SDL_SCANCODE_RIGHT));
-        for (unsigned row = 0; row < 5; ++row) {
-            neutral(tap(storage, SDL_SCANCODE_DOWN));
+        {
+            unsigned attempts = 0;
+            SdlHostOptions saved;
+            SdlFlightHost storage(options, [&](const SdlHostOptions& candidate) {
+                saved = candidate;
+                if (++attempts == 1) {
+                    throw std::runtime_error("Synthetic write failure");
+                }
+            });
+            storage.poll();
+            storage.set_playback(Playback::running);
+            tap(storage, SDL_SCANCODE_F3, KMOD_CTRL);
+            storage.set_playback(Playback::paused);
+            for (unsigned row = 0; row < 5; ++row) {
+                neutral(tap(storage, SDL_SCANCODE_DOWN));
+            }
+            neutral(tap(storage, SDL_SCANCODE_RIGHT));
+            for (unsigned row = 0; row < 5; ++row) {
+                neutral(tap(storage, SDL_SCANCODE_DOWN));
+            }
+            neutral(tap(storage, SDL_SCANCODE_RETURN));
+            require(attempts == 1 && saved.controller.deadzone == options.controller.deadzone + 512,
+                    "Apply must offer one complete staged controller configuration to persistence");
+            neutral(tap(storage, SDL_SCANCODE_RETURN));
+            require(attempts == 2 && saved.controller.deadzone == options.controller.deadzone + 512,
+                    "A failed save must retain staged changes for explicit retry");
+            require(tap(storage, SDL_SCANCODE_F3, KMOD_CTRL).pause == PauseAction::resume,
+                    "The editor shortcut must also close its active screen");
         }
-        neutral(tap(storage, SDL_SCANCODE_RETURN));
-        require(attempts == 1 && saved.controller.deadzone == options.controller.deadzone + 512,
-                "Apply must offer one complete staged controller configuration to persistence");
-        neutral(tap(storage, SDL_SCANCODE_RETURN));
-        require(attempts == 2 && saved.controller.deadzone == options.controller.deadzone + 512,
-                "A failed save must retain staged changes for explicit retry");
-        require(tap(storage, SDL_SCANCODE_F3, KMOD_CTRL).pause == PauseAction::resume,
-                "The editor shortcut must also close its active screen");
+        SdlHostOptions audio_saved;
+        {
+            unsigned audio_attempts = 0;
+            SdlFlightHost audio(options, [&](const SdlHostOptions& candidate) {
+                audio_saved = candidate;
+                if (++audio_attempts == 1) {
+                    throw std::runtime_error("Synthetic audio save failure");
+                }
+            });
+            audio.poll();
+            const comanchecd::AudioOutputFrame frame{{8192000, 8192000}, {8192000, 8192000}, {2000, 2000}};
+            const auto output = audio.audio_output_transform();
+            require(output(frame)[0] == 2000,
+                    "The enhanced host must expose unity startup output by default");
+            audio.set_playback(Playback::running);
+            require(tap(audio, SDL_SCANCODE_F4, KMOD_CTRL).pause == PauseAction::pause,
+                    "Audio setup must request native pause");
+            audio.set_playback(Playback::paused);
+            neutral(tap(audio, SDL_SCANCODE_LEFT));
+            neutral(tap(audio, SDL_SCANCODE_DOWN));
+            neutral(tap(audio, SDL_SCANCODE_DELETE));
+            neutral(tap(audio, SDL_SCANCODE_DOWN));
+            neutral(tap(audio, SDL_SCANCODE_LEFT));
+            neutral(tap(audio, SDL_SCANCODE_DOWN));
+            require(output(frame)[0] == 2000, "Staged volume must wait for successful Apply");
+            neutral(tap(audio, SDL_SCANCODE_RETURN));
+            require(audio_attempts == 1 && output(frame)[0] == 2000,
+                    "A failed save must preserve live gains");
+            neutral(tap(audio, SDL_SCANCODE_RETURN));
+            require(audio_attempts == 2 && audio_saved.volume.master == 95 && audio_saved.volume.music == 0 &&
+                        audio_saved.volume.effects == 95 && output(frame)[0] == 902,
+                    "Apply retry must atomically publish all gains after saving");
+            require(tap(audio, SDL_SCANCODE_ESCAPE).pause == PauseAction::resume,
+                    "Closing audio setup must restore a running session");
+            audio.set_playback(Playback::running);
+            tap(audio, SDL_SCANCODE_F4, KMOD_CTRL);
+            audio.set_playback(Playback::paused);
+            tap(audio, SDL_SCANCODE_DELETE);
+            tap(audio, SDL_SCANCODE_ESCAPE);
+            require(audio_attempts == 2 && output(frame)[0] == 902,
+                    "Closing without Apply must discard staged edits");
+        }
+        {
+            const comanchecd::AudioOutputFrame frame{{8192000, 8192000}, {8192000, 8192000}, {2000, 2000}};
+            audio_saved.window = {};
+            SdlFlightHost restarted(audio_saved, [](const auto&) {});
+            restarted.poll();
+            require(restarted.audio_output_transform()(frame)[0] == 902,
+                    "Restored preferences must take effect before session startup");
+        }
         std::cout << "Controller UI pause handoff, input ownership and save retry passed\n";
         return 0;
     } catch (const std::exception& error) {

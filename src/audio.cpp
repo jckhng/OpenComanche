@@ -26,7 +26,7 @@ std::uint32_t engine_rate(std::uint8_t power) {
 
 MissionAudio::Impl::Impl(AudioTables tables, const std::vector<GameplayPayload>& payloads, AudioEntry entry,
      std::vector<SampleRequest> requests, AudioTracePolicy trace_policy)
-    : tables_(std::move(tables)), device_(sample_rate), irq_clock_(entry.irq_phase),
+    : tables_(std::move(tables)), device_(sample_rate, entry.output_transform), irq_clock_(entry.irq_phase),
       trace_policy_(trace_policy), requests_(std::move(requests)) {
     if (payloads.size() < 17) {
         throw std::invalid_argument("Missing mission audio payloads");
@@ -61,7 +61,7 @@ MissionAudio::Impl::Impl(AudioTables tables, const std::vector<GameplayPayload>&
 }
 
 MissionAudio::Impl::Impl(AudioTables tables, MusicPlaylist playlist, AudioEntry entry, AudioTracePolicy trace_policy)
-    : tables_(std::move(tables)), device_(sample_rate),
+    : tables_(std::move(tables)), device_(sample_rate, entry.output_transform),
       irq_clock_(entry.irq_phase), trace_policy_(trace_policy) {
     music_ = std::move(playlist.introduction);
     next_music_ = std::move(playlist.repeat);
@@ -401,7 +401,7 @@ void MissionAudio::Impl::initialize(const AudioEntry& entry) {
         if (entry.irq_phase != 0 || entry.opl_delay_iterations == 0 || entry.opl_delay_iterations > 1000000) {
             throw std::invalid_argument("Unsupported scheduled audio entry timing");
         }
-        scheduler_ = std::make_unique<AudioScheduler>(sample_rate);
+        scheduler_ = std::make_unique<AudioScheduler>(sample_rate, dos_cycles_per_second / 1000, entry.output_transform);
         scheduler_->set_cpu_observer(entry.cpu_observer);
         scheduler_->enable_interrupts(false);
         scheduler_->set_interrupt_delay(838);

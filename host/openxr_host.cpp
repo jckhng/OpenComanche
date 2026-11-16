@@ -190,6 +190,7 @@ private:
 OpenXrHost::OpenXrHost(SdlHostOptions options, OpenXrOptions xr) : impl_(std::make_unique<Impl>(options, xr)) {}
 OpenXrHost::~OpenXrHost() = default;
 HostInput OpenXrHost::poll() { return impl_->poll(); }
+AudioOutputTransform OpenXrHost::audio_output_transform() const { return impl_->desktop_.audio_output_transform(); }
 PresentationDetail OpenXrHost::presentation_detail() const { return impl_->desktop_.presentation_detail(); }
 void OpenXrHost::present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) { impl_->present(std::move(frame), status); }
 void OpenXrHost::present(const CockpitImage& image, const FlightState& state, const std::string& status) {

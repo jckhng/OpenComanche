@@ -17,11 +17,11 @@ void run_session_app(const std::filesystem::path& installation, const std::files
     }
     const PilotProfile profile(profile_path);
     const SettingsProfile settings(profile_path);
+    auto host = create_host();
     GameSession session(
         Installation(installation, payload), [&](const auto& record) { profile.write(record); },
         profile.read(), settings.read(), [&](const auto& record) { settings.write(record); },
-        SessionStart::cold);
-    auto host = create_host();
+        SessionStart::cold, host->audio_output_transform());
     std::cout << "Arrows/Enter navigate | Tab/Enter acquires targets | Space fires | E/D throttle | P pauses "
                  "| Alt-A ends mission | Esc leaves debrief\n";
     run(session, *host);

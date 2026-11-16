@@ -4,7 +4,6 @@
 #include "host_ui.hpp"
 
 namespace comanchecd::host {
-enum class ControllerMenuCommand { up, down, left, right, accept, back, clear, close };
 
 class ControllerMenu {
   public:

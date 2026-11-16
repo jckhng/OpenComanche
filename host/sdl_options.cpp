@@ -5,7 +5,7 @@ namespace comanchecd::host {
 namespace {
 int integer_option(const std::string& value) {
     if (value.empty() || value.size() > 5 || value.find_first_not_of("0123456789") != std::string::npos) {
-        throw std::invalid_argument("Controller tuning values must be decimal integers");
+        throw std::invalid_argument("Numeric host options must be decimal integers");
     }
     return std::stoi(value);
 }
@@ -36,6 +36,12 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments, SdlH
             options.controller.sensitivity = integer_option(value);
         } else if (option == "--invert-y" && (value == "on" || value == "off")) {
             options.controller.pitch = value == "on" ? PitchDirection::inverted : PitchDirection::normal;
+        } else if (option == "--volume-master") {
+            options.volume.master = integer_option(value);
+        } else if (option == "--volume-music") {
+            options.volume.music = integer_option(value);
+        } else if (option == "--volume-effects") {
+            options.volume.effects = integer_option(value);
         } else if (option == "--axis-calibration") {
             set_axis_calibration(options.calibration, value);
         } else if (option == "--button-prompts" && (value == "auto" || value == "on" || value == "off")) {
@@ -71,13 +77,14 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments, SdlH
             throw std::invalid_argument("Unknown host option or unsupported value (" + option + ")");
         }
     }
+    validate_volume(options.volume);
     validate_frame_limit(options.frame_limit);
     validate_window_placement(options.window);
     validate_controller_calibration(options.calibration);
     validate_controller_tuning(options.controller);
     validate_controller_bindings(options.bindings);
     if (enhanced_options && options.input != InputProfile::enhanced) {
-        throw std::invalid_argument("Controller and presentation options require --mode enhanced");
+        throw std::invalid_argument("Enhanced host options require --mode enhanced");
     }
     return options;
 }

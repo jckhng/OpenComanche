@@ -18,9 +18,10 @@ int main(int argc, char** argv) {
             " [--fps auto|unlimited|15..1000] [--vsync on|off]"
             " [--window-size WIDTHxHEIGHT] [--window-position X,Y]"
             " [--window-mode windowed|maximized|fullscreen]"
-            " [--axis-calibration AXIS=MINIMUM,CENTER,MAXIMUM] [--button-prompts auto|on|off]";
+            " [--axis-calibration AXIS=MINIMUM,CENTER,MAXIMUM] [--button-prompts auto|on|off]"
+            " [--volume-master 0..100] [--volume-music 0..100] [--volume-effects 0..100]";
         if (argc == 2 && std::string(argv[1]) == "--help") {
-            std::cout << usage << "\nEnhanced SDL2 desktop controls and rendering.\n";
+            std::cout << usage << "\nEnhanced SDL2 desktop controls and rendering.\nCtrl+F3 controller settings | Ctrl+F4 audio settings.\n";
             return 0;
         }
         if (argc < 4) { throw std::invalid_argument(usage); }

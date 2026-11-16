@@ -136,6 +136,33 @@ For example, append `--fps 120 --vsync off --window-size 1600x900` to the
 enhanced launch command. Auto uses 60 Hz when SDL cannot report a refresh rate.
 The OpenXR host retains runtime-controlled headset pacing and an uncapped mirror.
 
+## Enhanced audio volume
+
+Press **Ctrl+F4** in `comanche_enhanced` to open audio settings. The session
+pauses while the page is open. Select Master, Music or Effects / Voice with
+Up/Down or the D-pad, then adjust with Left/Right in 5% steps. Delete or X mutes
+the selected channel. Choose Apply and Save, then close with Escape/B or
+Ctrl+F4 to listen. Closing without Apply discards staged changes. A session
+that was already paused stays paused. Focus loss also retains pause.
+
+All three levels default to 100% and persist per profile. Music controls the
+FM score. Effects / Voice controls sampled audio, including weapons, rotor,
+radio and cinematics. The original in-game music/effects options apply before
+these host gains. Master attenuates the final clipped mix. Source sliders act
+before clipping. Zero mutes output while the native devices keep running.
+
+| Enhanced option | Default | Meaning |
+|---|---|---|
+| `--volume-master 0..100` | 100 | Overall output level |
+| `--volume-music 0..100` | 100 | FM music level |
+| `--volume-effects 0..100` | 100 | Sampled effects and voice level |
+
+For example, append `--volume-master 75 --volume-music 40` to the enhanced
+launch command. Saved levels also apply during startup. At 100% the output
+hook returns the native mixed PCM exactly. Faithful uses its dedicated host
+and original audio settings. The optional OpenXR host shares the enhanced
+volume preferences and command-line levels.
+
 ## Controller bindings and preferences
 
 Enhanced launches load `host-preferences.cfg` from the native profile directory.
@@ -144,7 +171,7 @@ initialization and debounces display changes for 250 ms, flushing on close.
 The XR player saves its launch preferences after initialization. An initial
 enhanced launch creates the file. It stores bindings, steering axes, stick
 tuning, mapping-file location, scaling, scene renderer, desktop backend, aspect,
-interpolation, FPS/vsync and normal window bounds/fullscreen/maximized state. The enhanced and XR
+interpolation, audio volumes, FPS/vsync and normal window bounds/fullscreen/maximized state. The enhanced and XR
 players load it from their supplied profile. Faithful launches use original-format
 pilot/settings files through the dedicated host.
 

@@ -126,6 +126,7 @@ progress/settings in the native profile directory.
 | Enhanced | Ctrl+F1 | Cycle FPS limit |
 | Enhanced | Ctrl+F2 | Toggle vsync request |
 | Enhanced | Ctrl+F3 | Controller bindings, calibration and prompts |
+| Enhanced | Ctrl+F4 | Master, music and effects volume |
 | Debrief | Escape | Return to operations |
 
 Focus loss pauses flight and releases held controls. Resume with P after

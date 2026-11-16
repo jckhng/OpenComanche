@@ -51,7 +51,7 @@ int main() {
             "--steer-x", "rightx", "--steer-y", "righty", "--stick-deadzone", "4000",
             "--stick-sensitivity", "150", "--invert-y", "on", "--scale", "linear",
             "--scene-renderer", "native", "--interpolation", "off", "--cockpit-scale", "nearest", "--cockpit", "flat", "--renderer", "cpu", "--aspect", "original", "--axis-calibration", "leftx=-28000,1700,30000",
-            "--button-prompts", "on"});
+            "--button-prompts", "on", "--volume-master", "75", "--volume-music", "40", "--volume-effects", "90"});
         preferences.write(configured);
         const auto path = directory / "host-preferences.cfg";
         const auto original = text(path);
@@ -66,6 +66,10 @@ int main() {
                 loaded.scaling == ImageScaling::linear && loaded.scene_rendering == SceneRendering::native &&
                 loaded.interpolation == CameraInterpolation::disabled && loaded.cockpit_scaling == CockpitScaling::nearest && loaded.cockpit == CockpitPresentation::flat,
                 "Restart must restore bindings, axes, tuning and presentation preferences");
+        require(loaded.volume.master == 75 && loaded.volume.music == 40 && loaded.volume.effects == 90 &&
+                    restarted.resolve({"--mode", "enhanced", "--volume-music", "0"}).volume.master == 75 &&
+                    restarted.resolve({"--mode", "enhanced", "--volume-music", "0"}).volume.music == 0,
+                "Independent audio gains must survive restart and merge explicit CLI overrides");
         require(loaded.calibration.axes[0].minimum == -28000 && loaded.calibration.axes[0].center == 1700 &&
                 loaded.calibration.axes[0].maximum == 30000 && loaded.prompts == ButtonPrompts::enabled,
                 "Calibration and button prompt preferences must survive restart");
@@ -85,6 +89,8 @@ int main() {
                 "An unchanged preference launch must preserve its existing backup");
 
         for (const auto& arguments : std::vector<std::vector<std::string>>{
+                {"--volume-master", "50"}, {"--mode", "enhanced", "--volume-music", "101"},
+                {"--mode", "enhanced", "--volume-effects", "-1"}, {"--mode", "enhanced", "--volume-master", "1.5"},
                 {"--bind", "flight.a=fire"}, {"--mode", "enhanced", "--bind", "a=fire"},
                 {"--mode", "enhanced", "--bind", "flight.a=accept"}, {"--mode", "enhanced", "--bind", "menu.a=fire"},
                 {"--mode", "enhanced", "--bind", "menu.lefttrigger=accept"}, {"--mode", "enhanced", "--bind", "flight.missing=fire"},
@@ -105,7 +111,8 @@ int main() {
         }
         write(path, "version=1\nscale=integer\n");
         const auto upgraded = preferences.read();
-        require(upgraded.renderer == DesktopRenderer::automatic && upgraded.aspect == ViewAspect::profile_default,
+        require(upgraded.volume.master == maximum_volume && upgraded.volume.music == maximum_volume &&
+                upgraded.volume.effects == maximum_volume && upgraded.renderer == DesktopRenderer::automatic && upgraded.aspect == ViewAspect::profile_default,
                 "Older preference files must acquire desktop defaults without losing existing controls");
         require(preferences.resolve({"--mode", "enhanced", "--renderer", "gpu", "--aspect", "widescreen"}).renderer == DesktopRenderer::gpu,
                 "Explicit renderer and aspect must override older preferences");

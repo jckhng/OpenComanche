@@ -8,6 +8,7 @@
 #include "spatial_cockpit.hpp"
 #include "display_settings.hpp"
 #include "controller_configuration.hpp"
+#include "audio_volume.hpp"
 #include <functional>
 
 namespace comanchecd::host {
@@ -32,6 +33,7 @@ struct SdlHostOptions {
     WindowPlacement window;
     ControllerCalibration calibration;
     ButtonPrompts prompts = ButtonPrompts::automatic;
+    VolumeLevels volume;
 };
 
 class SdlFlightHost final : public FlightHost {
@@ -41,6 +43,7 @@ public:
     ~SdlFlightHost() override;
     HostInput poll() override;
     PresentationDetail presentation_detail() const override;
+    AudioOutputTransform audio_output_transform() const override;
     void present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) override;
     void set_input_context(InputContext context) override;
     void present(const CockpitImage& image, const FlightState& state, const std::string& status) override;

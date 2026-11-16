@@ -5,6 +5,8 @@
 
 namespace comanchecd::host {
 enum class UiColor : std::uint8_t { background, panel, text, accent, warning };
+
+enum class ControllerMenuCommand { up, down, left, right, accept, back, clear, close };
 CockpitImage ui_image();
 void ui_text(CockpitImage& image, int x, int y, const std::string& text, UiColor color = UiColor::text);
 void ui_rectangle(CockpitImage& image, int x, int y, unsigned width, unsigned height, UiColor color);

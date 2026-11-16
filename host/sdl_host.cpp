@@ -5,6 +5,7 @@
 #include "sdl_keyboard.hpp"
 #include "sdl_display.hpp"
 #include "controller_menu.hpp"
+#include "audio_menu.hpp"
 #include "spatial_renderer.hpp"
 #ifdef COMANCHECD_OPENGL_DESKTOP
 #include "gl_desktop_presenter.hpp"
@@ -17,6 +18,7 @@
 namespace comanchecd::host {
 namespace {
 constexpr double mouse_look_radians_per_pixel = 0.003;
+enum class SettingsPage { controller, audio };
 constexpr auto preferences_debounce = std::chrono::milliseconds(250);
 constexpr auto preferences_retry = std::chrono::seconds(2);
 constexpr std::array<unsigned, 9> frame_rate_presets{30, 60, 75, 90, 120, 144, 165, 240, 360};
@@ -30,6 +32,7 @@ public:
     Impl(SdlHostOptions options, PreferencesWriter save) : scene_rendering(options.scene_rendering),
         interpolation(options.interpolation), cockpit_scaling(options.cockpit_scaling), cockpit(options.cockpit),
         profile(options.input), settings(options), save_preferences(std::move(save)) {
+        audio_volume.set(options.volume);
         validate_frame_limit(options.frame_limit);
         validate_window_placement(options.window);
         if (options.pacing != DisplayPacing::vertical_sync && options.pacing != DisplayPacing::immediate) {
@@ -42,6 +45,8 @@ public:
         if (!enhanced && ((options.scaling != ImageScaling::profile_default && options.scaling != ImageScaling::nearest) ||
                 options.pacing != DisplayPacing::vertical_sync || options.renderer != DesktopRenderer::automatic ||
                 options.frame_limit.mode != FrameLimitMode::profile_default || options.window.width != 0 ||
+                options.volume.master != maximum_volume || options.volume.music != maximum_volume ||
+                options.volume.effects != maximum_volume ||
                 options.window.position || options.window.mode != WindowMode::windowed ||
                 (options.aspect != ViewAspect::profile_default && options.aspect != ViewAspect::original) ||
                 options.controller.deadzone != ControllerTuning{}.deadzone ||
@@ -89,7 +94,7 @@ public:
 
 private:
     bool look_event(const SDL_Event& event) {
-        if (controller_menu || profile != InputProfile::enhanced || external_focus != HostFocus::active || !look_available ||
+        if (menu_active() || profile != InputProfile::enhanced || external_focus != HostFocus::active || !look_available ||
                 (context != InputContext::flight && context != InputContext::training)) { return false; }
         if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_MIDDLE) {
             look.reset();
@@ -115,32 +120,36 @@ private:
         return {settings.controller, settings.bindings, settings.calibration, settings.prompts};
     }
 
-    void open_controller_menu(HostInput& input) {
+    void open_menu(HostInput& input, SettingsPage page) {
         resume_after_menu = input.pause == PauseAction::toggle ? playback == Playback::paused : playback == Playback::running;
         resume_after_menu = resume_after_menu && input.pause != PauseAction::pause;
         menu_keys = held;
         release_input(input);
-        controller_menu = std::make_unique<ControllerMenu>(controller_settings());
-        controller_menu->update(controller->snapshot(), std::chrono::duration<double>(Clock::now() - epoch).count());
+        if (page == SettingsPage::controller) {
+            controller_menu = std::make_unique<ControllerMenu>(controller_settings());
+            controller_menu->update(controller->snapshot(), std::chrono::duration<double>(Clock::now() - epoch).count());
+        } else {
+            audio_menu = std::make_unique<AudioMenu>(settings.volume);
+        }
         menu_pause_acknowledged = false;
         menu_pause_requested = true;
         audio.set_playback(Playback::paused);
     }
 
-    bool controller_menu_event(const SDL_Event& event, HostInput& input) {
-        if (!controller_menu && save_preferences && controller && external_focus == HostFocus::active &&
-                event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_F3 &&
+    bool settings_event(const SDL_Event& event, HostInput& input) {
+        if (!menu_active() && save_preferences && controller && external_focus == HostFocus::active &&
+                event.type == SDL_KEYDOWN && (event.key.keysym.scancode == SDL_SCANCODE_F3 || event.key.keysym.scancode == SDL_SCANCODE_F4) &&
                 (event.key.keysym.mod & KMOD_CTRL) != 0 && (event.key.keysym.mod & KMOD_ALT) == 0 &&
-                event.key.repeat == 0 && !held[SDL_SCANCODE_F3]) {
-            open_controller_menu(input);
-            menu_keys[SDL_SCANCODE_F3] = true;
+                event.key.repeat == 0 && !held[event.key.keysym.scancode]) {
+            open_menu(input, event.key.keysym.scancode == SDL_SCANCODE_F3 ? SettingsPage::controller : SettingsPage::audio);
+            menu_keys[event.key.keysym.scancode] = true;
             return true;
         }
-        if (!controller_menu) { return false; }
+        if (!menu_active()) { return false; }
         if (event.type == SDL_WINDOWEVENT && (event.window.event == SDL_WINDOWEVENT_FOCUS_LOST ||
                 event.window.event == SDL_WINDOWEVENT_MINIMIZED)) {
             resume_after_menu = false;
-            controller_menu->suspend();
+            if (controller_menu) { controller_menu->suspend(); }
         }
         if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
             const auto key = event.key.keysym.scancode;
@@ -149,21 +158,22 @@ private:
             if (event.type == SDL_KEYUP) { presentation_held[key] = false; return true; }
             if (external_focus == HostFocus::inactive || !window_focused) { return true; }
             controller_input = false;
-            if (key == SDL_SCANCODE_F3 && (event.key.keysym.mod & KMOD_CTRL) != 0 && event.key.repeat == 0) {
-                controller_menu->command(ControllerMenuCommand::close);
+            if (((key == SDL_SCANCODE_F3 && controller_menu) || (key == SDL_SCANCODE_F4 && audio_menu)) &&
+                    (event.key.keysym.mod & KMOD_CTRL) != 0 && event.key.repeat == 0) {
+                menu_command(ControllerMenuCommand::close);
                 return true;
             }
-            if (controller_menu->capturing() && key != SDL_SCANCODE_ESCAPE) { return true; }
+            if (controller_menu && controller_menu->capturing() && key != SDL_SCANCODE_ESCAPE) { return true; }
             if (event.key.repeat != 0 && key != SDL_SCANCODE_UP && key != SDL_SCANCODE_DOWN &&
                     key != SDL_SCANCODE_LEFT && key != SDL_SCANCODE_RIGHT) { return true; }
             switch (key) {
-            case SDL_SCANCODE_UP: controller_menu->command(ControllerMenuCommand::up); break;
-            case SDL_SCANCODE_DOWN: controller_menu->command(ControllerMenuCommand::down); break;
-            case SDL_SCANCODE_LEFT: controller_menu->command(ControllerMenuCommand::left); break;
-            case SDL_SCANCODE_RIGHT: controller_menu->command(ControllerMenuCommand::right); break;
-            case SDL_SCANCODE_RETURN: controller_menu->command(ControllerMenuCommand::accept); break;
-            case SDL_SCANCODE_ESCAPE: controller_menu->command(ControllerMenuCommand::back); break;
-            case SDL_SCANCODE_DELETE: controller_menu->command(ControllerMenuCommand::clear); break;
+            case SDL_SCANCODE_UP: menu_command(ControllerMenuCommand::up); break;
+            case SDL_SCANCODE_DOWN: menu_command(ControllerMenuCommand::down); break;
+            case SDL_SCANCODE_LEFT: menu_command(ControllerMenuCommand::left); break;
+            case SDL_SCANCODE_RIGHT: menu_command(ControllerMenuCommand::right); break;
+            case SDL_SCANCODE_RETURN: menu_command(ControllerMenuCommand::accept); break;
+            case SDL_SCANCODE_ESCAPE: menu_command(ControllerMenuCommand::back); break;
+            case SDL_SCANCODE_DELETE: menu_command(ControllerMenuCommand::clear); break;
             default: break;
             }
             return true;
@@ -174,15 +184,15 @@ private:
                     event.cbutton.which != controller->snapshot().instance ||
                     event.cbutton.button >= controller_button_count) { return true; }
             controller_input = true;
-            if (controller_menu->capturing()) { controller_menu->capture(event.cbutton.button); return true; }
+            if (controller_menu && controller_menu->capturing()) { controller_menu->capture(event.cbutton.button); return true; }
             switch (event.cbutton.button) {
-            case SDL_CONTROLLER_BUTTON_DPAD_UP: controller_menu->command(ControllerMenuCommand::up); break;
-            case SDL_CONTROLLER_BUTTON_DPAD_DOWN: controller_menu->command(ControllerMenuCommand::down); break;
-            case SDL_CONTROLLER_BUTTON_DPAD_LEFT: controller_menu->command(ControllerMenuCommand::left); break;
-            case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: controller_menu->command(ControllerMenuCommand::right); break;
-            case SDL_CONTROLLER_BUTTON_A: controller_menu->command(ControllerMenuCommand::accept); break;
-            case SDL_CONTROLLER_BUTTON_B: controller_menu->command(ControllerMenuCommand::back); break;
-            case SDL_CONTROLLER_BUTTON_X: controller_menu->command(ControllerMenuCommand::clear); break;
+            case SDL_CONTROLLER_BUTTON_DPAD_UP: menu_command(ControllerMenuCommand::up); break;
+            case SDL_CONTROLLER_BUTTON_DPAD_DOWN: menu_command(ControllerMenuCommand::down); break;
+            case SDL_CONTROLLER_BUTTON_DPAD_LEFT: menu_command(ControllerMenuCommand::left); break;
+            case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: menu_command(ControllerMenuCommand::right); break;
+            case SDL_CONTROLLER_BUTTON_A: menu_command(ControllerMenuCommand::accept); break;
+            case SDL_CONTROLLER_BUTTON_B: menu_command(ControllerMenuCommand::back); break;
+            case SDL_CONTROLLER_BUTTON_X: menu_command(ControllerMenuCommand::clear); break;
             default: break;
             }
             return true;
@@ -191,30 +201,49 @@ private:
             event.type == SDL_MOUSEBUTTONUP || event.type == SDL_MOUSEWHEEL;
     }
 
-    void update_controller_menu(HostInput& input) {
-        const auto device = controller->snapshot();
-        controller_menu->update(device, std::chrono::duration<double>(Clock::now() - epoch).count());
-        if (controller_menu->take_apply_request()) {
-            const auto& configuration = controller_menu->settings();
+    void menu_command(ControllerMenuCommand command) {
+        if (controller_menu) { controller_menu->command(command); }
+        else { audio_menu->command(command); }
+    }
+
+    void menu_save_result(const std::string& error) {
+        if (controller_menu) { controller_menu->save_result(error); }
+        else { audio_menu->save_result(error); }
+    }
+
+    void update_menu(HostInput& input) {
+        if (controller_menu) {
+            controller_menu->update(controller->snapshot(), std::chrono::duration<double>(Clock::now() - epoch).count());
+        }
+        const bool save_controller = controller_menu && controller_menu->take_apply_request();
+        const bool save_audio = audio_menu && audio_menu->take_apply_request();
+        if (save_controller || save_audio) {
             auto candidate = settings;
-            candidate.controller = configuration.tuning;
-            candidate.bindings = configuration.bindings;
-            candidate.calibration = configuration.calibration;
-            candidate.prompts = configuration.prompts;
+            if (save_controller) {
+                const auto& configuration = controller_menu->settings();
+                candidate.controller = configuration.tuning;
+                candidate.bindings = configuration.bindings;
+                candidate.calibration = configuration.calibration;
+                candidate.prompts = configuration.prompts;
+            } else {
+                candidate.volume = audio_menu->levels();
+            }
             candidate.window = display->placement();
             try {
                 validate_controller_tuning(candidate.controller);
                 validate_controller_bindings(candidate.bindings);
                 validate_controller_calibration(candidate.calibration);
+                validate_volume(candidate.volume);
                 save_preferences(candidate);
-                controller->configure(candidate.controller, candidate.bindings, candidate.calibration);
+                if (save_controller) { controller->configure(candidate.controller, candidate.bindings, candidate.calibration); }
+                audio_volume.set(candidate.volume);
                 settings = std::move(candidate);
                 preferences_dirty = false;
                 preferences_error.clear();
-                controller_menu->save_result({});
+                menu_save_result({});
             } catch (const std::exception& error) {
-                controller_menu->save_result(error.what());
-                SDL_Log("Controller settings save failed (%s)", error.what());
+                menu_save_result(error.what());
+                SDL_Log("Host settings save failed (%s)", error.what());
             }
         }
         input.controls = {};
@@ -227,11 +256,13 @@ private:
             input.pause = PauseAction::pause;
             menu_pause_requested = true;
         }
-        if (controller_menu->close_requested() && menu_pause_acknowledged) {
+        const bool close = controller_menu ? controller_menu->close_requested() : audio_menu->close_requested();
+        if (close && menu_pause_acknowledged) {
             for (std::size_t key = 0; key < menu_keys.size(); ++key) {
                 presentation_held[key] = presentation_held[key] || menu_keys[key];
             }
             controller_menu.reset();
+            audio_menu.reset();
             controller->set_focus(external_focus == HostFocus::active && window_focused);
             input.pause = resume_after_menu ? PauseAction::resume : PauseAction::pause;
         }
@@ -239,7 +270,7 @@ private:
 
     void update_button_prompts() {
         prompts.reset();
-        if (!controller || controller_menu || controller->snapshot().instance < 0 || settings.prompts == ButtonPrompts::disabled ||
+        if (!controller || menu_active() || controller->snapshot().instance < 0 || settings.prompts == ButtonPrompts::disabled ||
                 (settings.prompts == ButtonPrompts::automatic && !controller_input)) { return; }
         const std::string setup_hint = save_preferences ? "  CTRL+F3 SETUP" : "";
         const auto bound = [&](HostAction action) { return bound_controls(settings.bindings, context, action); };
@@ -354,6 +385,9 @@ private:
     }
 
 public:
+    bool menu_active() const { return controller_menu || audio_menu; }
+    CockpitImage menu_image() const { return controller_menu ? controller_menu->image() : audio_menu->image(); }
+    const char* menu_title() const { return controller_menu ? "Controller settings" : "Audio settings"; }
     bool gpu_available() const {
 #ifdef COMANCHECD_OPENGL_DESKTOP
         return gpu != nullptr;
@@ -412,7 +446,7 @@ public:
         if (focus_release_pending) {
             release_input(input);
             focus_release_pending = false;
-            if (controller && external_focus == HostFocus::active && !controller_menu) { controller->set_focus(true); }
+            if (controller && external_focus == HostFocus::active && !menu_active()) { controller->set_focus(true); }
         }
         const bool flight_input = context == InputContext::flight || context == InputContext::training;
         SDL_Event event;
@@ -428,11 +462,11 @@ public:
                 controller->event(event, input, throttle);
                 flush_controller_keys(input);
             }
-            if (controller_menu && (event.type == SDL_CONTROLLERDEVICEADDED || event.type == SDL_CONTROLLERDEVICEREMOVED)) {
+            if (menu_active() && (event.type == SDL_CONTROLLERDEVICEADDED || event.type == SDL_CONTROLLERDEVICEREMOVED)) {
                 resume_after_menu = false;
-                controller_menu->update(controller->snapshot(), std::chrono::duration<double>(Clock::now() - epoch).count());
+                if (controller_menu) { controller_menu->update(controller->snapshot(), std::chrono::duration<double>(Clock::now() - epoch).count()); }
             }
-            if (controller_menu_event(event, input)) { continue; }
+            if (settings_event(event, input)) { continue; }
             if (controller && event.type == SDL_CONTROLLERBUTTONDOWN &&
                     event.cbutton.which == controller->snapshot().instance) { controller_input = true; }
             if (controller && event.type == SDL_CONTROLLERAXISMOTION) {
@@ -454,7 +488,7 @@ public:
                     release_input(input);
                 } else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) {
                     window_focused = true;
-                    if (controller) { controller->set_focus(!controller_menu && external_focus == HostFocus::active); }
+                    if (controller) { controller->set_focus(!menu_active() && external_focus == HostFocus::active); }
                 }
             } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
                 const auto key = event.key.keysym.scancode;
@@ -522,8 +556,8 @@ public:
                 }
             }
         }
-        if (controller_menu) {
-            update_controller_menu(input);
+        if (menu_active()) {
+            update_menu(input);
             update_button_prompts();
             save_if_due(input.quit);
             return input;
@@ -585,6 +619,8 @@ public:
     std::array<bool, SDL_NUM_SCANCODES> suppressed{};
     InputProfile profile;
     std::unique_ptr<ControllerMenu> controller_menu;
+    std::unique_ptr<AudioMenu> audio_menu;
+    AudioVolume audio_volume;
     std::array<bool, SDL_NUM_SCANCODES> menu_keys{};
     bool menu_pause_acknowledged = false, menu_pause_requested = false, resume_after_menu = false;
     bool controller_input = false, window_focused = true;
@@ -614,7 +650,7 @@ void SdlFlightHost::set_focus(HostFocus focus) {
         impl_->resume_after_menu = false;
         if (impl_->controller_menu) { impl_->controller_menu->suspend(); }
     }
-    if (impl_->controller && focus == HostFocus::active && !impl_->controller_menu) { impl_->controller->set_focus(true); }
+    if (impl_->controller && focus == HostFocus::active && !impl_->menu_active()) { impl_->controller->set_focus(true); }
 }
 HostInput SdlFlightHost::poll() { return impl_->poll(); }
 void SdlFlightHost::set_input_context(InputContext context) {
@@ -625,10 +661,10 @@ void SdlFlightHost::set_input_context(InputContext context) {
 }
 
 void SdlFlightHost::present(const CockpitImage& image, const FlightState& state, const std::string& status) {
-    if (impl_->controller_menu) {
+    if (impl_->menu_active()) {
         if (impl_->display) { impl_->display->wait(); }
-        impl_->present_image(impl_->controller_menu->image());
-        update_title(state, "Controller settings");
+        impl_->present_image(impl_->menu_image());
+        update_title(state, impl_->menu_title());
         return;
     }
     impl_->look_available = false;
@@ -639,13 +675,17 @@ void SdlFlightHost::present(const CockpitImage& image, const FlightState& state,
     update_title(state, status);
 }
 
+AudioOutputTransform SdlFlightHost::audio_output_transform() const {
+    return impl_->profile == InputProfile::enhanced ? impl_->audio_volume.transform() : AudioOutputTransform{};
+}
+
 PresentationDetail SdlFlightHost::presentation_detail() const {
     return impl_->profile == InputProfile::enhanced && impl_->scene_rendering == SceneRendering::spatial ?
         PresentationDetail::spatial : PresentationDetail::indexed;
 }
 
 void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) {
-    if (impl_->controller_menu || presentation_detail() != PresentationDetail::spatial || !spatial_presentation(*frame, impl_->cockpit)) {
+    if (impl_->menu_active() || presentation_detail() != PresentationDetail::spatial || !spatial_presentation(*frame, impl_->cockpit)) {
         present(frame->image, frame->flight, status);
         return;
     }
@@ -703,7 +743,7 @@ void SdlFlightHost::update_title(const FlightState& state, const std::string& st
     if (impl_->display) {
         title << " | FPS " << impl_->display->limit_label()
               << " | vsync " << (impl_->settings.pacing == DisplayPacing::vertical_sync ? "on" : "off")
-              << (impl_->save_preferences ? " (Ctrl+F1/F2/F3)" : " (Ctrl+F1/F2)");
+              << (impl_->save_preferences ? " (Ctrl+F1/F2/F3/F4)" : " (Ctrl+F1/F2)");
         if (!impl_->preferences_error.empty()) { title << " | " << impl_->preferences_error; }
         if (!impl_->presentation_error.empty()) { title << " | " << impl_->presentation_error; }
     }
@@ -726,11 +766,11 @@ void SdlFlightHost::set_playback(Playback playback) {
         impl_->playback = playback;
         if (impl_->display) { impl_->display->reset_deadline(); }
     }
-    if (impl_->controller_menu) {
+    if (impl_->menu_active()) {
         impl_->menu_pause_acknowledged = playback == Playback::paused;
         if (playback == Playback::running) { impl_->menu_pause_requested = false; }
     }
-    impl_->audio.set_playback(impl_->controller_menu ? Playback::paused : playback);
+    impl_->audio.set_playback(impl_->menu_active() ? Playback::paused : playback);
 }
 void SdlFlightHost::idle() { SDL_Delay(1); }
 void SdlFlightHost::reset_controls() {

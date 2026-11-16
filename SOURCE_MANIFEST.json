@@ -20,8 +20,8 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "bytes": 19978,
-      "sha256": "270ba3ba1db2c2070863c3e04460489bb53d57292fb1d96831a732877c7cab89"
+      "bytes": 21034,
+      "sha256": "49b86fec5a7f8cbddfe9684f2d2cfc673fdf98ea07008cc07add4272555787fb"
     },
     {
       "path": "BUILDING.md",
@@ -40,8 +40,8 @@
     },
     {
       "path": "cmake/EnhancedSdl.cmake",
-      "bytes": 7552,
-      "sha256": "ba04d2048dde1545f67c4d8d30e84216d9a8cc63aa8dadaf2f72a61b3664469c"
+      "bytes": 7853,
+      "sha256": "5858db9b13d416cd8faafa6c60413d0ca23cc73d6219d3a8b1634edb6790174b"
     },
     {
       "path": "cmake/OpenGl.cmake",
@@ -77,6 +77,26 @@
       "path": "COPYING",
       "bytes": 17995,
       "sha256": "8674f5aabf4dd033831e7148a39184d8579e50c385da61a7d8bac6a5dd11c6da"
+    },
+    {
+      "path": "host/audio_menu.cpp",
+      "bytes": 3908,
+      "sha256": "0b26584011a3fac54cf5798fab629e1a7e55282ccb40ecca5556c1a1eabd88a2"
+    },
+    {
+      "path": "host/audio_menu.hpp",
+      "bytes": 741,
+      "sha256": "47dc8f822a437d0122b05f476adb0363fec5265390cff3e66370106493774ee3"
+    },
+    {
+      "path": "host/audio_volume.cpp",
+      "bytes": 2636,
+      "sha256": "76c94ec7fda68bdf503bb1d1ab847b29ade27cc850bbffa4fd229ab1bb475d85"
+    },
+    {
+      "path": "host/audio_volume.hpp",
+      "bytes": 623,
+      "sha256": "f2fdf02ba985b0b54396979d0101adc66f7870a8050f6ee0269159a47d76f476"
     },
     {
       "path": "host/camera_view.cpp",
@@ -135,8 +155,8 @@
     },
     {
       "path": "host/controller_menu.hpp",
-      "bytes": 1961,
-      "sha256": "dff84337df86945b4c5af52666bd757c1e89c86f4e0359492edb2b34882adbd3"
+      "bytes": 1872,
+      "sha256": "911af73718c0a524aefee119410936f6cb120e78503941fa7bbde5681ecf8b0d"
     },
     {
       "path": "host/controller_response.hpp",
@@ -180,8 +200,8 @@
     },
     {
       "path": "host/flight_host.hpp",
-      "bytes": 2039,
-      "sha256": "7cd208ecd01b8c16ea663c240cb2437d8bb92bbdbc6ae7f9ccc47b45c7f2b95b"
+      "bytes": 2118,
+      "sha256": "31c6d2477e438a632d26a2be840796347a60bf9d17dbb3751f508d7b162168ba"
     },
     {
       "path": "host/gl_attributes.hpp",
@@ -215,8 +235,8 @@
     },
     {
       "path": "host/host_preferences.cpp",
-      "bytes": 12817,
-      "sha256": "8426c5325af62799c465d9aec78d99bda9cb03f7a1b7f947d38915868318ea8e"
+      "bytes": 13045,
+      "sha256": "801a3bfce74afca4f58858ba44e1ccd899fdb0218e9cc861a64aa372cf1d5336"
     },
     {
       "path": "host/host_preferences.hpp",
@@ -230,8 +250,8 @@
     },
     {
       "path": "host/host_ui.hpp",
-      "bytes": 956,
-      "sha256": "b38fdcc473d5631a2800cd6414f9abea4deec7fc6ecac70daefd67943e7996cf"
+      "bytes": 1047,
+      "sha256": "8a7e5774ac991dfd989b9c4304864eb8af3f73eeb86939ea317c71d8d4ab9dd8"
     },
     {
       "path": "host/launch_options.cpp",
@@ -260,13 +280,13 @@
     },
     {
       "path": "host/openxr_host.cpp",
-      "bytes": 10644,
-      "sha256": "a9d3991ba69f1f934e97c99491dd0e370ab8b3910565072630b8785352e6b9bd"
+      "bytes": 10762,
+      "sha256": "5e08c599e5b457076fcd9c7e71096b11badd1feabf40c6af843a77e7757c3cb8"
     },
     {
       "path": "host/openxr_host.hpp",
-      "bytes": 1056,
-      "sha256": "e7a6e0a87d9b4b34f849c238e384c2630b2b31218ea3cae49195db04f2680062"
+      "bytes": 1123,
+      "sha256": "3d8688c2b6d8e0b72ef8a469e99dfbb4183f9c2daa441c44482e9ec3c1caac29"
     },
     {
       "path": "host/openxr_main.cpp",
@@ -365,13 +385,13 @@
     },
     {
       "path": "host/sdl_host.cpp",
-      "bytes": 38262,
-      "sha256": "f46be967db2d4039d52b81ebb94b480ac0f6337a6c149875125c94b570211d48"
+      "bytes": 40215,
+      "sha256": "9e4e342b6896885dcbc019c5a6020edc40702dc6cdb60227334c7e5cf4910fa4"
     },
     {
       "path": "host/sdl_host.hpp",
-      "bytes": 2382,
-      "sha256": "96a345392c2721847ff7a113ce5b18d30f5a776c09cd4d77366aed346825a1b3"
+      "bytes": 2501,
+      "sha256": "3b38f4b08bf1691128e427b5d1a1cae28200c8f16d7fb1780592636d68bdf4f3"
     },
     {
       "path": "host/sdl_keyboard.cpp",
@@ -385,8 +405,8 @@
     },
     {
       "path": "host/sdl_options.cpp",
-      "bytes": 4982,
-      "sha256": "d668f4c420e9ebff51351714dab3851d8a9efeaf6eda47dee66ad24d74bcdc18"
+      "bytes": 5328,
+      "sha256": "5b6f4ee4e1791b0c2865013003783e84d7ffee610ca510e10b01854134b6aaf7"
     },
     {
       "path": "host/sdl_options.hpp",
@@ -405,8 +425,8 @@
     },
     {
       "path": "host/session_app.cpp",
-      "bytes": 1528,
-      "sha256": "a2652a617e13b2fa7eb95392210e3d62824618ff248e458f5b254e810bc44608"
+      "bytes": 1560,
+      "sha256": "8d99f31b4b249c432d511bc3d0ab54c4f5c7806b35890f2590cd5716013e6e2c"
     },
     {
       "path": "host/session_app.hpp",
@@ -415,8 +435,8 @@
     },
     {
       "path": "host/session_main.cpp",
-      "bytes": 2164,
-      "sha256": "52ef2f6c499e3bfb8e4f61b748283612df6dd8bc09a1607b0f0b7c67af106388"
+      "bytes": 2309,
+      "sha256": "3af388a2a7046137a01b682b900fcde693bf123982dba102dc1d9eda17b04263"
     },
     {
       "path": "host/settings_profile.hpp",
@@ -495,13 +515,18 @@
     },
     {
       "path": "include/comanchecd/audio.hpp",
-      "bytes": 8458,
-      "sha256": "8225d9a6aa61bf6b0a8ef1aa934a81c7e771e953d1df27af4808b012bcdf171f"
+      "bytes": 8544,
+      "sha256": "0074f8d3dd2d9bb1dd0daf01eeef42c348aa3c4054ef5939729577991bb37782"
+    },
+    {
+      "path": "include/comanchecd/audio_output.hpp",
+      "bytes": 650,
+      "sha256": "33a7623db638fb94b037ebd1f88c41448dc0ecf8b5e9ad7f9559897ee835143a"
     },
     {
       "path": "include/comanchecd/audio_scheduler.hpp",
-      "bytes": 2853,
-      "sha256": "8730f3c2cf0368e2166d29a66e2981f7d7cb0b0def0a897ed0d9f5dfa8ec41af"
+      "bytes": 2927,
+      "sha256": "5fcc053b24ec8f889fd421c93810fde987c0ac80c4627d905163064511f1c3fc"
     },
     {
       "path": "include/comanchecd/callback_audio.hpp",
@@ -595,13 +620,13 @@
     },
     {
       "path": "include/comanchecd/session.hpp",
-      "bytes": 3758,
-      "sha256": "293768affa06de068112d335c37c1cb58ae2e8719535a2251ca351e182c6691e"
+      "bytes": 3837,
+      "sha256": "1e315058d871971075b1b308a160353af057f0793569c19c0f148e511ef03ae9"
     },
     {
       "path": "include/comanchecd/sound_device.hpp",
-      "bytes": 552,
-      "sha256": "90c468b7fb043046d1404c9f7e24d510913e849f5a912280811738ee2bd14c98"
+      "bytes": 625,
+      "sha256": "90f3cdf66159b26d61c745ab29c92e6eb0e917cfe763c55466b0977a65a8b1f6"
     },
     {
       "path": "include/comanchecd/spatial_presentation.hpp",
@@ -635,13 +660,13 @@
     },
     {
       "path": "PREVIEW.md",
-      "bytes": 26625,
-      "sha256": "e2f3e24fd175c83556d4e133b2649a9328223fc549c98ded17165c263f20f1b6"
+      "bytes": 28082,
+      "sha256": "01880757bb23bd138d95a111ec2a19bd19c27372935cde96074a46235475080f"
     },
     {
       "path": "README.md",
-      "bytes": 8499,
-      "sha256": "1d756f6a7289222f605d9e22a00b865bc55a63144d0178acc20a190a6f449d18"
+      "bytes": 8557,
+      "sha256": "1f42d457cc12aca153719cc51f1a34a0bc66b71b8c083c377551dbcf5d357320"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -655,8 +680,8 @@
     },
     {
       "path": "src/audio.cpp",
-      "bytes": 31363,
-      "sha256": "4201ee6f417162815669760cc5ba00704928ac972dc1a0d288425c11d87f5faf"
+      "bytes": 31465,
+      "sha256": "947b1c42de1389e6fad33a5ce4f21425e67108f548311ce868b4e86a7d0b201b"
     },
     {
       "path": "src/audio_decode.cpp",
@@ -685,8 +710,8 @@
     },
     {
       "path": "src/audio_scheduler.cpp",
-      "bytes": 42509,
-      "sha256": "8e35eca3122ae9c403ee9085882924f3c1014b82e51c59329264ebeff42437eb"
+      "bytes": 43061,
+      "sha256": "8c8087a7ce25a5deedd7a8bb60bad9e5862b194d9abdd1c26a3472393686345d"
     },
     {
       "path": "src/audio_sequencing.cpp",
@@ -975,8 +1000,8 @@
     },
     {
       "path": "src/session.cpp",
-      "bytes": 10022,
-      "sha256": "d6419cf02fde1a05fdfe17fc95d5e05c68cf661e6b3531b2a383c64a5b503835"
+      "bytes": 10142,
+      "sha256": "50ded0bd85609bb4a6ce8dcd27d5ad522b8509d942f1df9454b6f85ddff05cbc"
     },
     {
       "path": "src/session_cinematics.cpp",
@@ -990,8 +1015,8 @@
     },
     {
       "path": "src/sound_device.cpp",
-      "bytes": 1855,
-      "sha256": "42f87567bedca32ba00821063948abf1162de5fa394e7439310f9e34ae92ec99"
+      "bytes": 2174,
+      "sha256": "4553ad357faa94f61a9d6b80fe14e3bfc9c8f007ab10275e743cf059af610fe4"
     },
     {
       "path": "src/startup_resource.cpp",
@@ -1074,6 +1099,11 @@
       "sha256": "46f1cdfe59fdf1d468af25f6a434daef6197b7505d92cbd40b7619d93241848e"
     },
     {
+      "path": "tests/audio_volume_tests.cpp",
+      "bytes": 8275,
+      "sha256": "1611ae317381e9308ebf0dcf68a3c176363d475796f4ca92b3e58eaaa0b4a67b"
+    },
+    {
       "path": "tests/callback_audio_probe.cpp",
       "bytes": 4108,
       "sha256": "174b8d5125a0ef2f4ca03a4e70e8789d3c3c8c815329878a30fd1e45ca5fce4b"
@@ -1135,8 +1165,8 @@
     },
     {
       "path": "tests/controller_ui_host_tests.cpp",
-      "bytes": 6339,
-      "sha256": "0e029fd108672c0544b2974f556c128bf4f9b783b92f0657a7f9759e8bb46054"
+      "bytes": 9576,
+      "sha256": "bbab777abd558b49bdb57678eec491daad9f237ae35fa3750672b6c1e27fa5bc"
     },
     {
       "path": "tests/controller_work_tests.cpp",
@@ -1240,8 +1270,8 @@
     },
     {
       "path": "tests/host_preferences_tests.cpp",
-      "bytes": 10654,
-      "sha256": "acb1b30e23c947b75b039432e7ce19c4a7b43a86f6aa5ef47ccff42b41b10ea3"
+      "bytes": 11508,
+      "sha256": "66e01444632811acdad31bd1810fe7b70c550cfe0242f7ed625eb81422d4c176"
     },
     {
       "path": "tests/irq7_wave_tests.cpp",

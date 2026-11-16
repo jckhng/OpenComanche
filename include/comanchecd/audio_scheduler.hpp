@@ -1,6 +1,7 @@
 #pragma once
 
 #include "comanchecd/callback_audio.hpp"
+#include "comanchecd/audio_output.hpp"
 #include "comanchecd/cpu_work.hpp"
 #include "comanchecd/video_timing.hpp"
 #include "comanchecd/timing.hpp"
@@ -12,7 +13,7 @@ enum class DosFileCall { find, open_read, close, create };
 // and callback lengths follow from that clock and retained channel state.
 class AudioScheduler {
 public:
-    explicit AudioScheduler(unsigned output_rate, unsigned cycles_per_ms = 20000);
+    explicit AudioScheduler(unsigned output_rate, unsigned cycles_per_ms = 20000, AudioOutputTransform output = {});
     ~AudioScheduler();
     void run_cycles(std::uint64_t cycles);
     void execute(CpuOperation operation, unsigned count);

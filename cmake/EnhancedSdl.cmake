@@ -5,7 +5,7 @@ target_link_libraries(comanchecd_spatial PUBLIC comanchecd_renderer)
 include(cmake/OpenGl.cmake)
 add_library(comanchecd_sdl2
     host/sdl_host.cpp host/sdl_controller.cpp host/display_settings.cpp host/sdl_display.cpp
-    host/controller_configuration.cpp host/controller_menu.cpp host/host_ui.cpp
+    host/controller_configuration.cpp host/controller_menu.cpp host/host_ui.cpp host/audio_volume.cpp host/audio_menu.cpp
     host/sdl_options.cpp host/sdl_presenter.cpp host/controller_bindings.cpp host/host_preferences.cpp)
 target_include_directories(comanchecd_sdl2 PUBLIC host)
 target_link_libraries(comanchecd_sdl2 PUBLIC comanchecd_renderer comanchecd_spatial comanchecd_devices PRIVATE ${COMANCHECD_SDL2_TARGET})
@@ -49,6 +49,10 @@ if(COMANCHECD_BUILD_OPENXR)
     include(cmake/OpenXr.cmake)
 endif()
 if(BUILD_TESTING)
+    add_executable(audio_volume_tests tests/audio_volume_tests.cpp)
+    find_package(Threads REQUIRED)
+    target_link_libraries(audio_volume_tests PRIVATE comanchecd_sdl2 Threads::Threads)
+    add_test(NAME audio_volume_tests COMMAND audio_volume_tests)
     add_executable(keyboard_pilot_tests tests/keyboard_pilot_tests.cpp)
     target_link_libraries(keyboard_pilot_tests PRIVATE comanchecd_renderer)
     add_test(NAME keyboard_pilot_tests COMMAND keyboard_pilot_tests)

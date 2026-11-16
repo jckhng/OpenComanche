@@ -44,11 +44,13 @@ int main(int argc,char** argv) {
 
         auto resources=std::make_shared<SpatialResources>();
         resources->hud_colors[1]=true;
+        resources->hud_colors[3]=true;
         SpatialFrame frame;
         frame.resources=resources;
         frame.scene_mask.assign(cockpit_width*cockpit_height,1);
         CockpitImage source;
         source.palette[1]={0,63,0}; source.palette[2]={63,0,0};
+        source.palette[3]={0,0,63};
         for (unsigned y=145;y<cockpit_height;++y) {
             for (unsigned x=0;x<cockpit_width;++x) {
                 source.pixels[y*cockpit_width+x]=1;
@@ -57,6 +59,13 @@ int main(int argc,char** argv) {
         }
         source.pixels[70*cockpit_width+160]=1;
         frame.scene_mask[70*cockpit_width+160]=0;
+        source.pixels[137*cockpit_width+160]=3;
+        frame.scene_mask[137*cockpit_width+160]=0;
+        for (const auto x : {64u,288u}) {
+            source.pixels[137*cockpit_width+x]=3;
+            frame.scene_mask[137*cockpit_width+x]=0;
+        }
+        std::fill(source.pixels.end()-cockpit_width,source.pixels.end(),2);
         const auto retained=source;
         const auto retained_mask=frame.scene_mask;
         SpatialCockpit cockpit;
@@ -68,6 +77,32 @@ int main(int argc,char** argv) {
         };
         const auto front=render({});
         require(std::count(front.pixels.begin(),front.pixels.end(),0xff00ff00)>1000,"Live recovered instrument pixels must appear on the front panel");
+        require(front.pixels[470*640+320]!=0xff00ff00,
+            "The fitted instrument panel must leave a visible housing margin below its bottom row");
+        require(front.pixels[140*640+320]==0xff00ff00,
+            "Instrument fitting must preserve the world-aligned native HUD projection");
+        require(front.pixels[274*640+320]==0xff0000ff,
+            "The dashboard housing must leave the lower HUD visible");
+        require(front.pixels[274*640+128]==0xff0000ff && front.pixels[274*640+576]==0xff0000ff,
+            "The side consoles must clear the neutral-view speed and altitude HUD regions");
+        require(std::count(front.pixels.begin(),front.pixels.end(),0xffff0000)>500,
+            "The final native instrument row must remain visible inside the housing");
+        for (const auto width : {640u, 854u, 1120u}) {
+            auto fitted=SpatialImage{width,480,std::vector<std::uint32_t>(width*480,background),{}};
+            auto view=camera_view({},cockpit_width,cockpit_height);
+            const auto expansion=double(width)*cockpit_height/(480*cockpit_width);
+            view.frustum.left*=expansion; view.frustum.right*=expansion;
+            cockpit.draw(fitted,cockpit_view({},view.frustum),source,frame);
+            unsigned bottom=0;
+            for (unsigned y=290;y<fitted.height;++y) {
+                if (std::find(fitted.pixels.begin()+y*width,fitted.pixels.begin()+(y+1)*width,
+                        0xff00ff00)!=fitted.pixels.begin()+(y+1)*width) { bottom=y; }
+            }
+            require(bottom>=456 && bottom<466,
+                "4:3, widescreen and ultrawide must retain the whole instrument panel with bottom clearance");
+            require(fitted.pixels[470*width+width/2]!=background,
+                "The dashboard housing must continue beneath the fitted instruments");
+        }
         auto left=render({{},camera_orientation(1.5707963267948966,0,0)});
         auto right=render({{},camera_orientation(-1.5707963267948966,0,0)});
         auto rear=render({{},camera_orientation(3.141592653589793,0.2,0)});
@@ -85,6 +120,12 @@ int main(int argc,char** argv) {
         require(left_eye.pixels!=right_eye.pixels,"Physical eye separation must produce cockpit stereo parallax");
         source.pixels[180*cockpit_width+100]=2;
         require(render({}).pixels!=front.pixels,"Native instrument changes must update the spatial panel");
+        frame.scene_mask[180*cockpit_width+100]=1;
+        const auto cutout=render({});
+        require(std::count(cutout.pixels.begin(),cutout.pixels.end(),0xffff0000)==
+            std::count(front.pixels.begin(),front.pixels.end(),0xffff0000),
+            "Native world pixels must reveal the housing through instrument artwork cutouts");
+        frame.scene_mask=retained_mask;
         source=retained;
         frame.native_effects=true;
         require(render({}).pixels==front.pixels,"Native effects must preserve the independently rendered world instead of copying a flat scene plane");

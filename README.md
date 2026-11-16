@@ -41,12 +41,20 @@ These choices persist in the enhanced profile. Desktop GPU builds need SDL2
 and OpenGL development files. OpenXR support is a separate build option.
 The recovered cockpit and HUD
 supply the live instrument and HUD artwork for an authored spatial cockpit.
+The fitted instrument panel retains its bottom rows inside a connected dashboard
+housing. Its framing is independent of the world-aligned HUD projection.
 Hold right mouse and drag to look around. Middle mouse recenters the view.
 The canopy, consoles, seats and static rear crew figure are approximate enhanced
 geometry. `--cockpit flat` selects the earlier overlay presentation.
 Use `--cockpit-scale nearest` for native pixel blocks in flat presentation.
 Use `--scene-renderer native` for the indexed
 presentation or `--interpolation off` for discrete camera steps.
+
+The player retains nominal 20 Hz flight pacing and recovered DOS CPU/device
+timing. Enhanced camera and entity interpolation runs between simulation
+updates, with approximately one update of visual delay. Presentation requests
+display vsync. Driver behavior and foreground simulation work affect delivered
+frame cadence.
 
 Enhanced controller bindings and tuning/display preferences persist in
 `host-preferences.cfg` inside the native profile. Use `--bind flight.x=fire`

@@ -732,7 +732,7 @@ class GlScene::Impl final : public SpatialGeometry {
                 panel[at] = color >> 16;
                 panel[at + 1] = color >> 8;
                 panel[at + 2] = color;
-                panel[at + 3] = 255;
+                panel[at + 3] = frame.scene_mask[i] ? 0 : 255;
                 if (!frame.scene_mask[i] && resources_->hud_colors[source.pixels[i]]) {
                     std::copy_n(panel.begin() + at, 4, hud.begin() + at);
                 }

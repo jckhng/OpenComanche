@@ -1,4 +1,5 @@
 #include "cockpit_model.hpp"
+#include "comanchecd/cockpit.hpp"
 #include "spatial_units.hpp"
 #include <algorithm>
 #include <cmath>
@@ -74,15 +75,28 @@ public:
 };
 }
 
+std::array<CameraVector, 4> instrument_panel() {
+    constexpr double distance = 0.64;
+    constexpr double scale = 0.9;
+    constexpr double focal = cockpit_width * spatial_units::focal_ratio;
+    constexpr double horizon = cockpit_height * spatial_units::horizon_ratio;
+    constexpr double half_width = distance * cockpit_width * scale / (2 * focal);
+    constexpr double top = distance * (horizon - instrument_top) / focal;
+    constexpr double bottom = top - distance * (cockpit_height - instrument_top) * scale / focal;
+    // Fit the complete artwork independently of the world-aligned HUD projection.
+    return {{{-half_width,top,-distance},{half_width,top,-distance},
+        {half_width,bottom,-distance},{-half_width,bottom,-distance}}};
+}
+
 std::vector<Face> build() {
     Builder mesh;
     // Authored proportions approximate a tandem crew station around a front-seat eye origin.
     mesh.box({0,-0.91,0.15},{1.26,0.12,3.3},trim);
     for (const auto side : {-1.0,1.0}) {
-        mesh.box({side*0.63,-0.67,0.1},{0.12,0.52,3.15},structure);
+        mesh.box({side*0.63,-0.67,0.45},{0.12,0.52,2.46},structure);
         mesh.box({side*0.49,-0.5,-0.04},{0.24,0.14,0.94},trim);
         mesh.box({side*0.49,-0.26,1.2},{0.24,0.14,0.87},trim);
-        mesh.beam({side*0.64,-0.36,-1.4},{side*0.64,-0.36,1.8},0.06,0.065,structure);
+        mesh.beam({side*0.64,-0.36,-0.78},{side*0.64,-0.36,1.8},0.06,0.065,structure);
         const std::array<CameraVector,4> front{{{side*0.56,-0.3,-0.78},{side*0.47,0.55,-0.63},
             {side*0.44,0.62,0.43},{side*0.61,-0.32,0.55}}};
         for (unsigned index=0;index+1<front.size();++index) { mesh.beam(front[index],front[index+1],0.035,0.045,structure); }
@@ -110,8 +124,23 @@ std::vector<Face> build() {
     mesh.beam({-0.45,0.78,1.77},{0.45,0.78,1.77},0.035,0.06,structure);
     mesh.beam({0,0.55,-0.63},{0,0.62,0.43},0.028,0.025,trim);
     mesh.beam({0,0.62,0.43},{0,0.78,0.94},0.028,0.025,trim);
-    mesh.box({0,-0.47,-0.75},{1.18,0.46,0.16},trim);
-    mesh.box({0,-0.24,-0.77},{1.22,0.055,0.24},structure);
+    const auto panel = instrument_panel();
+    const auto housing_half_width = panel[1].x + 0.035;
+    const auto housing_top = panel[0].y + 0.006;
+    const auto housing_bottom = panel[3].y - 0.04;
+    const auto housing_z = panel[0].z - 0.01;
+    const std::array<CameraVector,4> front{{{-housing_half_width,housing_top,housing_z},
+        {housing_half_width,housing_top,housing_z},{housing_half_width,housing_bottom,housing_z},
+        {-housing_half_width,housing_bottom,housing_z}}};
+    // Taper the housing along sight lines so its upper surface clears the lower HUD.
+    std::array<CameraVector,4> back;
+    for (unsigned index=0;index<front.size();++index) { back[index]=front[index]*1.2; }
+    mesh.quad(front[0],front[1],front[2],front[3],trim);
+    mesh.quad(back[3],back[2],back[1],back[0],trim);
+    for (unsigned index=0;index<front.size();++index) {
+        const auto next=(index+1)%front.size();
+        mesh.quad(front[index],back[index],back[next],front[next],structure);
+    }
     mesh.box({0,-0.06,0.76},{0.66,0.35,0.18},trim);
     mesh.box({0,0.67,1.93},{1.15,0.23,0.13},trim);
     mesh.box({0,-0.26,1.96},{1.22,1.6,0.12},structure);

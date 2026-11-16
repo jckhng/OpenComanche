@@ -98,6 +98,19 @@ int main() {
                               SceneOverlay::sharp);
                 require(pixel(width / 2, height / 2)[0] == 255 && pixel(0, height / 2)[0] == 0,
                         "Flat cockpit overlay must preserve 4:3 instruments over the wider world");
+                renderer.draw({0, unsigned(width), unsigned(height)}, frame, view, {}, image,
+                              cockpit_view({}, view.frustum));
+                require(pixel(width / 2, height / 10)[0] == 255 &&
+                            pixel(width / 2, height / 40)[0] != 255,
+                        "GPU instruments must retain their bottom rows inside the fitted dashboard housing");
+                for (unsigned y = 170; y < 190; ++y) {
+                    std::fill_n(frame.scene_mask.begin() + y * cockpit_width + 80, 40, 1);
+                }
+                renderer.draw({0, unsigned(width), unsigned(height)}, frame, view, {}, image,
+                              cockpit_view({}, view.frustum));
+                require(pixel(width / 2 - height * 9 / 40, height * 127 / 480)[0] < 64,
+                        "GPU artwork cutouts must reveal the housing instead of the indexed world image");
+                frame.scene_mask.assign(image.pixels.size(), 0);
                 renderer.image(back, image, ImageScaling::nearest);
                 renderer.draw(target, frame, desktop_camera(spatial_camera(frame.camera), 64, 48), {}, image,
                               {}, SceneOverlay::nearest);

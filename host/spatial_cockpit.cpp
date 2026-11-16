@@ -9,7 +9,7 @@
 
 namespace comanchecd::host {
 namespace {
-constexpr unsigned instrument_top = 145;
+constexpr unsigned instrument_top = cockpit_model::instrument_top;
 constexpr double desktop_pitch_limit = 1.45;
 constexpr double hud_distance = 24;
 constexpr double native_focal = cockpit_width * spatial_units::focal_ratio;
@@ -106,8 +106,11 @@ public:
             GeometryMaterial material; material.kind=GeometryKind::instruments;
             image.geometry->material(material);
         }
-        quad(image,eye,projection,native_plane(0.64,instrument_top,cockpit_height),0,instrument_top,cockpit_width,cockpit_height,
-            [&](double u,double v,double) { return palette[source.pixels[index(u,v)]]; });
+        quad(image,eye,projection,cockpit_model::instrument_panel(),0,instrument_top,cockpit_width,cockpit_height,
+            [&](double u,double v,double) {
+                const auto pixel=index(u,v);
+                return frame.scene_mask[pixel] ? 0u : palette[source.pixels[pixel]];
+            });
     }
 private:
     std::vector<cockpit_model::Face> faces_=cockpit_model::build();

@@ -4,6 +4,7 @@
 #include <array>
 #include <algorithm>
 #include "spatial_cockpit.hpp"
+#include "cockpit_model.hpp"
 #include <cstring>
 #include <iostream>
 
@@ -149,6 +150,8 @@ int main() {
                     "GPU mirrored water must apply the recovered water remap");
             view = camera_view(spatial_camera(scene.camera), side, side);
             instruments.pixels.fill(2);
+            std::fill(scene.scene_mask.begin() + cockpit_model::instrument_top * comanchecd::cockpit_width,
+                      scene.scene_mask.end(), 0);
             resources = std::make_shared<comanchecd::SpatialResources>(*resources);
             resources->hud_colors[2] = true;
             scene.resources = resources;

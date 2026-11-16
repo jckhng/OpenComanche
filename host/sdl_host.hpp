@@ -6,6 +6,8 @@
 #include "sdl_presenter.hpp"
 #include "cockpit_scaling.hpp"
 #include "spatial_cockpit.hpp"
+#include "display_settings.hpp"
+#include <functional>
 
 namespace comanchecd::host {
 enum class SceneRendering { spatial, native };
@@ -25,11 +27,14 @@ struct SdlHostOptions {
     DisplayPacing pacing = DisplayPacing::vertical_sync;
     DesktopRenderer renderer = DesktopRenderer::automatic;
     ViewAspect aspect = ViewAspect::profile_default;
+    FrameLimit frame_limit;
+    WindowPlacement window;
 };
 
 class SdlFlightHost final : public FlightHost {
 public:
-    explicit SdlFlightHost(SdlHostOptions options = {});
+    using PreferencesWriter = std::function<void(const SdlHostOptions&)>;
+    explicit SdlFlightHost(SdlHostOptions options = {}, PreferencesWriter save = {});
     ~SdlFlightHost() override;
     HostInput poll() override;
     PresentationDetail presentation_detail() const override;

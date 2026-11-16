@@ -4,7 +4,7 @@ target_include_directories(comanchecd_spatial PUBLIC host)
 target_link_libraries(comanchecd_spatial PUBLIC comanchecd_renderer)
 include(cmake/OpenGl.cmake)
 add_library(comanchecd_sdl2
-    host/sdl_host.cpp host/sdl_controller.cpp
+    host/sdl_host.cpp host/sdl_controller.cpp host/display_settings.cpp host/sdl_display.cpp
     host/sdl_options.cpp host/sdl_presenter.cpp host/controller_bindings.cpp host/host_preferences.cpp)
 target_include_directories(comanchecd_sdl2 PUBLIC host)
 target_link_libraries(comanchecd_sdl2 PUBLIC comanchecd_renderer comanchecd_spatial comanchecd_devices PRIVATE ${COMANCHECD_SDL2_TARGET})
@@ -48,6 +48,14 @@ if(COMANCHECD_BUILD_OPENXR)
     include(cmake/OpenXr.cmake)
 endif()
 if(BUILD_TESTING)
+    add_executable(display_settings_tests tests/display_settings_tests.cpp)
+    target_link_libraries(display_settings_tests PRIVATE comanchecd_sdl2)
+    add_test(NAME display_settings_tests COMMAND display_settings_tests)
+    add_executable(display_host_tests tests/display_host_tests.cpp)
+    target_link_libraries(display_host_tests PRIVATE comanchecd_sdl2 ${COMANCHECD_SDL2_TARGET})
+    add_test(NAME display_host_tests COMMAND display_host_tests)
+    set_tests_properties(display_host_tests PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy;SDL_RENDER_DRIVER=software")
     add_executable(desktop_view_tests tests/desktop_view_tests.cpp)
     target_link_libraries(desktop_view_tests PRIVATE comanchecd_sdl2)
     add_test(NAME desktop_view_tests COMMAND desktop_view_tests)

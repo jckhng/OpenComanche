@@ -70,6 +70,10 @@ std::pair<unsigned, unsigned> GlDesktopPresenter::spatial_size() const {
     const auto layout = impl_->layout(impl_->aspect, impl_->scaling);
     return {layout.width, layout.height};
 }
+void GlDesktopPresenter::set_pacing(DisplayPacing pacing) {
+    impl_->current();
+    SDL_GL_SetSwapInterval(pacing == DisplayPacing::vertical_sync ? 1 : 0);
+}
 void GlDesktopPresenter::present(const CockpitImage& image) {
     impl_->current();
     impl_->scene->image(Impl::target(impl_->layout(ViewAspect::original, impl_->scaling)), image,

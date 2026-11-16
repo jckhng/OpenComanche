@@ -108,6 +108,11 @@ SdlHostOptions parse_preferences(const std::string& text, const std::filesystem:
 
 std::string serialize(const SdlHostOptions& options) {
     if (options.input != InputProfile::enhanced) { throw std::invalid_argument("Host preferences require enhanced mode"); }
+    validate_frame_limit(options.frame_limit);
+    validate_window_placement(options.window);
+    if (options.pacing != DisplayPacing::vertical_sync && options.pacing != DisplayPacing::immediate) {
+        throw std::invalid_argument("Invalid display pacing preference");
+    }
     validate_controller_tuning(options.controller);
     validate_controller_bindings(options.bindings);
     std::ostringstream output;
@@ -118,6 +123,15 @@ std::string serialize(const SdlHostOptions& options) {
     if (!options.controller_mappings.empty()) {
         const auto path = std::filesystem::absolute(options.controller_mappings).lexically_normal().string();
         output << "controller-mappings=" << quote_mapping(path) << '\n';
+    }
+    output << "fps=" << frame_limit_name(options.frame_limit) << '\n'
+        << "vsync=" << (options.pacing == DisplayPacing::vertical_sync ? "on" : "off") << '\n'
+        << "window-mode=" << window_mode_name(options.window.mode) << '\n';
+    if (options.window.width != 0) {
+        output << "window-size=" << options.window.width << 'x' << options.window.height << '\n';
+    }
+    if (options.window.position) {
+        output << "window-position=" << options.window.position->x << ',' << options.window.position->y << '\n';
     }
     switch (options.renderer) {
     case DesktopRenderer::automatic: output << "renderer=auto\n"; break;

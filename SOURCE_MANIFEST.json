@@ -20,8 +20,8 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "bytes": 18329,
-      "sha256": "d58e6ca40a8085a550ecc8ab0600713f324e8f99e78424a6501bfb6368b7cf36"
+      "bytes": 18815,
+      "sha256": "81cc660837e539be1993930b17d96c70fb062543be7f2f3caa192455b86c4fab"
     },
     {
       "path": "BUILDING.md",
@@ -40,8 +40,8 @@
     },
     {
       "path": "cmake/EnhancedSdl.cmake",
-      "bytes": 5955,
-      "sha256": "ae11185696e22c6e592f69800192338c4b3d2cfe75f45ec44561d00ec5b68d33"
+      "bytes": 6611,
+      "sha256": "361e1d02b14d0cc092af047e676f5b71f293615b6328064a5d97beb6e1834c26"
     },
     {
       "path": "cmake/OpenGl.cmake",
@@ -134,6 +134,16 @@
       "sha256": "7ec3b7ba32d549f795a787b78177ff044ce723f5ee93b8f5d01ed0b79333bf27"
     },
     {
+      "path": "host/display_settings.cpp",
+      "bytes": 5048,
+      "sha256": "4209d63cda109cd94d03d1b16207717bd691c209d277b7a82aed62b189f6efac"
+    },
+    {
+      "path": "host/display_settings.hpp",
+      "bytes": 1732,
+      "sha256": "acdd603fec0fe2f35f085f0179c9f11f51a7ed858acbd2114528da4088e7f8e0"
+    },
+    {
       "path": "host/faithful_main.cpp",
       "bytes": 952,
       "sha256": "249e834c6baeab345fce03dc1bd0a3b39172c4484783892931a8c72405880a67"
@@ -160,13 +170,13 @@
     },
     {
       "path": "host/gl_desktop_presenter.cpp",
-      "bytes": 4435,
-      "sha256": "f457eef252f948c4760bee0990a5c2e9d10346cf2108c76acdb862730ffdf7c6"
+      "bytes": 4599,
+      "sha256": "a0d3dff304054ddaad26fdcb1e872e5849ae38d80f79a9842d0942f479dfdbec"
     },
     {
       "path": "host/gl_desktop_presenter.hpp",
-      "bytes": 846,
-      "sha256": "5d16d232fc925d5a495b64d452136f8df32c51ef6526e0ba0ff94846ccf354ed"
+      "bytes": 890,
+      "sha256": "39a024a7f377912c69d3812d78c97d9b92dcb34e89cfc605804b99559f20d1cd"
     },
     {
       "path": "host/gl_scene.cpp",
@@ -185,8 +195,8 @@
     },
     {
       "path": "host/host_preferences.cpp",
-      "bytes": 11049,
-      "sha256": "62f00675b93d842f2f556050c7d3238cde3811e557a133d922498c155a47ab79"
+      "bytes": 11877,
+      "sha256": "2a1d65c1e987b05f855f1a9a3424bba279557b226cce22202903a4b4ef4f5147"
     },
     {
       "path": "host/host_preferences.hpp",
@@ -220,8 +230,8 @@
     },
     {
       "path": "host/openxr_host.cpp",
-      "bytes": 10497,
-      "sha256": "646f283ae2be9a09421dd46d9d0b60f00ee2739a1a13730111455a703521500f"
+      "bytes": 10644,
+      "sha256": "a9d3991ba69f1f934e97c99491dd0e370ab8b3910565072630b8785352e6b9bd"
     },
     {
       "path": "host/openxr_host.hpp",
@@ -314,14 +324,24 @@
       "sha256": "baa9a12915cec932a3ca70ffb267aa9f8fad3de2f33ca16ed478044a50789bd6"
     },
     {
+      "path": "host/sdl_display.cpp",
+      "bytes": 6683,
+      "sha256": "0741474cd5c809565c82f75085b40a514e6e7d30ce8aafc139ba3239f5bcf7ea"
+    },
+    {
+      "path": "host/sdl_display.hpp",
+      "bytes": 858,
+      "sha256": "d78425a966355587bac98376d1d15b72d0e2a9d05b9ae26da06168ab82d434fd"
+    },
+    {
       "path": "host/sdl_host.cpp",
-      "bytes": 21233,
-      "sha256": "38704206329b4598b4ecd21c771b3c2eea6b68d4d6c4a671b942024fd70607e7"
+      "bytes": 26217,
+      "sha256": "a9489efaf7b217608ac891e6d8222a0104143a826ccd77d181c2b5e64dcae790"
     },
     {
       "path": "host/sdl_host.hpp",
-      "bytes": 2036,
-      "sha256": "e26d316b65ab2abc0e1a7c7567b345186aaf6586a746f7c079588cb836626413"
+      "bytes": 2249,
+      "sha256": "dd4d90bd6486d0089133a4d26ff75cfada33cd47d2054902ff0336631a12793f"
     },
     {
       "path": "host/sdl_keyboard.cpp",
@@ -335,8 +355,8 @@
     },
     {
       "path": "host/sdl_options.cpp",
-      "bytes": 3823,
-      "sha256": "54bef3bdbc363fa34196d17bfe6483772fa176d1d7e284c8bb761a9a1242f208"
+      "bytes": 4545,
+      "sha256": "9c53f80edc355bf341353a2bf96d0ce4f91f82e0f43e9e510ce5790a487ecab5"
     },
     {
       "path": "host/sdl_options.hpp",
@@ -365,8 +385,8 @@
     },
     {
       "path": "host/session_main.cpp",
-      "bytes": 1850,
-      "sha256": "30f50692f54120f50f219a67f0dd534751dded7e74bdf94304079d1c2ff9289a"
+      "bytes": 2069,
+      "sha256": "d58231033c8cd4b08cd981ec452801d45d1eaa89c734f66f1ef0c4713505fd48"
     },
     {
       "path": "host/settings_profile.hpp",
@@ -585,13 +605,13 @@
     },
     {
       "path": "PREVIEW.md",
-      "bytes": 22135,
-      "sha256": "f9caa618d1e12599ff70ff3ec8baa585af0a90af28380cbe634d4a0e902e4db7"
+      "bytes": 23693,
+      "sha256": "138c72a96cfcfff60c1bc3b16d746641745b910c7f4ef4bf4c9b056e8db6e36b"
     },
     {
       "path": "README.md",
-      "bytes": 7767,
-      "sha256": "65ef04e4fc46dd17f9e7db4a2ce0dce1a31d88341387dd87e7606bcc007e5fab"
+      "bytes": 8109,
+      "sha256": "be9ed79bf5330c87b3f20608b9647bb0a2c7607b6239284116476a749b7a0af3"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -1109,6 +1129,16 @@
       "sha256": "e89900fa2db72b83e395c2b3eb12eda163db8f03d34ab7b8127a641444e25e0e"
     },
     {
+      "path": "tests/display_host_tests.cpp",
+      "bytes": 8118,
+      "sha256": "62e9a325f29105e26cd2c05ca72c2a1aa4740713689d0b2eb52ffe1f9469a4f4"
+    },
+    {
+      "path": "tests/display_settings_tests.cpp",
+      "bytes": 4502,
+      "sha256": "6801dd650255c6b98db15409487bc1a402bcb3ed74754106994ef5a5f1eba0a7"
+    },
+    {
       "path": "tests/effects_probe.cpp",
       "bytes": 4891,
       "sha256": "0819de195df70c2d2f631a8bc1aff56d4a9fa7884ba8069afd0f90d976da7529"
@@ -1165,8 +1195,8 @@
     },
     {
       "path": "tests/gl_desktop_tests.cpp",
-      "bytes": 9647,
-      "sha256": "1c0261973b322b3c7410cbfe77643628bb102bb6814938c4fd3d84cfb2829483"
+      "bytes": 10390,
+      "sha256": "a88e3b8394f835ebebf7f120fae7e9147305170ae091bd3a0dcbff0433fcc919"
     },
     {
       "path": "tests/host_preferences_tests.cpp",

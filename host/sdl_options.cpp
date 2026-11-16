@@ -36,6 +36,16 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments, SdlH
             options.controller.sensitivity = integer_option(value);
         } else if (option == "--invert-y" && (value == "on" || value == "off")) {
             options.controller.pitch = value == "on" ? PitchDirection::inverted : PitchDirection::normal;
+        } else if (option == "--fps") {
+            options.frame_limit = parse_frame_limit(value);
+        } else if (option == "--vsync" && (value == "on" || value == "off")) {
+            options.pacing = value == "on" ? DisplayPacing::vertical_sync : DisplayPacing::immediate;
+        } else if (option == "--window-size") {
+            options.window = parse_window_size(value, options.window);
+        } else if (option == "--window-position") {
+            options.window.position = parse_window_position(value);
+        } else if (option == "--window-mode") {
+            options.window.mode = parse_window_mode(value);
         } else if (option == "--renderer" && (value == "auto" || value == "gpu" || value == "cpu")) {
             options.renderer = value == "auto" ? DesktopRenderer::automatic :
                 value == "gpu" ? DesktopRenderer::gpu : DesktopRenderer::cpu;
@@ -56,6 +66,8 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments, SdlH
             throw std::invalid_argument("Unknown host option or unsupported value (" + option + ")");
         }
     }
+    validate_frame_limit(options.frame_limit);
+    validate_window_placement(options.window);
     validate_controller_tuning(options.controller);
     validate_controller_bindings(options.bindings);
     if (enhanced_options && options.input != InputProfile::enhanced) {

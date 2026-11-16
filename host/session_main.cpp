@@ -14,7 +14,10 @@ int main(int argc, char** argv) {
             " [--stick-deadzone 0..32766] [--stick-sensitivity 1..400] [--invert-y on|off]"
             " [--scale nearest|linear|integer] [--renderer auto|gpu|cpu] [--aspect original|widescreen]"
             " [--scene-renderer native|spatial] [--interpolation on|off]"
-            " [--cockpit-scale nearest|sharp] [--cockpit flat|spatial]";
+            " [--cockpit-scale nearest|sharp] [--cockpit flat|spatial]"
+            " [--fps auto|unlimited|15..1000] [--vsync on|off]"
+            " [--window-size WIDTHxHEIGHT] [--window-position X,Y]"
+            " [--window-mode windowed|maximized|fullscreen]";
         if (argc == 2 && std::string(argv[1]) == "--help") {
             std::cout << usage << "\nEnhanced SDL2 desktop controls and rendering.\n";
             return 0;
@@ -24,9 +27,9 @@ int main(int argc, char** argv) {
         const HostPreferences preferences(std::filesystem::absolute(argv[3]).lexically_normal());
         const auto options = preferences.resolve(launch_arguments(Application::enhanced, {argv + 4, argv + argc}));
         run_session_app(argv[1], argv[2], argv[3], [&] {
-            auto host = std::make_unique<SdlFlightHost>(options);
-            preferences.write(options);
-            return host;
+            return std::make_unique<SdlFlightHost>(options, [&](const SdlHostOptions& updated) {
+                preferences.write(updated);
+            });
         }, [](comanchecd::GameSession& session, FlightHost& host) {
             run_presentation(host, [&](FlightHost& simulation) { run_session(session, simulation); });
         });

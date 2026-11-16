@@ -3,6 +3,7 @@
 #include "sdl_common.hpp"
 #include "sdl_controller.hpp"
 #include "sdl_keyboard.hpp"
+#include "sdl_display.hpp"
 #include "spatial_renderer.hpp"
 #ifdef COMANCHECD_OPENGL_DESKTOP
 #include "gl_desktop_presenter.hpp"
@@ -15,6 +16,9 @@
 namespace comanchecd::host {
 namespace {
 constexpr double mouse_look_radians_per_pixel = 0.003;
+constexpr auto preferences_debounce = std::chrono::milliseconds(250);
+constexpr auto preferences_retry = std::chrono::seconds(2);
+constexpr std::array<unsigned, 9> frame_rate_presets{30, 60, 75, 90, 120, 144, 165, 240, 360};
 
 template<class T, void (*Destroy)(T*)>
 using SdlPointer = std::unique_ptr<T, decltype(Destroy)>;
@@ -22,13 +26,21 @@ using SdlPointer = std::unique_ptr<T, decltype(Destroy)>;
 
 class SdlFlightHost::Impl {
 public:
-    explicit Impl(SdlHostOptions options) : scene_rendering(options.scene_rendering),
-        interpolation(options.interpolation), cockpit_scaling(options.cockpit_scaling), cockpit(options.cockpit), profile(options.input) {
+    Impl(SdlHostOptions options, PreferencesWriter save) : scene_rendering(options.scene_rendering),
+        interpolation(options.interpolation), cockpit_scaling(options.cockpit_scaling), cockpit(options.cockpit),
+        profile(options.input), settings(options), save_preferences(std::move(save)) {
+        validate_frame_limit(options.frame_limit);
+        validate_window_placement(options.window);
+        if (options.pacing != DisplayPacing::vertical_sync && options.pacing != DisplayPacing::immediate) {
+            throw std::invalid_argument("Invalid display pacing");
+        }
         validate_controller_tuning(options.controller);
         validate_controller_bindings(options.bindings);
         const bool enhanced = profile == InputProfile::enhanced;
         if (!enhanced && ((options.scaling != ImageScaling::profile_default && options.scaling != ImageScaling::nearest) ||
                 options.pacing != DisplayPacing::vertical_sync || options.renderer != DesktopRenderer::automatic ||
+                options.frame_limit.mode != FrameLimitMode::profile_default || options.window.width != 0 ||
+                options.window.position || options.window.mode != WindowMode::windowed ||
                 (options.aspect != ViewAspect::profile_default && options.aspect != ViewAspect::original) ||
                 options.controller.deadzone != ControllerTuning{}.deadzone ||
                 options.controller.sensitivity != ControllerTuning{}.sensitivity ||
@@ -37,8 +49,10 @@ public:
         }
         const auto scaling = options.scaling == ImageScaling::profile_default ?
             (enhanced ? ImageScaling::integer : ImageScaling::nearest) : options.scaling;
+        settings.scaling = scaling;
         const auto aspect = options.aspect == ViewAspect::profile_default ?
             (enhanced ? ViewAspect::widescreen : ViewAspect::original) : options.aspect;
+        settings.aspect = aspect;
         if (enhanced && options.renderer != DesktopRenderer::cpu) {
 #ifdef COMANCHECD_OPENGL_DESKTOP
             try {
@@ -61,6 +75,8 @@ public:
             presenter = std::make_unique<SdlPresenter>(window.get(), scaling, options.pacing, aspect);
         }
         if (enhanced) {
+            display = std::make_unique<SdlDisplay>(output_window(), options.frame_limit, options.window);
+            request_save();
             controller = std::make_unique<SdlController>(options.controller_mappings, options.controller, options.bindings);
             if (!gpu_available() && cockpit == CockpitPresentation::spatial && scene_rendering == SceneRendering::spatial) {
                 spatial_cockpit = std::make_unique<SpatialCockpit>();
@@ -93,19 +109,100 @@ private:
         return false;
     }
 
-    bool presentation_key(const SDL_KeyboardEvent& event) {
-        if (profile != InputProfile::enhanced || event.keysym.scancode != SDL_SCANCODE_RETURN) { return false; }
-        if (fullscreen_key_held) {
-            if (event.type == SDL_KEYUP) { fullscreen_key_held = false; }
-            return true;
+    void request_save() {
+        preferences_dirty = true;
+        save_at = Clock::now() + preferences_debounce;
+    }
+
+    void save_if_due(bool force) {
+        if (!display || !save_preferences || !preferences_dirty || (!force && Clock::now() < save_at)) {
+            return;
         }
-        if (event.type != SDL_KEYDOWN || (event.keysym.mod & KMOD_ALT) == 0 || held[SDL_SCANCODE_RETURN]) {
+        settings.window = display->placement();
+        try {
+            save_preferences(settings);
+            preferences_dirty = false;
+            preferences_error.clear();
+        } catch (const std::exception& error) {
+            preferences_error = "preferences save failed";
+            SDL_Log("Host preferences save failed (%s)", error.what());
+            save_at = Clock::now() + preferences_retry;
+        }
+    }
+
+    void cycle_frame_limit() {
+        auto limit = settings.frame_limit;
+        if (limit.mode == FrameLimitMode::profile_default || limit.mode == FrameLimitMode::display) {
+            limit = {FrameLimitMode::fixed, frame_rate_presets.front()};
+        } else if (limit.mode == FrameLimitMode::unlimited) {
+            limit = {FrameLimitMode::display};
+        } else {
+            const auto next = std::upper_bound(frame_rate_presets.begin(), frame_rate_presets.end(), limit.rate);
+            limit = next == frame_rate_presets.end() ? FrameLimit{FrameLimitMode::unlimited} :
+                FrameLimit{FrameLimitMode::fixed, *next};
+        }
+        display->set_limit(limit);
+        settings.frame_limit = limit;
+    }
+
+    void toggle_vsync() {
+        const auto pacing = settings.pacing == DisplayPacing::vertical_sync ?
+            DisplayPacing::immediate : DisplayPacing::vertical_sync;
+#ifdef COMANCHECD_OPENGL_DESKTOP
+        if (gpu) {
+            gpu->set_pacing(pacing);
+        } else
+#endif
+        {
+            // SDL 2.0.10 changes renderer pacing by recreating its presentation resources.
+            presenter.reset();
+            try {
+                presenter = std::make_unique<SdlPresenter>(window.get(), settings.scaling, pacing, settings.aspect);
+            } catch (...) {
+                presenter = std::make_unique<SdlPresenter>(window.get(), settings.scaling, settings.pacing, settings.aspect);
+                throw;
+            }
+        }
+        settings.pacing = pacing;
+        display->reset_deadline();
+    }
+
+    bool presentation_key(const SDL_KeyboardEvent& event) {
+        if (!display) {
             return false;
         }
-        fullscreen_key_held = true;
-        if (event.repeat == 0) {
-            const auto mode = (SDL_GetWindowFlags(output_window()) & SDL_WINDOW_FULLSCREEN) != 0 ? 0u : SDL_WINDOW_FULLSCREEN_DESKTOP;
-            if (SDL_SetWindowFullscreen(output_window(), mode) != 0) { throw sdl_error("SDL2 fullscreen change failed"); }
+        const auto key = event.keysym.scancode;
+        if (presentation_held[key]) {
+            if (event.type == SDL_KEYUP) {
+                presentation_held[key] = false;
+            }
+            return true;
+        }
+        const auto modifiers = event.keysym.mod;
+        const bool fullscreen = key == SDL_SCANCODE_RETURN && (modifiers & KMOD_ALT) != 0;
+        const bool display_control = (key == SDL_SCANCODE_F1 || key == SDL_SCANCODE_F2) &&
+            (modifiers & KMOD_CTRL) != 0 && (modifiers & KMOD_ALT) == 0;
+        if (event.type != SDL_KEYDOWN || (!fullscreen && !display_control) || held[key]) {
+            return false;
+        }
+        presentation_held[key] = true;
+        if (event.repeat != 0) {
+            return true;
+        }
+        try {
+            if (fullscreen) {
+                display->toggle_fullscreen();
+            } else if (key == SDL_SCANCODE_F1) {
+                cycle_frame_limit();
+            } else {
+                toggle_vsync();
+            }
+            presentation_error.clear();
+            request_save();
+        } catch (const std::exception& error) {
+            if (!gpu_available() && !presenter) { throw; }
+            presentation_error = "display change failed";
+            SDL_Log("Host display change failed (%s)", error.what());
         }
         return true;
     }
@@ -147,7 +244,6 @@ public:
         }
         held.fill(false);
         suppressed.fill(false);
-        fullscreen_key_held = false;
         if (controller) { controller->set_focus(false); flush_controller_keys(input); }
         input.pause = PauseAction::pause;
     }
@@ -177,6 +273,9 @@ public:
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_WINDOWEVENT && event.window.windowID != 0 &&
                     event.window.windowID != SDL_GetWindowID(output_window())) { continue; }
+            if (display && event.type == SDL_WINDOWEVENT && display->event(event.window)) {
+                request_save();
+            }
             if (look_event(event)) { continue; }
             if (controller) {
                 controller->event(event, input, throttle);
@@ -277,6 +376,7 @@ public:
             input.cockpit = displays;
         }
         if (controller) { controller->sample(input, throttle); flush_controller_keys(input); }
+        save_if_due(input.quit);
         return input;
     }
 
@@ -311,7 +411,13 @@ public:
     std::array<bool, SDL_NUM_SCANCODES> controller_held{};
     std::array<bool, SDL_NUM_SCANCODES> suppressed{};
     InputProfile profile;
-    bool fullscreen_key_held = false;
+    std::array<bool, SDL_NUM_SCANCODES> presentation_held{};
+    SdlHostOptions settings;
+    PreferencesWriter save_preferences;
+    std::unique_ptr<SdlDisplay> display;
+    bool preferences_dirty = false;
+    Clock::time_point save_at{};
+    std::string preferences_error, presentation_error;
     HostFocus external_focus = HostFocus::active;
     bool focus_release_pending = false;
     InputContext context = InputContext::flight;
@@ -319,7 +425,8 @@ public:
     CockpitControls displays;
 };
 
-SdlFlightHost::SdlFlightHost(SdlHostOptions options) : impl_(std::make_unique<Impl>(std::move(options))) {}
+SdlFlightHost::SdlFlightHost(SdlHostOptions options, PreferencesWriter save)
+    : impl_(std::make_unique<Impl>(std::move(options), std::move(save))) {}
 SdlFlightHost::~SdlFlightHost() = default;
 void SdlFlightHost::set_focus(HostFocus focus) {
     if (focus == impl_->external_focus) { return; }
@@ -339,6 +446,7 @@ void SdlFlightHost::present(const CockpitImage& image, const FlightState& state,
     impl_->look_available = false;
     impl_->stop_look();
     impl_->camera_history.reset();
+    if (impl_->display) { impl_->display->wait(); }
     impl_->present_image(image);
     update_title(state, status);
 }
@@ -353,6 +461,7 @@ void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> 
         present(frame->image, frame->flight, status);
         return;
     }
+    if (impl_->display) { impl_->display->wait(); }
     const auto time = impl_->presentation_time();
     impl_->camera_history.observe(frame->spatial, frame->cpu_cycles, time);
     const auto camera = impl_->interpolation == CameraInterpolation::enabled ?
@@ -400,7 +509,15 @@ void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> 
 void SdlFlightHost::update_title(const FlightState& state, const std::string& status) {
     std::ostringstream title;
     title << (impl_->profile == InputProfile::enhanced ? (impl_->gpu_available() ? "OpenCommanche enhanced GPU | " : "OpenCommanche enhanced CPU | ") : "Comanche CD | ")
-          << status << " | throttle " << unsigned(impl_->throttle)
+          << status;
+    if (impl_->display) {
+        title << " | FPS " << impl_->display->limit_label()
+              << " | vsync " << (impl_->settings.pacing == DisplayPacing::vertical_sync ? "on" : "off")
+              << " (Ctrl+F1/F2)";
+        if (!impl_->preferences_error.empty()) { title << " | " << impl_->preferences_error; }
+        if (!impl_->presentation_error.empty()) { title << " | " << impl_->presentation_error; }
+    }
+    title << " | throttle " << unsigned(impl_->throttle)
           << "/15 | height " << unsigned(state.view.height) << " | armor " << state.armor
           << " | weapon " << unsigned(state.weapon + 1) << " | ammo " << state.ammunition[state.weapon];
     const auto text = title.str();
@@ -417,6 +534,7 @@ void SdlFlightHost::set_playback(Playback playback) {
         if (playback == Playback::paused) { impl_->paused_at = now; }
         else { impl_->paused_duration += now - impl_->paused_at; }
         impl_->playback = playback;
+        if (impl_->display) { impl_->display->reset_deadline(); }
     }
     impl_->audio.set_playback(playback);
 }

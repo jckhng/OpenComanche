@@ -154,6 +154,19 @@ int main() {
             host.present_snapshot(snapshot, "GPU host fixture");
             host.present(snapshot->image, {}, "Native menu fixture");
             host.present_snapshot(snapshot, "Restored GPU host fixture");
+            for (unsigned transition = 0; transition < 2; ++transition) {
+                SDL_Event shortcut{};
+                shortcut.type = SDL_KEYDOWN;
+                shortcut.key.keysym.scancode = SDL_SCANCODE_F2;
+                shortcut.key.keysym.mod = KMOD_CTRL;
+                SDL_PushEvent(&shortcut);
+                shortcut.type = SDL_KEYUP;
+                shortcut.key.keysym.mod = 0;
+                SDL_PushEvent(&shortcut);
+                require(host.poll().scan_bytes.empty(), "GPU vsync shortcuts must retain host key ownership");
+                host.present_snapshot(snapshot, "Live GPU vsync transition");
+                host.present(snapshot->image, {}, "Live GPU native transition");
+            }
             SDL_Event event{};
             event.type = SDL_KEYDOWN;
             event.key.keysym.scancode = SDL_SCANCODE_SPACE;

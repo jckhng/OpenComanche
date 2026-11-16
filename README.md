@@ -25,7 +25,8 @@ Published RC10 archives retain their `comanche_viewer` filename.
 
 The `enhanced-sdl2` branch adds configurable gamepad response, buffered
 keyboard fire/target taps, high-DPI integer scaling, optional filtered scaling
-and Alt+Enter desktop fullscreen. Build this branch to try these features.
+and saved window layout, FPS/vsync controls and Alt+Enter desktop fullscreen.
+Build this branch to try these features.
 
 ```sh
 ./build/comanche_enhanced /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile --scale integer --stick-deadzone 4000 --stick-sensitivity 150 --invert-y off
@@ -56,7 +57,9 @@ timing. Enhanced camera and entity interpolation runs between simulation
 updates, with approximately one update of visual delay. The enhanced desktop
 runs its session on a worker while the main thread handles SDL2 input, rendering
 and audio output. Completed snapshots feed independently paced draws. The GPU
-backend requests display vsync.
+backend requests display vsync and defaults to a software FPS cap at the current
+display refresh rate. Ctrl+F1 cycles the cap and Ctrl+F2 toggles the vsync request.
+Window bounds and fullscreen/maximized state restore from the native profile.
 
 Enhanced controller bindings and tuning/display preferences persist in
 `host-preferences.cfg` inside the native profile. Use `--bind flight.x=fire`
@@ -115,6 +118,8 @@ progress/settings in the native profile directory.
 | Flight | Alt-A | Abort to debrief |
 | Session | P | Pause/resume outside pilot name entry |
 | Enhanced | Alt+Enter | Toggle desktop fullscreen |
+| Enhanced | Ctrl+F1 | Cycle FPS limit |
+| Enhanced | Ctrl+F2 | Toggle vsync request |
 | Debrief | Escape | Return to operations |
 
 Focus loss pauses flight and releases held controls. Resume with P after

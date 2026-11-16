@@ -122,13 +122,29 @@ uses SDL2's GameController API. [SDL2 controller documentation](https://wiki.lib
 These options belong to `comanche_enhanced` and `comanche_openxr`. Keyboard steering takes precedence
 over analog steering. Controller neutral detection uses the selected deadzone.
 
+Desktop display options for `comanche_enhanced` also persist in the native profile.
+
+| Display option | Default | Meaning |
+|---|---|---|
+| `--fps auto\|unlimited\|15..1000` | auto | Software presentation limit, auto follows the window's display refresh rate |
+| `--vsync on\|off` | on | Best-effort backend vsync request, independent of the software cap |
+| `--window-size WIDTHxHEIGHT` | 1280x720 | Normal window bounds, minimum 320x240 |
+| `--window-position X,Y` | centered | Signed desktop coordinates, including secondary monitors |
+| `--window-mode windowed\|maximized\|fullscreen` | windowed | Initial window state |
+
+For example, append `--fps 120 --vsync off --window-size 1600x900` to the
+enhanced launch command. Auto uses 60 Hz when SDL cannot report a refresh rate.
+The OpenXR host retains runtime-controlled headset pacing and an uncapped mirror.
+
 ## Controller bindings and preferences
 
 Enhanced launches load `host-preferences.cfg` from the native profile directory.
-Command-line values override saved values and persist after successful SDL2
-host initialization. An initial enhanced launch creates the file. It stores
-bindings, steering axes, stick tuning, mapping-file location, scaling, scene
-renderer, desktop backend, aspect and interpolation. The enhanced and XR
+Command-line values override saved values. The desktop player saves after host
+initialization and debounces display changes for 250 ms, flushing on close.
+The XR player saves its launch preferences after initialization. An initial
+enhanced launch creates the file. It stores bindings, steering axes, stick
+tuning, mapping-file location, scaling, scene renderer, desktop backend, aspect,
+interpolation, FPS/vsync and normal window bounds/fullscreen/maximized state. The enhanced and XR
 players load it from their supplied profile. Faithful launches use original-format
 pilot/settings files through the dedicated host.
 
@@ -189,9 +205,17 @@ retain 4:3 framing in every window shape.
 [SDL2 integer scaling](https://wiki.libsdl.org/SDL2/SDL_RenderSetIntegerScale),
 [SDL2 texture filtering](https://wiki.libsdl.org/SDL2/SDL_HINT_RENDER_SCALE_QUALITY)
 
-Alt+Enter toggles desktop fullscreen in enhanced mode. Its Enter is consumed
-by the host presentation shortcut. F1–F12 retain their instrument bindings.
-The faithful launch profile keeps nearest scaling and its existing key route.
+Alt+Enter toggles desktop fullscreen. Ctrl+F1 cycles auto, 30, 60, 75, 90,
+120, 144, 165, 240, 360 and unlimited FPS. Ctrl+F2 toggles the vsync request.
+The window title reports both settings. Drivers can override vsync requests.
+The shortcuts consume their function/Enter keys through release and ignore
+repeats. F1–F12 retain their instrument bindings.
+
+Resizing/moving the window and switching fullscreen saves its normal bounds.
+Maximized/fullscreen dimensions preserve the saved windowed size. A saved
+position whose title bar is unreachable on the current monitors is recentered.
+Save failures appear in the title and log, retain pending changes and retry.
+Version 1 preference files created before these options inherit their defaults.
 
 Enhanced flight renders the 1024×1024 toroidal height/color maps into an
 output-sized color/depth buffer. Desktop `--renderer auto` selects the shared

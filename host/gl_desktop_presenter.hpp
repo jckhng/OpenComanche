@@ -13,6 +13,7 @@ class GlDesktopPresenter {
     ~GlDesktopPresenter();
     SDL_Window* window() const;
     std::pair<unsigned, unsigned> spatial_size() const;
+    void set_pacing(DisplayPacing pacing);
     void present(const CockpitImage& image);
     void present_scene(const SpatialFrame& frame, const CameraView& view, const EntityPoses& poses,
                        const CockpitImage& instruments, const std::optional<CameraView>& cockpit,

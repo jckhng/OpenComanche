@@ -63,8 +63,14 @@ actions can use the same host action vocabulary and simulation input contract.
 
 `host/host_preferences.cpp` owns versioned text parsing and staged replacement
 inside the native profile. Command-line overrides share the option validator.
-`session_main.cpp` selects enhanced preference loading and saves resolved values
-after host initialization. Context/focus suppression, trigger neutral rearming
+`session_main.cpp` supplies the SDL host with a preference-writer callback.
+The desktop host debounces complete snapshots of its presentation settings and
+normal window placement, flushes on close and retains failed writes for retry.
+`display_settings.cpp` validates portable values and advances steady-clock frame
+deadlines. `sdl_display.cpp` owns refresh-rate lookup, window restoration and
+SDL-timed waits on the device thread. GPU swap control and SDL renderer
+recreation remain in their presentation adapters. The OpenXR worker retains
+runtime frame timing and its mirror starts uncapped. Context/focus suppression, trigger neutral rearming
 and shared logical-key ownership belong to the input adapter. Original-format
 pilot and menu settings retain their existing persistence owners.
 

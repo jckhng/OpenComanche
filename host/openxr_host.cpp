@@ -14,6 +14,8 @@ namespace comanchecd::host {
 namespace {
 SdlHostOptions desktop_options(SdlHostOptions options) {
     options.pacing = DisplayPacing::immediate;
+    // The XR worker owns headset pacing, including profiles saved by the desktop player.
+    options.frame_limit = {FrameLimitMode::unlimited};
     options.renderer = DesktopRenderer::cpu;
     options.cockpit = CockpitPresentation::flat;
     return options;

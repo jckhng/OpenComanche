@@ -37,6 +37,16 @@ controller, host-preference and XR objects are outside this link graph.
 The enhanced player links `SdlFlightHost` and desktop preferences. XR runtime
 and platform graphics bindings belong to `comanche_openxr`.
 
+The enhanced desktop entry point selects `run_presentation`. Its simulation
+callback owns `GameSession` on one worker through the existing session loop.
+The caller thread owns SDL2 event polling, window/rendering calls and audio
+device output. A single completed snapshot feeds repeated interpolated draws.
+Buffered input carries ordered DOS bytes, held controls and one-shot presses.
+Context/playback changes, control resets and intermediate images are acknowledged
+on the device thread. Input context is applied before publishing its snapshot.
+Audio clears invalidate pending samples from preceding queue generations.
+Shutdown joins the worker before releasing session or device ownership.
+
 `COMANCHECD_BUILD_ENHANCED=OFF` with OpenXR disabled builds the faithful host
 independently of enhanced sources and graphics development packages. Shared
 simulation, native drawing and audio retain their DOS parity checks. The

@@ -97,10 +97,10 @@ std::vector<Face> build() {
         mesh.box({side*0.49,-0.5,-0.04},{0.24,0.14,0.94},trim);
         mesh.box({side*0.49,-0.26,1.2},{0.24,0.14,0.87},trim);
         mesh.beam({side*0.64,-0.36,-0.78},{side*0.64,-0.36,1.8},0.06,0.065,structure);
-        const std::array<CameraVector,4> front{{{side*0.56,-0.3,-0.78},{side*0.47,0.55,-0.63},
-            {side*0.44,0.62,0.43},{side*0.61,-0.32,0.55}}};
-        for (unsigned index=0;index+1<front.size();++index) { mesh.beam(front[index],front[index+1],0.035,0.045,structure); }
-        mesh.beam(front.back(),front.front(),0.035,0.045,structure);
+        const std::array<CameraVector,5> front{{{side*0.38,-0.25,-0.66},{side*0.64,-0.03,-0.82},
+            {side*0.82,0.35,-0.82},{side*0.44,0.62,0.43},{side*0.61,-0.32,0.55}}};
+        for (unsigned index=0;index+1<front.size();++index) { mesh.beam(front[index],front[index+1],0.02,0.02,structure); }
+        mesh.beam(front.back(),front.front(),0.02,0.02,structure);
         mesh.beam({side*0.61,-0.32,0.55},{side*0.45,0.78,0.94},0.04,0.055,structure);
         mesh.beam({side*0.45,0.78,0.94},{side*0.45,0.78,1.77},0.04,0.055,structure);
         mesh.beam({side*0.45,0.78,1.77},{side*0.61,-0.14,1.94},0.04,0.055,structure);
@@ -118,25 +118,35 @@ std::vector<Face> build() {
         mesh.box({side*0.38,-0.29,-0.16},{0.055,0.09,0.06},trim);
         mesh.box({side*0.14,-0.82,-0.66},{0.17,0.08,0.25},0xff51575b);
     }
-    mesh.beam({-0.47,0.55,-0.63},{0.47,0.55,-0.63},0.035,0.045,structure);
+    mesh.beam({-0.82,0.35,-0.82},{0.82,0.35,-0.82},0.035,0.045,structure);
     mesh.beam({-0.44,0.62,0.43},{0.44,0.62,0.43},0.035,0.06,structure);
     mesh.beam({-0.45,0.78,0.94},{0.45,0.78,0.94},0.035,0.06,structure);
     mesh.beam({-0.45,0.78,1.77},{0.45,0.78,1.77},0.035,0.06,structure);
-    mesh.beam({0,0.55,-0.63},{0,0.62,0.43},0.028,0.025,trim);
+    mesh.beam({0,0.35,-0.82},{0,0.62,0.43},0.028,0.025,trim);
     mesh.beam({0,0.62,0.43},{0,0.78,0.94},0.028,0.025,trim);
     const auto panel = instrument_panel();
     const auto housing_half_width = panel[1].x + 0.035;
     const auto housing_top = panel[0].y + 0.006;
     const auto housing_bottom = panel[3].y - 0.04;
     const auto housing_z = panel[0].z - 0.01;
-    const std::array<CameraVector,4> front{{{-housing_half_width,housing_top,housing_z},
-        {housing_half_width,housing_top,housing_z},{housing_half_width,housing_bottom,housing_z},
-        {-housing_half_width,housing_bottom,housing_z}}};
-    // Taper the housing along sight lines so its upper surface clears the lower HUD.
-    std::array<CameraVector,4> back;
+    constexpr double shoulder_inset = 0.3;
+    constexpr double shoulder_drop = 0.09;
+    const auto top_half_width = housing_half_width - shoulder_inset * panel[1].x;
+    const auto shoulder = housing_top - shoulder_drop;
+    const std::array<CameraVector,6> front{{{-top_half_width,housing_top,housing_z},
+        {top_half_width,housing_top,housing_z},{housing_half_width,shoulder,housing_z},
+        {housing_half_width,housing_bottom,housing_z},{-housing_half_width,housing_bottom,housing_z},
+        {-housing_half_width,shoulder,housing_z}}};
+    // The recovered artwork has a level center and sloping outer shoulders.
+    std::array<CameraVector,6> back;
     for (unsigned index=0;index<front.size();++index) { back[index]=front[index]*1.2; }
-    mesh.quad(front[0],front[1],front[2],front[3],trim);
-    mesh.quad(back[3],back[2],back[1],back[0],trim);
+    for (const auto& face : {front,back}) {
+        const CameraVector left{face[0].x,face[4].y,face[0].z};
+        const CameraVector right{face[1].x,face[3].y,face[1].z};
+        mesh.quad(face[0],face[1],right,left,trim);
+        mesh.quad(face[0],left,face[4],face[5],trim);
+        mesh.quad(face[1],face[2],face[3],right,trim);
+    }
     for (unsigned index=0;index<front.size();++index) {
         const auto next=(index+1)%front.size();
         mesh.quad(front[index],back[index],back[next],front[next],structure);

@@ -6,7 +6,8 @@
 namespace comanchecd::host {
 void run_session_app(const std::filesystem::path& installation, const std::filesystem::path& payload,
                      const std::filesystem::path& directory,
-                     const std::function<std::unique_ptr<FlightHost>()>& create_host) {
+                     const std::function<std::unique_ptr<FlightHost>()>& create_host,
+                     const std::function<void(GameSession&, FlightHost&)>& run) {
     const auto profile_path = std::filesystem::absolute(directory).lexically_normal();
     for (const auto& root : {installation, payload}) {
         if (profile_path == std::filesystem::absolute(root).lexically_normal() ||
@@ -23,6 +24,6 @@ void run_session_app(const std::filesystem::path& installation, const std::files
     auto host = create_host();
     std::cout << "Arrows/Enter navigate | Tab/Enter acquires targets | Space fires | E/D throttle | P pauses "
                  "| Alt-A ends mission | Esc leaves debrief\n";
-    run_session(session, *host);
+    run(session, *host);
 }
 } // namespace comanchecd::host

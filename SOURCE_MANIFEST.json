@@ -20,8 +20,8 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "bytes": 17636,
-      "sha256": "bb0fb6acb5c677fb688f54084e83196156c8a39c2ba01c6b4ccc0933def8bb2b"
+      "bytes": 18329,
+      "sha256": "d58e6ca40a8085a550ecc8ab0600713f324e8f99e78424a6501bfb6368b7cf36"
     },
     {
       "path": "BUILDING.md",
@@ -40,8 +40,8 @@
     },
     {
       "path": "cmake/EnhancedSdl.cmake",
-      "bytes": 5299,
-      "sha256": "bce08161ddf4fd89cf30f02e4ee472940bc5f81a95078fb0c5a2b9a2acbf53ce"
+      "bytes": 5955,
+      "sha256": "ae11185696e22c6e592f69800192338c4b3d2cfe75f45ec44561d00ec5b68d33"
     },
     {
       "path": "cmake/OpenGl.cmake",
@@ -90,8 +90,8 @@
     },
     {
       "path": "host/cockpit_model.cpp",
-      "bytes": 8842,
-      "sha256": "99e88d38a97ea86712fbedd1fb0cda60f1dc235b9360d0256841cb3ff7b379ed"
+      "bytes": 9399,
+      "sha256": "c9b83f287bd2b24986c1d8aa22a472987735722d2b7845fb9cb7df681c694609"
     },
     {
       "path": "host/cockpit_model.hpp",
@@ -269,6 +269,16 @@
       "sha256": "2234586e89a0890251d19044c4d6f3d1b27e659313b914b60f05eacb7adcadb4"
     },
     {
+      "path": "host/presentation_loop.cpp",
+      "bytes": 11047,
+      "sha256": "33487306bd3a4d4d7ba902c53e6d27d42b55453c8b1245f5fe20dedf97129ef7"
+    },
+    {
+      "path": "host/presentation_loop.hpp",
+      "bytes": 311,
+      "sha256": "0df1dc506e752c07bd4082f4cbd910c7382a76b632c00c35c5171d5517471e12"
+    },
+    {
       "path": "host/presentation_mailbox.hpp",
       "bytes": 608,
       "sha256": "dfe920631e83fb4563aad8669ba72a05d270dba24304d3111d615bbb6c13307b"
@@ -345,18 +355,18 @@
     },
     {
       "path": "host/session_app.cpp",
-      "bytes": 1455,
-      "sha256": "40834e6cd38559c1f4b6d867964c8456cbda05f9c6d1cefb0928f4dc25924f1f"
+      "bytes": 1528,
+      "sha256": "a2652a617e13b2fa7eb95392210e3d62824618ff248e458f5b254e810bc44608"
     },
     {
       "path": "host/session_app.hpp",
-      "bytes": 374,
-      "sha256": "c0f3daa3d14f264187885a8ad22a40b9e4f8de2dc8ed9d2b23171646c6f6d1ab"
+      "bytes": 469,
+      "sha256": "e09fe2eb5bb908f087bf9cd8e4624285297f655f54c2adeaf2cf0d9155879f88"
     },
     {
       "path": "host/session_main.cpp",
-      "bytes": 1646,
-      "sha256": "2745754b29321eca31c2d95a63ace37349b6fbbd01076294848e33dbf2287515"
+      "bytes": 1850,
+      "sha256": "30f50692f54120f50f219a67f0dd534751dded7e74bdf94304079d1c2ff9289a"
     },
     {
       "path": "host/settings_profile.hpp",
@@ -580,8 +590,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 7624,
-      "sha256": "ff0b62d5e1a5033a2bcf583a8f6b4f15fe80aa0015532bcde44fee941d4c67bb"
+      "bytes": 7767,
+      "sha256": "65ef04e4fc46dd17f9e7db4a2ce0dce1a31d88341387dd87e7606bcc007e5fab"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -1309,6 +1319,11 @@
       "sha256": "87c7566ead0e68e0f6d993294d1e37adc0d425d99838a670641e7b5cb9f016d7"
     },
     {
+      "path": "tests/presentation_loop_tests.cpp",
+      "bytes": 10157,
+      "sha256": "f138407bfab4367001e1f4090a4bb17a1461b043121e8b93672f4d7623a747da"
+    },
+    {
       "path": "tests/presentation_tests.cpp",
       "bytes": 3256,
       "sha256": "350abf60fd016ee2b1a02a6df8024a5be278c0bca1a195ff9b209672a048463a"
@@ -1390,8 +1405,8 @@
     },
     {
       "path": "tests/spatial_cockpit_tests.cpp",
-      "bytes": 8776,
-      "sha256": "0916cebc0e4f80c75133f605c6eff9e58438aa0a4aad075abefd9656e63c2270"
+      "bytes": 9907,
+      "sha256": "5fe26ed7bc768cef624ec17b96fee47c67eec80647d8506a0eb6c865e51ab53c"
     },
     {
       "path": "tests/spatial_effects_tests.cpp",

@@ -11,6 +11,7 @@ namespace {
 using namespace comanchecd;
 using namespace comanchecd::host;
 constexpr std::uint32_t background=0xff123456;
+constexpr unsigned speed_x=40, speed_y=134, altitude_x=284, altitude_y=112;
 void require(bool value,const char* message) {
     if (!value) { throw std::runtime_error(message); }
 }
@@ -57,14 +58,22 @@ int main(int argc,char** argv) {
                 frame.scene_mask[y*cockpit_width+x]=0;
             }
         }
+        constexpr unsigned shoulder_bottom=177, shoulder_inset=48;
+        for (unsigned y=145;y<shoulder_bottom;++y) {
+            const auto inset=shoulder_inset*(shoulder_bottom-y)/(shoulder_bottom-145);
+            for (unsigned x=0;x<inset;++x) {
+                frame.scene_mask[y*cockpit_width+x]=1;
+                frame.scene_mask[y*cockpit_width+cockpit_width-1-x]=1;
+            }
+        }
         source.pixels[70*cockpit_width+160]=1;
         frame.scene_mask[70*cockpit_width+160]=0;
         source.pixels[137*cockpit_width+160]=3;
         frame.scene_mask[137*cockpit_width+160]=0;
-        for (const auto x : {64u,288u}) {
-            source.pixels[137*cockpit_width+x]=3;
-            frame.scene_mask[137*cockpit_width+x]=0;
-        }
+        source.pixels[speed_y*cockpit_width+speed_x]=3;
+        frame.scene_mask[speed_y*cockpit_width+speed_x]=0;
+        source.pixels[altitude_y*cockpit_width+altitude_x]=3;
+        frame.scene_mask[altitude_y*cockpit_width+altitude_x]=0;
         std::fill(source.pixels.end()-cockpit_width,source.pixels.end(),2);
         const auto retained=source;
         const auto retained_mask=frame.scene_mask;
@@ -76,6 +85,14 @@ int main(int argc,char** argv) {
             return image;
         };
         const auto front=render({});
+        require(front.pixels[300*640+40]==background,
+            "The sloping dashboard shoulder must leave the outer windshield corner open");
+        unsigned diagonal=0;
+        for (unsigned y=270;y<280;++y) {
+            diagonal+=std::count_if(front.pixels.begin()+y*640+60,front.pixels.begin()+y*640+110,
+                [](auto color) { return color!=background; });
+        }
+        require(diagonal>20,"The forward canopy support must slope inward toward the original dashboard shoulder");
         require(std::count(front.pixels.begin(),front.pixels.end(),0xff00ff00)>1000,"Live recovered instrument pixels must appear on the front panel");
         require(front.pixels[470*640+320]!=0xff00ff00,
             "The fitted instrument panel must leave a visible housing margin below its bottom row");
@@ -83,7 +100,8 @@ int main(int argc,char** argv) {
             "Instrument fitting must preserve the world-aligned native HUD projection");
         require(front.pixels[274*640+320]==0xff0000ff,
             "The dashboard housing must leave the lower HUD visible");
-        require(front.pixels[274*640+128]==0xff0000ff && front.pixels[274*640+576]==0xff0000ff,
+        require(front.pixels[speed_y*2*640+speed_x*2]==0xff0000ff &&
+                front.pixels[altitude_y*2*640+altitude_x*2]==0xff0000ff,
             "The side consoles must clear the neutral-view speed and altitude HUD regions");
         require(std::count(front.pixels.begin(),front.pixels.end(),0xffff0000)>500,
             "The final native instrument row must remain visible inside the housing");

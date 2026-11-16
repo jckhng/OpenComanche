@@ -2,6 +2,7 @@
 #include "host_preferences.hpp"
 #include "launch_options.hpp"
 #include "session_app.hpp"
+#include "presentation_loop.hpp"
 #include <iostream>
 
 int main(int argc, char** argv) {
@@ -26,6 +27,8 @@ int main(int argc, char** argv) {
             auto host = std::make_unique<SdlFlightHost>(options);
             preferences.write(options);
             return host;
+        }, [](comanchecd::GameSession& session, FlightHost& host) {
+            run_presentation(host, [&](FlightHost& simulation) { run_session(session, simulation); });
         });
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

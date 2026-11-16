@@ -36,6 +36,11 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments, SdlH
             options.controller.sensitivity = integer_option(value);
         } else if (option == "--invert-y" && (value == "on" || value == "off")) {
             options.controller.pitch = value == "on" ? PitchDirection::inverted : PitchDirection::normal;
+        } else if (option == "--axis-calibration") {
+            set_axis_calibration(options.calibration, value);
+        } else if (option == "--button-prompts" && (value == "auto" || value == "on" || value == "off")) {
+            options.prompts = value == "auto" ? ButtonPrompts::automatic :
+                value == "on" ? ButtonPrompts::enabled : ButtonPrompts::disabled;
         } else if (option == "--fps") {
             options.frame_limit = parse_frame_limit(value);
         } else if (option == "--vsync" && (value == "on" || value == "off")) {
@@ -68,6 +73,7 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments, SdlH
     }
     validate_frame_limit(options.frame_limit);
     validate_window_placement(options.window);
+    validate_controller_calibration(options.calibration);
     validate_controller_tuning(options.controller);
     validate_controller_bindings(options.bindings);
     if (enhanced_options && options.input != InputProfile::enhanced) {

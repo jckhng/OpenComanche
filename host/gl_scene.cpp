@@ -242,6 +242,7 @@ class GlScene::Impl final : public SpatialGeometry {
             weather_map_ = texture();
             panel_ = texture();
             overlay_ = texture();
+            prompts_ = texture();
             hud_ = texture();
             background_ = texture();
             gl_.GenFramebuffers(1, &target_framebuffer_);
@@ -445,6 +446,39 @@ class GlScene::Impl final : public SpatialGeometry {
         gl_.UseProgram(0);
         glFlush();
         if (glGetError() != GL_NO_ERROR) { throw std::runtime_error("OpenGL image presentation failed"); }
+    }
+
+    void button_prompts(const GraphicsTarget& target, const ButtonPromptImage& prompts) {
+        const auto width = target.viewport.width ? target.viewport.width : target.width;
+        const auto height = target.viewport.height ? target.viewport.height : target.height;
+        const auto scale = std::min(double(width)/cockpit_width, double(height)/cockpit_height);
+        const auto panel_width = std::max(1u, static_cast<unsigned>(ButtonPromptImage::width*scale));
+        const auto panel_height = std::max(1u, static_cast<unsigned>(ButtonPromptImage::height*scale));
+        upload(prompts_, ButtonPromptImage::width, ButtonPromptImage::height, prompts.rgba.data(), PixelFormat::rgba);
+        gl_.UseProgram(program_);
+        gl_.BindVertexArray(vao_);
+        gl_.BindFramebuffer(GL_FRAMEBUFFER, target.texture ? target_framebuffer_ : 0);
+        if (target.texture) {
+            gl_.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target.texture, 0);
+        }
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+        glDisable(GL_SCISSOR_TEST);
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_FRAMEBUFFER_SRGB);
+        glViewport(target.viewport.x + (width-panel_width)/2,
+            target.viewport.y + height-panel_height, panel_width, panel_height);
+        integer("reflectionPass", 0);
+        integer("linearOutput", target.texture != 0);
+        integer("flipOutput", 1);
+        bind(7, prompts_);
+        if (target.texture && target.color_space == GraphicsColorSpace::srgb) { glEnable(GL_FRAMEBUFFER_SRGB); }
+        screen(ScreenPass::output, screen_view());
+        glDisable(GL_FRAMEBUFFER_SRGB);
+        gl_.BindFramebuffer(GL_FRAMEBUFFER, 0);
+        gl_.BindVertexArray(0);
+        gl_.UseProgram(0);
+        if (glGetError() != GL_NO_ERROR) { throw std::runtime_error("OpenGL button prompts failed"); }
     }
 
   private:
@@ -977,7 +1011,7 @@ class GlScene::Impl final : public SpatialGeometry {
     Gl gl_;
     GLuint program_ = 0, vao_ = 0, buffer_ = 0, target_framebuffer_ = 0;
     GLuint palette_ = 0, terrain_ = 0, heights_ = 0, sky_ = 0, water_map_ = 0, weather_map_ = 0, panel_ = 0,
-           hud_ = 0, background_ = 0, overlay_ = 0;
+           hud_ = 0, background_ = 0, overlay_ = 0, prompts_ = 0;
     std::vector<GLuint> textures_;
     std::unordered_map<GLuint, std::pair<unsigned, unsigned>> texture_sizes_;
     Surface scene_, reflected_;
@@ -1008,6 +1042,9 @@ void GlScene::draw(const GraphicsTarget& target, const SpatialFrame& frame, cons
                    const EntityPoses& poses, const CockpitImage& source,
                    const std::optional<CameraView>& cockpit, SceneOverlay overlay) {
     impl_->draw(target, frame, view, poses, source, cockpit, overlay);
+}
+void GlScene::button_prompts(const GraphicsTarget& target, const ButtonPromptImage& prompts) {
+    impl_->button_prompts(target, prompts);
 }
 void GlScene::image(const GraphicsTarget& target, const CockpitImage& image, ImageScaling scaling) {
     impl_->image(target, image, scaling);

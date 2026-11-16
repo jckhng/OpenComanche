@@ -7,6 +7,7 @@
 #include "cockpit_scaling.hpp"
 #include "spatial_cockpit.hpp"
 #include "display_settings.hpp"
+#include "controller_configuration.hpp"
 #include <functional>
 
 namespace comanchecd::host {
@@ -29,6 +30,8 @@ struct SdlHostOptions {
     ViewAspect aspect = ViewAspect::profile_default;
     FrameLimit frame_limit;
     WindowPlacement window;
+    ControllerCalibration calibration;
+    ButtonPrompts prompts = ButtonPrompts::automatic;
 };
 
 class SdlFlightHost final : public FlightHost {

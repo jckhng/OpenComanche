@@ -193,6 +193,63 @@ Host preferences have a separate file and lifetime from the DOS pilot/settings
 records. Faithful launches use their existing keyboard and DOS settings route.
 Physical remapped-controller qualification remains open.
 
+## In-game controller setup
+
+In `comanche_enhanced`, press Ctrl+F3 from menus, name entry or flight. Opening
+setup pauses the native session and audio. Closing waits for the simulation's
+pause acknowledgment and restores its prior playback state. Focus loss or a
+controller disconnect retains pause. Resume with P when ready.
+
+The editor uses fixed host navigation so every native action can be rebound.
+
+| Input | Editor action |
+|---|---|
+| Arrows / D-pad | Move selection and change values |
+| Enter / A | Select or confirm |
+| Escape / B | Return, cancel capture or close the overview |
+| Delete / X | Clear the selected action's bindings |
+| Ctrl+F3 | Close setup |
+
+Choose Menu bindings or Flight bindings, select an action and press Enter/A.
+Release held buttons, then press the new button or flight trigger. Capture adds
+that control to the action and replaces its previous assignment. Existing
+controls for that action remain assigned. Clear removes all its controls.
+During capture, B is available as a binding. Use Escape to cancel or wait for
+the eight-second timeout. Disconnects and focus loss cancel capture.
+
+Choose steering axes before calibrating. In Calibrate sticks, release both
+sticks and confirm. Keep them released while setup samples center/noise for
+one second. Move the selected axes through full travel in both directions and
+confirm again. The editor requires at least one-quarter of raw axis travel on
+each side of center and derives a deadzone from measured noise plus a margin.
+Live values show raw readings and captured travel. Incomplete sweeps remain
+open for further movement. Unstable centers require another attempt.
+
+Apply and save commits bindings, response, calibration and prompt visibility
+together through the profile writer. Save failures retain staged edits for
+retry. Close discards changes made since the last successful Apply. Settings
+belong to the native profile, including calibration. Recalibrate when changing
+controllers. Version 1 profiles created before calibration inherit identity
+axis calibration.
+
+Button prompts offer Auto, On and Off. Auto follows controller use and hides
+after keyboard input. Prompts show the active menu or flight bindings, including
+multiple buttons per action. They use SDL's standard A/B/X/Y, LB/RB, LT/RT and
+D-pad names. The host draws them over completed images or world views. The
+controller editor and its prompt settings are available in the enhanced desktop
+player. OpenXR controller interaction remains pending.
+
+CLI overrides can also configure calibration and prompts.
+
+```sh
+--axis-calibration leftx=-28000,1700,30000 --button-prompts auto
+```
+
+The file form uses `calibration.leftx=-28000,1700,30000` and
+`button-prompts=auto`. Axis calibration is `minimum,center,maximum` for
+`leftx`, `lefty`, `rightx` or `righty`, bounded by SDL's signed 16-bit range.
+The selected center becomes zero and each side scales to full steering range.
+
 ## Enhanced SDL2 presentation
 
 Enhanced windows request high-DPI output. Integer scaling uses the largest

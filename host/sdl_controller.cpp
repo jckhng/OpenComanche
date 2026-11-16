@@ -5,7 +5,6 @@
 
 namespace comanchecd::host {
 namespace {
-constexpr int trigger_deadzone = 3276;
 constexpr std::uint8_t maximum_throttle = 15;
 constexpr std::array<SDL_GameControllerButton, controller_button_count> buttons{
     SDL_CONTROLLER_BUTTON_A, SDL_CONTROLLER_BUTTON_B, SDL_CONTROLLER_BUTTON_X, SDL_CONTROLLER_BUTTON_Y,
@@ -40,8 +39,10 @@ SDL_Scancode menu_key(HostAction action) {
 }
 }
 
-SdlController::SdlController(const std::string& mappings, ControllerTuning tuning, ControllerBindings bindings)
-    : tuning_(tuning), bindings_(bindings) {
+SdlController::SdlController(const std::string& mappings, ControllerTuning tuning, ControllerBindings bindings,
+                             ControllerCalibration calibration)
+    : tuning_(tuning), bindings_(bindings), calibration_(calibration) {
+    validate_controller_calibration(calibration_);
     validate_controller_tuning(tuning_);
     validate_controller_bindings(bindings_);
     if (!mappings.empty() && SDL_GameControllerAddMappingsFromFile(mappings.c_str()) < 0) {
@@ -160,14 +161,46 @@ void SdlController::event(const SDL_Event& event, HostInput& input, std::uint8_t
     emit(flight_input() ? bindings_.flight[button] : bindings_.menu[button], button, input, throttle);
 }
 
+ControllerDevice SdlController::snapshot() const {
+    ControllerDevice device;
+    if (!controller_) { return device; }
+    device.instance = instance_;
+    const auto* name = SDL_GameControllerName(controller_);
+    device.name = name ? name : "SDL2 game controller";
+    for (std::size_t index = 0; index < device.axes.size(); ++index) {
+        device.axes[index] = axis(controller_, static_cast<ControllerAxis>(index + 1));
+    }
+    for (std::size_t index = 0; index < triggers.size(); ++index) {
+        device.triggers[index] = SDL_GameControllerGetAxis(controller_, triggers[index]);
+    }
+    for (std::size_t index = 0; index < buttons.size(); ++index) {
+        device.buttons[index] = SDL_GameControllerGetButton(controller_, buttons[index]) != 0;
+    }
+    return device;
+}
+
+void SdlController::configure(ControllerTuning tuning, ControllerBindings bindings, ControllerCalibration calibration) {
+    validate_controller_tuning(tuning);
+    validate_controller_bindings(bindings);
+    validate_controller_calibration(calibration);
+    reset();
+    tuning_ = tuning;
+    bindings_ = bindings;
+    calibration_ = calibration;
+}
+
 void SdlController::sample(HostInput& input, std::uint8_t& throttle) {
     if (!controller_ || !focused_ || !flight_input()) { return; }
-    const auto x = axis(controller_, bindings_.horizontal);
-    const auto y = axis(controller_, bindings_.vertical);
+    const auto calibrated = [&](ControllerAxis selected) -> std::int16_t {
+        return selected == ControllerAxis::none ? 0 :
+            calibrated_axis(axis(controller_, selected), calibration_.axes[static_cast<std::size_t>(selected) - 1]);
+    };
+    const auto x = calibrated(bindings_.horizontal);
+    const auto y = calibrated(bindings_.vertical);
     std::array<bool, controller_trigger_count> pressed{};
     for (std::size_t trigger = 0; trigger < triggers.size(); ++trigger) {
         pressed[trigger] = bindings_.triggers[trigger] != HostAction::none &&
-            SDL_GameControllerGetAxis(controller_, triggers[trigger]) > trigger_deadzone;
+            SDL_GameControllerGetAxis(controller_, triggers[trigger]) > controller_trigger_threshold;
     }
     if (!axes_armed_) {
         axes_armed_ = std::abs(int(x)) <= tuning_.deadzone && std::abs(int(y)) <= tuning_.deadzone &&

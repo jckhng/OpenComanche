@@ -54,8 +54,9 @@ std::size_t run_viewer(TrainingFlight& flight, FlightHost& host, std::size_t tic
             host.clear_audio();
             host.set_playback(Playback::running);
         }
-        if (input.pause == PauseAction::pause || (input.pause == PauseAction::toggle && fault.empty())) {
-            paused = input.pause == PauseAction::pause || !paused;
+        if (input.pause == PauseAction::pause ||
+                ((input.pause == PauseAction::toggle || input.pause == PauseAction::resume) && fault.empty())) {
+            paused = input.pause == PauseAction::pause || (input.pause == PauseAction::toggle && !paused);
             pending.clear_presses();
             host.clear_audio();
             host.set_playback(paused ? Playback::paused : Playback::running);
@@ -137,8 +138,9 @@ void run_session(GameSession& session, FlightHost& host) {
             host.set_playback(Playback::running);
             pending.clear();
             host.reset_controls();
-        } else if (input.pause == PauseAction::pause || (input.pause == PauseAction::toggle && !editing_name)) {
-            paused = input.pause == PauseAction::pause || !paused;
+        } else if (input.pause == PauseAction::pause || input.pause == PauseAction::resume ||
+                (input.pause == PauseAction::toggle && !editing_name)) {
+            paused = input.pause == PauseAction::pause || (input.pause == PauseAction::toggle && !paused);
             pending.clear_presses();
             host.clear_audio();
             host.set_playback(paused ? Playback::paused : Playback::running);

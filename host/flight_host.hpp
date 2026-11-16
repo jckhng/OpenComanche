@@ -6,7 +6,7 @@
 #include <string>
 
 namespace comanchecd::host {
-enum class PauseAction { none, toggle, pause };
+enum class PauseAction { none, toggle, pause, resume };
 enum class Playback { paused, running };
 enum class InputContext { menu, name_entry, flight, training };
 enum class InputProfile { faithful, enhanced };

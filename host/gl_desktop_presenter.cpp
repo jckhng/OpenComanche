@@ -82,7 +82,8 @@ void GlDesktopPresenter::present(const CockpitImage& image) {
 }
 void GlDesktopPresenter::present_scene(const SpatialFrame& frame, const CameraView& view,
                                        const EntityPoses& poses, const CockpitImage& instruments,
-                                       const std::optional<CameraView>& cockpit, SceneOverlay overlay) {
+                                       const std::optional<CameraView>& cockpit, SceneOverlay overlay,
+                                       const ButtonPromptImage* prompts) {
     impl_->current();
     const auto layout = impl_->layout(impl_->aspect, impl_->scaling);
     if (overlay == SceneOverlay::sharp &&
@@ -90,6 +91,7 @@ void GlDesktopPresenter::present_scene(const SpatialFrame& frame, const CameraVi
         overlay = SceneOverlay::nearest;
     }
     impl_->scene->draw(Impl::target(layout), frame, view, poses, instruments, cockpit, overlay);
+    if (prompts) { impl_->scene->button_prompts(Impl::target(layout), *prompts); }
     SDL_GL_SwapWindow(impl_->window.get());
 }
 } // namespace comanchecd::host

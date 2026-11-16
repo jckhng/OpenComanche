@@ -74,6 +74,26 @@ runtime frame timing and its mirror starts uncapped. Context/focus suppression, 
 and shared logical-key ownership belong to the input adapter. Original-format
 pilot and menu settings retain their existing persistence owners.
 
+## Controller editor and calibration
+
+`controller_configuration.cpp` validates and normalizes physical stick ranges,
+formats logical button labels and resolves action prompts from active bindings.
+`SdlController` exposes raw device observations and accepts complete validated
+configurations. Reconfiguration releases its prior logical keys and requires
+neutral axes/button release before gameplay resumes.
+
+`ControllerMenu` owns staged edits, binding capture, center/noise sampling and
+travel qualification independently of SDL. The SDL host translates fixed
+editor navigation, owns the pause handshake and commits settings through its
+profile-writer callback. Explicit host resume supports returning to pilot name
+entry while retaining the existing P-key behavior. Setup sends one pause
+request and waits for acknowledgment before returning a resume request.
+
+`host_ui.cpp` draws authored bitmap text and prompt strips from host state.
+Native output decorates a private image copy using its existing palette.
+Spatial CPU/GPU adapters compose the strip after world/cockpit rendering.
+These views consume completed observations and contribute no simulation time.
+
 ## Enhanced presentation views
 
 `host/spatial_history.cpp` samples camera and entity transforms from retained

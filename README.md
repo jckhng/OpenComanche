@@ -61,6 +61,11 @@ backend requests display vsync and defaults to a software FPS cap at the current
 display refresh rate. Ctrl+F1 cycles the cap and Ctrl+F2 toggles the vsync request.
 Window bounds and fullscreen/maximized state restore from the native profile.
 
+Ctrl+F3 opens the paused controller editor. Bind menu/flight actions, calibrate
+stick center and full travel, adjust response and choose button prompt visibility.
+Use arrows or the D-pad, Enter/A to select and Escape/B to return. Apply and save
+commits the staged settings. Gameplay prompts follow the active bindings.
+
 Enhanced controller bindings and tuning/display preferences persist in
 `host-preferences.cfg` inside the native profile. Use `--bind flight.x=fire`
 for a saved action override.
@@ -120,6 +125,7 @@ progress/settings in the native profile directory.
 | Enhanced | Alt+Enter | Toggle desktop fullscreen |
 | Enhanced | Ctrl+F1 | Cycle FPS limit |
 | Enhanced | Ctrl+F2 | Toggle vsync request |
+| Enhanced | Ctrl+F3 | Controller bindings, calibration and prompts |
 | Debrief | Escape | Return to operations |
 
 Focus loss pauses flight and releases held controls. Resume with P after

@@ -2,6 +2,7 @@
 #include "graphics_target.hpp"
 #include "desktop_view.hpp"
 #include "spatial_renderer.hpp"
+#include "host_ui.hpp"
 #include <optional>
 
 namespace comanchecd::host {
@@ -14,6 +15,7 @@ class GlScene {
               const EntityPoses& poses, const CockpitImage& instruments,
               const std::optional<CameraView>& cockpit, SceneOverlay overlay = SceneOverlay::none);
     void image(const GraphicsTarget& target, const CockpitImage& image, ImageScaling scaling);
+    void button_prompts(const GraphicsTarget& target, const ButtonPromptImage& prompts);
 
   private:
     class Impl;

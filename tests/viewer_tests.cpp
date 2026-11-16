@@ -88,6 +88,27 @@ private:
     bool paused_seen_ = false, fault_seen_ = false;
 };
 
+class ExplicitResumeHost final : public comanchecd::host::FlightHost {
+public:
+    comanchecd::host::HostInput poll() override {
+        comanchecd::host::HostInput input;
+        ++polls_;
+        input.quit = polls_ == 3;
+        input.pause = polls_ == 1 ? comanchecd::host::PauseAction::pause : comanchecd::host::PauseAction::resume;
+        return input;
+    }
+    void present(const comanchecd::CockpitImage&, const comanchecd::FlightState&, const std::string& status) override {
+        require((status == "Paused") == (polls_ == 1), "Explicit host resume must work inside pilot name entry");
+    }
+    void queue_audio(const std::vector<std::int16_t>&) override {}
+    std::size_t queued_audio_samples() const override { return 0; }
+    void clear_audio() override {}
+    void set_playback(comanchecd::host::Playback) override {}
+    void idle() override {}
+private:
+    unsigned polls_ = 0;
+};
+
 class SessionPauseHost final : public comanchecd::host::FlightHost {
 public:
     enum class Context { menu, pilot_editor };
@@ -238,6 +259,8 @@ int main(int argc, char** argv) {
         SessionPauseHost text_pause(SessionPauseHost::Context::pilot_editor);
         comanchecd::host::run_session(editor, text_pause);
         text_pause.verify();
+        ExplicitResumeHost controller_return;
+        comanchecd::host::run_session(editor, controller_return);
         comanchecd::TrainingFlight flight(comanchecd::Installation(argv[1], argv[2]));
         TestHost controls(TestHost::Scenario::pause_reset);
         require(comanchecd::host::run_viewer(flight, controls) == 2, "Pause and reset must produce the declared tick count");

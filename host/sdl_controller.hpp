@@ -3,6 +3,7 @@
 #include "flight_host.hpp"
 #include "controller_response.hpp"
 #include "controller_bindings.hpp"
+#include "controller_configuration.hpp"
 #include "sdl_common.hpp"
 
 namespace comanchecd::host {
@@ -13,7 +14,8 @@ struct ControllerKey {
 
 class SdlController {
 public:
-    explicit SdlController(const std::string& mappings, ControllerTuning tuning = {}, ControllerBindings bindings = {});
+    explicit SdlController(const std::string& mappings, ControllerTuning tuning = {}, ControllerBindings bindings = {},
+                           ControllerCalibration calibration = {});
     ~SdlController();
     void event(const SDL_Event& event, HostInput& input, std::uint8_t& throttle);
     void sample(HostInput& input, std::uint8_t& throttle);
@@ -21,6 +23,8 @@ public:
     void set_focus(bool focused);
     void reset();
     std::vector<ControllerKey> take_keys();
+    ControllerDevice snapshot() const;
+    void configure(ControllerTuning tuning, ControllerBindings bindings, ControllerCalibration calibration);
 private:
     void open_available();
     bool flight_input() const;
@@ -39,5 +43,6 @@ private:
     std::vector<ControllerKey> keys_;
     ControllerTuning tuning_;
     ControllerBindings bindings_;
+    ControllerCalibration calibration_;
 };
 }

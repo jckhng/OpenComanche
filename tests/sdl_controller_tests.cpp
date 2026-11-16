@@ -251,6 +251,82 @@ int main() {
             require(!input.controls.fire && !input.pressed.fire && input.scan_bytes.empty(),
                     "Faithful input must leave enhanced controller routing disabled");
         }
+        {
+            for (unsigned button = 0; button < SDL_CONTROLLER_BUTTON_MAX; ++button) {
+                SDL_JoystickSetVirtualButton(replacement_joystick.get(), button, 0);
+            }
+            for (unsigned axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; ++axis) {
+                SDL_JoystickSetVirtualAxis(replacement_joystick.get(), axis,
+                    axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT ? -32768 : 0);
+            }
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTX, 1700);
+            auto options = parse_sdl_options({"--mode", "enhanced", "--renderer", "cpu", "--fps", "unlimited",
+                "--axis-calibration", "leftx=-28000,1700,30000"});
+            SdlHostOptions saved;
+            unsigned saves = 0;
+            SdlFlightHost editor(options, [&](const SdlHostOptions& configuration) { saved = configuration; ++saves; });
+            editor.poll();
+            require(editor.poll().controls.horizontal == 0, "A calibrated center must rearm without drift");
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTX, 30000);
+            require(editor.poll().controls.horizontal == 350, "Calibrated physical travel must reach full steering");
+            SDL_JoystickSetVirtualAxis(replacement_joystick.get(), SDL_CONTROLLER_AXIS_LEFTX, 1700);
+            editor.poll();
+            editor.set_playback(Playback::running);
+            SDL_Event open{};
+            open.type = SDL_KEYDOWN;
+            open.key.keysym.scancode = SDL_SCANCODE_F3;
+            open.key.keysym.mod = KMOD_CTRL;
+            SDL_PushEvent(&open);
+            open.type = SDL_KEYUP;
+            open.key.keysym.mod = 0;
+            SDL_PushEvent(&open);
+            require(editor.poll().pause == PauseAction::pause, "The live controller editor must request native pause");
+            editor.set_playback(Playback::paused);
+            const auto press = [&](SDL_GameControllerButton button, bool down) {
+                SDL_JoystickSetVirtualButton(replacement_joystick.get(), button, down ? 1 : 0);
+                return editor.poll();
+            };
+            const auto tap = [&](SDL_GameControllerButton button) {
+                auto input = press(button, true);
+                const auto released = press(button, false);
+                require(input.scan_bytes.empty() && released.scan_bytes.empty() && !input.controls.fire && !input.pressed.fire,
+                    "Gamepad editor navigation must not reach DOS or fire");
+                return input;
+            };
+            tap(SDL_CONTROLLER_BUTTON_A);
+            tap(SDL_CONTROLLER_BUTTON_A);
+            tap(SDL_CONTROLLER_BUTTON_B);
+            tap(SDL_CONTROLLER_BUTTON_B);
+            tap(SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+            tap(SDL_CONTROLLER_BUTTON_A);
+            tap(SDL_CONTROLLER_BUTTON_A);
+            SDL_Event extra_button{};
+            extra_button.type = SDL_CONTROLLERBUTTONDOWN;
+            extra_button.cbutton.which = SDL_JoystickInstanceID(replacement_joystick.get());
+            extra_button.cbutton.button = static_cast<Uint8>(controller_button_count);
+            SDL_PushEvent(&extra_button);
+            editor.poll();
+            extra_button.type = SDL_CONTROLLERBUTTONUP;
+            SDL_PushEvent(&extra_button);
+            editor.poll();
+            tap(SDL_CONTROLLER_BUTTON_Y);
+            tap(SDL_CONTROLLER_BUTTON_B);
+            for (unsigned row = 0; row < 9; ++row) { tap(SDL_CONTROLLER_BUTTON_DPAD_DOWN); }
+            tap(SDL_CONTROLLER_BUTTON_A);
+            require(saves > 0 && saved.bindings.menu[static_cast<std::size_t>(ControllerButton::b)] == HostAction::accept &&
+                    saved.calibration.axes[0].center == 1700 &&
+                    saved.bindings.flight[static_cast<std::size_t>(ControllerButton::y)] == HostAction::fire &&
+                    saved.bindings.triggers[0] == HostAction::none,
+                    "Gamepad capture and Apply must persist a complete calibrated configuration");
+            require(tap(SDL_CONTROLLER_BUTTON_B).pause == PauseAction::resume,
+                    "Fixed editor Back must remain usable after rebinding the native Back button");
+            editor.set_input_context(InputContext::menu);
+            editor.poll();
+            require(press(SDL_CONTROLLER_BUTTON_B, true).scan_bytes == std::vector<std::uint8_t>{0x1c},
+                    "The applied button binding must work through normal native menu input");
+            require(press(SDL_CONTROLLER_BUTTON_B, false).scan_bytes == std::vector<std::uint8_t>{0x9c},
+                    "The applied binding must retain its release ownership");
+        }
         require(SDL_JoystickDetachVirtual(replacement) == 0, "Replacement virtual controller must detach");
         std::cout << "Virtual SDL2 controller routing and lifecycle passed\n";
         return 0;

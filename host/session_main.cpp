@@ -17,7 +17,8 @@ int main(int argc, char** argv) {
             " [--cockpit-scale nearest|sharp] [--cockpit flat|spatial]"
             " [--fps auto|unlimited|15..1000] [--vsync on|off]"
             " [--window-size WIDTHxHEIGHT] [--window-position X,Y]"
-            " [--window-mode windowed|maximized|fullscreen]";
+            " [--window-mode windowed|maximized|fullscreen]"
+            " [--axis-calibration AXIS=MINIMUM,CENTER,MAXIMUM] [--button-prompts auto|on|off]";
         if (argc == 2 && std::string(argv[1]) == "--help") {
             std::cout << usage << "\nEnhanced SDL2 desktop controls and rendering.\n";
             return 0;

@@ -93,6 +93,12 @@ int main() {
                 require(
                     world[0] == 0 && (world[1] == 255 || world[2] == 255),
                     "Desktop world rendering must restore instruments and scene state after native images");
+                const auto before_prompt = pixel(width/2, height/2);
+                const auto prompts = button_prompt_image("A FIRE", "CTRL+F3 SETUP");
+                renderer.button_prompts(back, prompts);
+                require(pixel(width/2, height-1)[0] == prompts.rgba[0] &&
+                            pixel(width/2, height/2) == before_prompt,
+                        "GPU button prompts must draw without clearing the surrounding scene");
                 frame.scene_mask.assign(image.pixels.size(), 0);
                 renderer.draw({0, unsigned(width), unsigned(height)}, frame, view, {}, image, {},
                               SceneOverlay::sharp);

@@ -17,7 +17,7 @@ class GlDesktopPresenter {
     void present(const CockpitImage& image);
     void present_scene(const SpatialFrame& frame, const CameraView& view, const EntityPoses& poses,
                        const CockpitImage& instruments, const std::optional<CameraView>& cockpit,
-                       SceneOverlay overlay);
+                       SceneOverlay overlay, const ButtonPromptImage* prompts = nullptr);
 
   private:
     class Impl;

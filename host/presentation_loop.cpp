@@ -148,8 +148,13 @@ class SimulationHost final : public FlightHost {
         input_.key_pressed |= input.key_pressed;
         if (input.pause == PauseAction::pause) {
             input_.pause = PauseAction::pause;
-        } else if (input.pause == PauseAction::toggle && input_.pause != PauseAction::pause) {
-            input_.pause = input_.pause == PauseAction::toggle ? PauseAction::none : PauseAction::toggle;
+        } else if (input_.pause != PauseAction::pause) {
+            if (input.pause == PauseAction::resume) {
+                input_.pause = PauseAction::resume;
+            } else if (input.pause == PauseAction::toggle) {
+                input_.pause = input_.pause == PauseAction::toggle ? PauseAction::none :
+                    input_.pause == PauseAction::resume ? PauseAction::pause : PauseAction::toggle;
+            }
         }
         ++received_input_;
         changed_.notify_all();
@@ -228,7 +233,7 @@ class SimulationHost final : public FlightHost {
         input_ = {};
         input_.scan_bytes = std::move(scan_bytes);
         input_.quit = quit;
-        if (pause == PauseAction::pause) {
+        if (pause == PauseAction::pause || pause == PauseAction::resume) {
             input_.pause = pause;
         }
     }

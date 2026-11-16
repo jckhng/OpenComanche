@@ -4,6 +4,7 @@
 #include "sdl_controller.hpp"
 #include "sdl_keyboard.hpp"
 #include "sdl_display.hpp"
+#include "controller_menu.hpp"
 #include "spatial_renderer.hpp"
 #ifdef COMANCHECD_OPENGL_DESKTOP
 #include "gl_desktop_presenter.hpp"
@@ -34,6 +35,7 @@ public:
         if (options.pacing != DisplayPacing::vertical_sync && options.pacing != DisplayPacing::immediate) {
             throw std::invalid_argument("Invalid display pacing");
         }
+        validate_controller_calibration(options.calibration);
         validate_controller_tuning(options.controller);
         validate_controller_bindings(options.bindings);
         const bool enhanced = profile == InputProfile::enhanced;
@@ -77,7 +79,7 @@ public:
         if (enhanced) {
             display = std::make_unique<SdlDisplay>(output_window(), options.frame_limit, options.window);
             request_save();
-            controller = std::make_unique<SdlController>(options.controller_mappings, options.controller, options.bindings);
+            controller = std::make_unique<SdlController>(options.controller_mappings, options.controller, options.bindings, options.calibration);
             if (!gpu_available() && cockpit == CockpitPresentation::spatial && scene_rendering == SceneRendering::spatial) {
                 spatial_cockpit = std::make_unique<SpatialCockpit>();
             }
@@ -87,7 +89,7 @@ public:
 
 private:
     bool look_event(const SDL_Event& event) {
-        if (profile != InputProfile::enhanced || external_focus != HostFocus::active || !look_available ||
+        if (controller_menu || profile != InputProfile::enhanced || external_focus != HostFocus::active || !look_available ||
                 (context != InputContext::flight && context != InputContext::training)) { return false; }
         if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_MIDDLE) {
             look.reset();
@@ -107,6 +109,150 @@ private:
             return true;
         }
         return false;
+    }
+
+    ControllerConfiguration controller_settings() const {
+        return {settings.controller, settings.bindings, settings.calibration, settings.prompts};
+    }
+
+    void open_controller_menu(HostInput& input) {
+        resume_after_menu = input.pause == PauseAction::toggle ? playback == Playback::paused : playback == Playback::running;
+        resume_after_menu = resume_after_menu && input.pause != PauseAction::pause;
+        menu_keys = held;
+        release_input(input);
+        controller_menu = std::make_unique<ControllerMenu>(controller_settings());
+        controller_menu->update(controller->snapshot(), std::chrono::duration<double>(Clock::now() - epoch).count());
+        menu_pause_acknowledged = false;
+        menu_pause_requested = true;
+        audio.set_playback(Playback::paused);
+    }
+
+    bool controller_menu_event(const SDL_Event& event, HostInput& input) {
+        if (!controller_menu && save_preferences && controller && external_focus == HostFocus::active &&
+                event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_F3 &&
+                (event.key.keysym.mod & KMOD_CTRL) != 0 && (event.key.keysym.mod & KMOD_ALT) == 0 &&
+                event.key.repeat == 0 && !held[SDL_SCANCODE_F3]) {
+            open_controller_menu(input);
+            menu_keys[SDL_SCANCODE_F3] = true;
+            return true;
+        }
+        if (!controller_menu) { return false; }
+        if (event.type == SDL_WINDOWEVENT && (event.window.event == SDL_WINDOWEVENT_FOCUS_LOST ||
+                event.window.event == SDL_WINDOWEVENT_MINIMIZED)) {
+            resume_after_menu = false;
+            controller_menu->suspend();
+        }
+        if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+            const auto key = event.key.keysym.scancode;
+            if (key < SDL_SCANCODE_UNKNOWN || key >= SDL_NUM_SCANCODES) { return true; }
+            menu_keys[key] = event.type == SDL_KEYDOWN;
+            if (event.type == SDL_KEYUP) { presentation_held[key] = false; return true; }
+            if (external_focus == HostFocus::inactive || !window_focused) { return true; }
+            controller_input = false;
+            if (key == SDL_SCANCODE_F3 && (event.key.keysym.mod & KMOD_CTRL) != 0 && event.key.repeat == 0) {
+                controller_menu->command(ControllerMenuCommand::close);
+                return true;
+            }
+            if (controller_menu->capturing() && key != SDL_SCANCODE_ESCAPE) { return true; }
+            if (event.key.repeat != 0 && key != SDL_SCANCODE_UP && key != SDL_SCANCODE_DOWN &&
+                    key != SDL_SCANCODE_LEFT && key != SDL_SCANCODE_RIGHT) { return true; }
+            switch (key) {
+            case SDL_SCANCODE_UP: controller_menu->command(ControllerMenuCommand::up); break;
+            case SDL_SCANCODE_DOWN: controller_menu->command(ControllerMenuCommand::down); break;
+            case SDL_SCANCODE_LEFT: controller_menu->command(ControllerMenuCommand::left); break;
+            case SDL_SCANCODE_RIGHT: controller_menu->command(ControllerMenuCommand::right); break;
+            case SDL_SCANCODE_RETURN: controller_menu->command(ControllerMenuCommand::accept); break;
+            case SDL_SCANCODE_ESCAPE: controller_menu->command(ControllerMenuCommand::back); break;
+            case SDL_SCANCODE_DELETE: controller_menu->command(ControllerMenuCommand::clear); break;
+            default: break;
+            }
+            return true;
+        }
+        if (event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP ||
+                event.type == SDL_CONTROLLERAXISMOTION) {
+            if (event.type != SDL_CONTROLLERBUTTONDOWN || external_focus == HostFocus::inactive || !window_focused ||
+                    event.cbutton.which != controller->snapshot().instance ||
+                    event.cbutton.button >= controller_button_count) { return true; }
+            controller_input = true;
+            if (controller_menu->capturing()) { controller_menu->capture(event.cbutton.button); return true; }
+            switch (event.cbutton.button) {
+            case SDL_CONTROLLER_BUTTON_DPAD_UP: controller_menu->command(ControllerMenuCommand::up); break;
+            case SDL_CONTROLLER_BUTTON_DPAD_DOWN: controller_menu->command(ControllerMenuCommand::down); break;
+            case SDL_CONTROLLER_BUTTON_DPAD_LEFT: controller_menu->command(ControllerMenuCommand::left); break;
+            case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: controller_menu->command(ControllerMenuCommand::right); break;
+            case SDL_CONTROLLER_BUTTON_A: controller_menu->command(ControllerMenuCommand::accept); break;
+            case SDL_CONTROLLER_BUTTON_B: controller_menu->command(ControllerMenuCommand::back); break;
+            case SDL_CONTROLLER_BUTTON_X: controller_menu->command(ControllerMenuCommand::clear); break;
+            default: break;
+            }
+            return true;
+        }
+        return event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN ||
+            event.type == SDL_MOUSEBUTTONUP || event.type == SDL_MOUSEWHEEL;
+    }
+
+    void update_controller_menu(HostInput& input) {
+        const auto device = controller->snapshot();
+        controller_menu->update(device, std::chrono::duration<double>(Clock::now() - epoch).count());
+        if (controller_menu->take_apply_request()) {
+            const auto& configuration = controller_menu->settings();
+            auto candidate = settings;
+            candidate.controller = configuration.tuning;
+            candidate.bindings = configuration.bindings;
+            candidate.calibration = configuration.calibration;
+            candidate.prompts = configuration.prompts;
+            candidate.window = display->placement();
+            try {
+                validate_controller_tuning(candidate.controller);
+                validate_controller_bindings(candidate.bindings);
+                validate_controller_calibration(candidate.calibration);
+                save_preferences(candidate);
+                controller->configure(candidate.controller, candidate.bindings, candidate.calibration);
+                settings = std::move(candidate);
+                preferences_dirty = false;
+                preferences_error.clear();
+                controller_menu->save_result({});
+            } catch (const std::exception& error) {
+                controller_menu->save_result(error.what());
+                SDL_Log("Controller settings save failed (%s)", error.what());
+            }
+        }
+        input.controls = {};
+        input.controls.throttle = throttle;
+        input.cockpit = displays;
+        input.pressed = {};
+        input.keys.clear();
+        input.key_pressed = input.escape = input.abort_mission = input.reset = false;
+        if (!menu_pause_requested) {
+            input.pause = PauseAction::pause;
+            menu_pause_requested = true;
+        }
+        if (controller_menu->close_requested() && menu_pause_acknowledged) {
+            for (std::size_t key = 0; key < menu_keys.size(); ++key) {
+                presentation_held[key] = presentation_held[key] || menu_keys[key];
+            }
+            controller_menu.reset();
+            controller->set_focus(external_focus == HostFocus::active && window_focused);
+            input.pause = resume_after_menu ? PauseAction::resume : PauseAction::pause;
+        }
+    }
+
+    void update_button_prompts() {
+        prompts.reset();
+        if (!controller || controller_menu || controller->snapshot().instance < 0 || settings.prompts == ButtonPrompts::disabled ||
+                (settings.prompts == ButtonPrompts::automatic && !controller_input)) { return; }
+        const std::string setup_hint = save_preferences ? "  CTRL+F3 SETUP" : "";
+        const auto bound = [&](HostAction action) { return bound_controls(settings.bindings, context, action); };
+        if (context == InputContext::flight || context == InputContext::training) {
+            prompts = button_prompt_image(bound(HostAction::fire) + " FIRE  " + bound(HostAction::target) + " TARGET  " +
+                bound(HostAction::flare) + " FLARE  " + bound(HostAction::chaff) + " CHAFF",
+                bound(HostAction::previous_weapon) + "/" + bound(HostAction::next_weapon) + " WEAPON  " +
+                bound(HostAction::pause) + (playback == Playback::paused ? " RESUME" : " PAUSE") + setup_hint);
+        } else {
+            prompts = button_prompt_image(context == InputContext::name_entry ? "KEYBOARD TYPE NAME  " + bound(HostAction::accept) + " CONFIRM" :
+                bound(HostAction::accept) + " SELECT  " + bound(HostAction::back) + " BACK",
+                bound(HostAction::up) + "/" + bound(HostAction::down) + " MOVE" + setup_hint);
+        }
     }
 
     void request_save() {
@@ -266,7 +412,7 @@ public:
         if (focus_release_pending) {
             release_input(input);
             focus_release_pending = false;
-            if (controller && external_focus == HostFocus::active) { controller->set_focus(true); }
+            if (controller && external_focus == HostFocus::active && !controller_menu) { controller->set_focus(true); }
         }
         const bool flight_input = context == InputContext::flight || context == InputContext::training;
         SDL_Event event;
@@ -276,10 +422,27 @@ public:
             if (display && event.type == SDL_WINDOWEVENT && display->event(event.window)) {
                 request_save();
             }
+            if (event.type == SDL_MOUSEBUTTONDOWN) { controller_input = false; }
             if (look_event(event)) { continue; }
             if (controller) {
                 controller->event(event, input, throttle);
                 flush_controller_keys(input);
+            }
+            if (controller_menu && (event.type == SDL_CONTROLLERDEVICEADDED || event.type == SDL_CONTROLLERDEVICEREMOVED)) {
+                resume_after_menu = false;
+                controller_menu->update(controller->snapshot(), std::chrono::duration<double>(Clock::now() - epoch).count());
+            }
+            if (controller_menu_event(event, input)) { continue; }
+            if (controller && event.type == SDL_CONTROLLERBUTTONDOWN &&
+                    event.cbutton.which == controller->snapshot().instance) { controller_input = true; }
+            if (controller && event.type == SDL_CONTROLLERAXISMOTION) {
+                const auto device = controller->snapshot();
+                if (event.caxis.which == device.instance &&
+                        (std::abs(int(controller_axis_value(device, settings.bindings.horizontal, settings.calibration))) > settings.controller.deadzone ||
+                         std::abs(int(controller_axis_value(device, settings.bindings.vertical, settings.calibration))) > settings.controller.deadzone ||
+                         std::any_of(device.triggers.begin(), device.triggers.end(), [](int value) { return value > controller_trigger_threshold; }))) {
+                    controller_input = true;
+                }
             }
             if (event.type == SDL_QUIT) {
                 input.quit = true;
@@ -287,9 +450,11 @@ public:
                 if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
                     input.quit = true;
                 } else if (event.window.event == SDL_WINDOWEVENT_FOCUS_LOST || event.window.event == SDL_WINDOWEVENT_MINIMIZED) {
+                    window_focused = false;
                     release_input(input);
                 } else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) {
-                    if (controller) { controller->set_focus(external_focus == HostFocus::active); }
+                    window_focused = true;
+                    if (controller) { controller->set_focus(!controller_menu && external_focus == HostFocus::active); }
                 }
             } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
                 const auto key = event.key.keysym.scancode;
@@ -297,6 +462,7 @@ public:
                 if (key < SDL_SCANCODE_UNKNOWN || key >= SDL_NUM_SCANCODES) {
                     continue;
                 }
+                if (event.type == SDL_KEYDOWN) { controller_input = false; }
                 if (presentation_key(event.key)) { continue; }
                 const bool was_held = held[key];
                 const bool enhanced = profile == InputProfile::enhanced;
@@ -356,6 +522,12 @@ public:
                 }
             }
         }
+        if (controller_menu) {
+            update_controller_menu(input);
+            update_button_prompts();
+            save_if_due(input.quit);
+            return input;
+        }
         if (controller && input.pause != PauseAction::none) {
             suppressed = held;
             controller->reset();
@@ -376,6 +548,7 @@ public:
             input.cockpit = displays;
         }
         if (controller) { controller->sample(input, throttle); flush_controller_keys(input); }
+        update_button_prompts();
         save_if_due(input.quit);
         return input;
     }
@@ -411,6 +584,11 @@ public:
     std::array<bool, SDL_NUM_SCANCODES> controller_held{};
     std::array<bool, SDL_NUM_SCANCODES> suppressed{};
     InputProfile profile;
+    std::unique_ptr<ControllerMenu> controller_menu;
+    std::array<bool, SDL_NUM_SCANCODES> menu_keys{};
+    bool menu_pause_acknowledged = false, menu_pause_requested = false, resume_after_menu = false;
+    bool controller_input = false, window_focused = true;
+    std::optional<ButtonPromptImage> prompts;
     std::array<bool, SDL_NUM_SCANCODES> presentation_held{};
     SdlHostOptions settings;
     PreferencesWriter save_preferences;
@@ -431,8 +609,12 @@ SdlFlightHost::~SdlFlightHost() = default;
 void SdlFlightHost::set_focus(HostFocus focus) {
     if (focus == impl_->external_focus) { return; }
     impl_->external_focus = focus;
-    if (focus == HostFocus::inactive) { impl_->focus_release_pending = true; }
-    if (impl_->controller && focus == HostFocus::active) { impl_->controller->set_focus(true); }
+    if (focus == HostFocus::inactive) {
+        impl_->focus_release_pending = true;
+        impl_->resume_after_menu = false;
+        if (impl_->controller_menu) { impl_->controller_menu->suspend(); }
+    }
+    if (impl_->controller && focus == HostFocus::active && !impl_->controller_menu) { impl_->controller->set_focus(true); }
 }
 HostInput SdlFlightHost::poll() { return impl_->poll(); }
 void SdlFlightHost::set_input_context(InputContext context) {
@@ -443,11 +625,17 @@ void SdlFlightHost::set_input_context(InputContext context) {
 }
 
 void SdlFlightHost::present(const CockpitImage& image, const FlightState& state, const std::string& status) {
+    if (impl_->controller_menu) {
+        if (impl_->display) { impl_->display->wait(); }
+        impl_->present_image(impl_->controller_menu->image());
+        update_title(state, "Controller settings");
+        return;
+    }
     impl_->look_available = false;
     impl_->stop_look();
     impl_->camera_history.reset();
     if (impl_->display) { impl_->display->wait(); }
-    impl_->present_image(image);
+    impl_->present_image(impl_->prompts ? with_button_prompts(image, *impl_->prompts) : image);
     update_title(state, status);
 }
 
@@ -457,7 +645,7 @@ PresentationDetail SdlFlightHost::presentation_detail() const {
 }
 
 void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> frame, const std::string& status) {
-    if (presentation_detail() != PresentationDetail::spatial || !spatial_presentation(*frame, impl_->cockpit)) {
+    if (impl_->controller_menu || presentation_detail() != PresentationDetail::spatial || !spatial_presentation(*frame, impl_->cockpit)) {
         present(frame->image, frame->flight, status);
         return;
     }
@@ -482,7 +670,7 @@ void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> 
         } else { impl_->stop_look(); }
         const auto overlay = body ? SceneOverlay::none :
             impl_->cockpit_scaling == CockpitScaling::sharp ? SceneOverlay::sharp : SceneOverlay::nearest;
-        impl_->gpu->present_scene(*frame->spatial, world, poses, frame->image, body, overlay);
+        impl_->gpu->present_scene(*frame->spatial, world, poses, frame->image, body, overlay, impl_->prompts ? &*impl_->prompts : nullptr);
         update_title(frame->flight, status);
         return;
     }
@@ -493,6 +681,7 @@ void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> 
         impl_->cockpit_image = impl_->spatial_renderer.render_world(*frame->spatial, looked, poses,
             frame->image.palette, size.first, size.second);
         impl_->spatial_cockpit->draw(impl_->cockpit_image, cockpit_view(pose, view.frustum), frame->image, *frame->spatial);
+        if (impl_->prompts) { composite_button_prompts(impl_->cockpit_image.pixels, size.first, size.second, *impl_->prompts); }
         impl_->presenter->present_spatial(impl_->cockpit_image.pixels, size.first, size.second);
         update_title(frame->flight, status);
         return;
@@ -502,7 +691,8 @@ void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> 
         frame->image.palette, size.first, size.second);
     composite_cockpit(impl_->cockpit_image, frame->image, frame->spatial->scene_mask,
         impl_->cockpit_scaling, OverlayLayout::centered);
-    impl_->presenter->present_spatial(impl_->cockpit_image.pixels, size.first, size.second);
+    if (impl_->prompts) { composite_button_prompts(impl_->cockpit_image.pixels, size.first, size.second, *impl_->prompts); }
+        impl_->presenter->present_spatial(impl_->cockpit_image.pixels, size.first, size.second);
     update_title(frame->flight, status);
 }
 
@@ -513,7 +703,7 @@ void SdlFlightHost::update_title(const FlightState& state, const std::string& st
     if (impl_->display) {
         title << " | FPS " << impl_->display->limit_label()
               << " | vsync " << (impl_->settings.pacing == DisplayPacing::vertical_sync ? "on" : "off")
-              << " (Ctrl+F1/F2)";
+              << (impl_->save_preferences ? " (Ctrl+F1/F2/F3)" : " (Ctrl+F1/F2)");
         if (!impl_->preferences_error.empty()) { title << " | " << impl_->preferences_error; }
         if (!impl_->presentation_error.empty()) { title << " | " << impl_->presentation_error; }
     }
@@ -536,7 +726,11 @@ void SdlFlightHost::set_playback(Playback playback) {
         impl_->playback = playback;
         if (impl_->display) { impl_->display->reset_deadline(); }
     }
-    impl_->audio.set_playback(playback);
+    if (impl_->controller_menu) {
+        impl_->menu_pause_acknowledged = playback == Playback::paused;
+        if (playback == Playback::running) { impl_->menu_pause_requested = false; }
+    }
+    impl_->audio.set_playback(impl_->controller_menu ? Playback::paused : playback);
 }
 void SdlFlightHost::idle() { SDL_Delay(1); }
 void SdlFlightHost::reset_controls() {

@@ -90,6 +90,10 @@ SdlHostOptions parse_preferences(const std::string& text, const std::filesystem:
         if (key == "mode") { throw std::invalid_argument("Select the input mode on the command line"); }
         try {
             if (key == "controller-mappings") { value = mapping_value(value); }
+            if (key.compare(0, 12, "calibration.") == 0) {
+                options = parse_sdl_options({"--axis-calibration", key.substr(12) + "=" + value}, options);
+                continue;
+            }
             options = key.compare(0, 5, "bind.") == 0 ?
                 parse_sdl_options({"--bind", key.substr(5) + "=" + value}, options) :
                 parse_sdl_options({"--" + key, value}, options);
@@ -113,6 +117,11 @@ std::string serialize(const SdlHostOptions& options) {
     if (options.pacing != DisplayPacing::vertical_sync && options.pacing != DisplayPacing::immediate) {
         throw std::invalid_argument("Invalid display pacing preference");
     }
+    validate_controller_calibration(options.calibration);
+    if (options.prompts != ButtonPrompts::automatic && options.prompts != ButtonPrompts::enabled &&
+            options.prompts != ButtonPrompts::disabled) {
+        throw std::invalid_argument("Invalid button prompt preference");
+    }
     validate_controller_tuning(options.controller);
     validate_controller_bindings(options.bindings);
     std::ostringstream output;
@@ -132,6 +141,12 @@ std::string serialize(const SdlHostOptions& options) {
     }
     if (options.window.position) {
         output << "window-position=" << options.window.position->x << ',' << options.window.position->y << '\n';
+    }
+    output << "button-prompts=" << (options.prompts == ButtonPrompts::automatic ? "auto" :
+        options.prompts == ButtonPrompts::enabled ? "on" : "off") << '\n';
+    for (std::size_t axis = 0; axis < options.calibration.axes.size(); ++axis) {
+        output << "calibration." << axis_name(static_cast<ControllerAxis>(axis + 1)) << '='
+            << axis_calibration_name(options.calibration.axes[axis]) << '\n';
     }
     switch (options.renderer) {
     case DesktopRenderer::automatic: output << "renderer=auto\n"; break;

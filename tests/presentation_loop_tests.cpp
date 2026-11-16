@@ -30,11 +30,11 @@ class DeviceHost final : public FlightHost {
             input.pressed.fire = true;
             input.controls.fire = true;
             input.controls.weapon = WeaponSelection::next;
-            input.pause = PauseAction::toggle;
+            input.pause = first_pause;
         } else if (presents == 2 && !released_) {
             released_ = true;
             input.scan_bytes = {0xb9};
-            input.pause = forced_pause ? PauseAction::pause : PauseAction::toggle;
+            input.pause = forced_pause ? PauseAction::pause : second_pause;
         }
         return input;
     }
@@ -109,6 +109,7 @@ class DeviceHost final : public FlightHost {
     unsigned images = 0, clears = 0, resets = 0;
     unsigned stop_after_images = 0;
     bool fail_present = false, forced_pause = false, fail_pause = false;
+    PauseAction first_pause = PauseAction::toggle, second_pause = PauseAction::toggle;
 
   private:
     std::thread::id owner_ = std::this_thread::get_id();
@@ -169,6 +170,20 @@ int main() {
                 input.scan_bytes == std::vector<std::uint8_t>{0x39, 0xb9} && !input.pressed.fire &&
                     input.pause == PauseAction::pause,
                 "Context changes must retain DOS key releases and forced pause while clearing logical taps");
+        });
+
+        DeviceHost resuming;
+        resuming.first_pause = PauseAction::resume;
+        resuming.second_pause = PauseAction::none;
+        run_presentation(resuming, [&](FlightHost& worker) {
+            worker.set_input_context(InputContext::flight);
+            auto frame = std::make_shared<SessionPresentation>();
+            frame->flying = true;
+            worker.present_snapshot(frame, "Controller editor return");
+            resuming.wait_for_frames();
+            worker.set_input_context(InputContext::menu);
+            require(worker.poll().pause == PauseAction::resume,
+                    "An explicit modal resume must survive context acknowledgment and input clearing");
         });
 
         DeviceHost settings;

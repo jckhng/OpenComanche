@@ -50,7 +50,8 @@ int main() {
             "--bind", "flight.x=fire", "--bind", "flight.lefttrigger=settings", "--bind", "menu.b=accept",
             "--steer-x", "rightx", "--steer-y", "righty", "--stick-deadzone", "4000",
             "--stick-sensitivity", "150", "--invert-y", "on", "--scale", "linear",
-            "--scene-renderer", "native", "--interpolation", "off", "--cockpit-scale", "nearest", "--cockpit", "flat", "--renderer", "cpu", "--aspect", "original"});
+            "--scene-renderer", "native", "--interpolation", "off", "--cockpit-scale", "nearest", "--cockpit", "flat", "--renderer", "cpu", "--aspect", "original", "--axis-calibration", "leftx=-28000,1700,30000",
+            "--button-prompts", "on"});
         preferences.write(configured);
         const auto path = directory / "host-preferences.cfg";
         const auto original = text(path);
@@ -65,6 +66,9 @@ int main() {
                 loaded.scaling == ImageScaling::linear && loaded.scene_rendering == SceneRendering::native &&
                 loaded.interpolation == CameraInterpolation::disabled && loaded.cockpit_scaling == CockpitScaling::nearest && loaded.cockpit == CockpitPresentation::flat,
                 "Restart must restore bindings, axes, tuning and presentation preferences");
+        require(loaded.calibration.axes[0].minimum == -28000 && loaded.calibration.axes[0].center == 1700 &&
+                loaded.calibration.axes[0].maximum == 30000 && loaded.prompts == ButtonPrompts::enabled,
+                "Calibration and button prompt preferences must survive restart");
         require(restarted.resolve({}).input == InputProfile::faithful &&
                 restarted.resolve({}).controller.deadzone == ControllerTuning{}.deadzone,
                 "Enhanced preferences must retain the explicit enhanced launch boundary");

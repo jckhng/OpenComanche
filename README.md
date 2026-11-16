@@ -17,9 +17,15 @@ and Alt+Enter desktop fullscreen. Build this branch to try these features.
 ./build/comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile --mode enhanced --scale integer --stick-deadzone 4000 --stick-sensitivity 150 --invert-y off
 ```
 
-Enhanced flight renders terrain and directional SG models into a display-sized
-color/depth buffer, with stitched terrain detail and camera/entity interpolation.
-The default window renders the world at 960×720. The recovered cockpit and HUD
+Enhanced desktop flight uses SDL2/OpenGL 3.2 for terrain, directional SG models,
+weather, water and cockpit rendering, with camera/entity interpolation.
+The default window is 1280×720. Widescreen expands the horizontal field of view
+while retaining vertical framing and native instrument proportions.
+`--renderer cpu` selects software world rendering. Automatic GPU admission
+falls back to CPU when OpenGL is unavailable. `--aspect original` selects 4:3.
+These choices persist in the enhanced profile. Desktop GPU builds need SDL2
+and OpenGL development files. OpenXR support is a separate build option.
+The recovered cockpit and HUD
 supply the live instrument and HUD artwork for an authored spatial cockpit.
 Hold right mouse and drag to look around. Middle mouse recenters the view.
 The canopy, consoles, seats and static rear crew figure are approximate enhanced
@@ -34,12 +40,12 @@ for a saved action override.
 [Controller configuration](PREVIEW.md#controller-bindings-and-preferences)
 
 The default launch profile remains faithful. Immutable world observations feed
-a portable CPU renderer with a full-pose, asymmetric-projection camera
+portable GPU and CPU renderers through a full-pose, asymmetric-projection camera
 interface and separate cockpit composition. SDL2 owns device output.
 Optional OpenXR builds add an experimental SDL2/OpenGL headset host with
 tracked stereo world views, a separate cockpit/menu layer and a presentation
-thread. Headset performance, comfort and physical controls need qualification. Scripted screen effects, reflected-water
-scenes and crash presentation use the recovered indexed image.
+thread. VR development is deferred pending further physical testing.
+Scripted screen effects and crash presentation use the recovered indexed image.
 [Enhanced controls and rendering](PREVIEW.md#enhanced-sdl2-presentation)
 
 ## Download and play

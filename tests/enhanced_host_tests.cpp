@@ -35,6 +35,8 @@ void configuration() {
             options.controller.pitch == PitchDirection::inverted,
             "Enhanced options must parse independently of option order");
     for (const auto& arguments : std::vector<std::vector<std::string>>{
+            {"--renderer", "gpu"}, {"--aspect", "widescreen"},
+            {"--mode", "enhanced", "--renderer", "vulkan"}, {"--mode", "enhanced", "--aspect", "stretch"},
             {"--scale", "linear"}, {"--scene-renderer", "spatial"}, {"--interpolation", "on"}, {"--cockpit", "spatial"},
             {"--mode", "enhanced", "--cockpit", "paper"},
             {"--mode", "enhanced", "--scene-renderer", "mesh"}, {"--mode", "enhanced", "--interpolation", "yes"}, {"--mode", "enhanced", "--stick-deadzone", "32767"},
@@ -80,8 +82,17 @@ int main() {
     try {
         using namespace comanchecd::host;
         configuration();
+        const auto gpu = parse_sdl_options({"--mode", "enhanced", "--renderer", "gpu", "--aspect", "widescreen"});
+        require(gpu.renderer == DesktopRenderer::gpu && gpu.aspect == ViewAspect::widescreen,
+                "Desktop rendering options must cross the host boundary");
         SdlFlightHost host(SdlHostOptions{InputProfile::enhanced, {}});
         host.poll();
+        SDL_Event unrelated{};
+        unrelated.type = SDL_WINDOWEVENT;
+        unrelated.window.windowID = 0xffffffffu;
+        unrelated.window.event = SDL_WINDOWEVENT_CLOSE;
+        SDL_PushEvent(&unrelated);
+        require(!host.poll().quit, "Other and failed-backend windows must preserve the active host's lifecycle");
         tap(SDL_SCANCODE_SPACE);
         auto input = host.poll();
         require(input.pressed.fire && !input.controls.fire,
@@ -229,6 +240,13 @@ int main() {
         host.poll();
         host.present_snapshot(next_snapshot, "Recentered");
         require(pixels() == centered, "Middle mouse must restore the same centered cockpit view");
+        if (std::string(SDL_GetCurrentVideoDriver()) == "dummy") {
+            auto required_gpu = parse_sdl_options({"--mode", "enhanced", "--renderer", "gpu"});
+            bool rejected = false;
+            try { SdlFlightHost unavailable(required_gpu); }
+            catch (const std::runtime_error&) { rejected = true; }
+            require(rejected, "Explicit GPU selection must report an unavailable backend");
+        }
         std::cout << "Enhanced keyboard buffering and input boundaries passed\n";
         return 0;
     } catch (const std::exception& error) {

@@ -1,6 +1,7 @@
 #include "openxr_graphics.hpp"
 #include "sdl_common.hpp"
 #include "gl_scene.hpp"
+#include "gl_attributes.hpp"
 #include <SDL_syswm.h>
 #include <SDL_opengl.h>
 #if defined(_WIN32)
@@ -20,26 +21,6 @@
 #include <cmath>
 
 namespace comanchecd::host {
-namespace {
-class GlAttributes {
-public:
-    GlAttributes() {
-        for (unsigned index = 0; index < attributes_.size(); ++index) {
-            if (SDL_GL_GetAttribute(attributes_[index], &values_[index]) != 0) {
-                values_[index] = defaults_[index];
-            }
-        }
-    }
-    ~GlAttributes() {
-        for (unsigned index = 0; index < attributes_.size(); ++index) { SDL_GL_SetAttribute(attributes_[index], values_[index]); }
-    }
-private:
-    const std::array<SDL_GLattr, 3> attributes_{SDL_GL_CONTEXT_MAJOR_VERSION, SDL_GL_CONTEXT_MINOR_VERSION, SDL_GL_CONTEXT_PROFILE_MASK};
-    const std::array<int, 3> defaults_{2, 1, 0};
-    std::array<int, 3> values_{};
-};
-}
-
 class OpenXrGraphics::Impl {
 public:
     explicit Impl(const OpenXrCapabilities& requirements) {
@@ -81,6 +62,7 @@ public:
     }
     void render_eye(const OpenXrTarget& target, const SpatialFrame& frame, const CameraView& view,
                     const EntityPoses& poses, const CockpitImage& source, const std::optional<CameraView>& cockpit) {
+        if (!target.texture) { throw std::invalid_argument("XR requires an acquired swapchain texture"); }
         current();
         if (!scene_) { scene_ = std::make_unique<GlScene>(); }
         scene_->draw(target, frame, view, poses, source, cockpit);

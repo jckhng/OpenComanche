@@ -23,6 +23,8 @@ struct SdlHostOptions {
     CockpitScaling cockpit_scaling = CockpitScaling::sharp;
     CockpitPresentation cockpit = CockpitPresentation::spatial;
     DisplayPacing pacing = DisplayPacing::vertical_sync;
+    DesktopRenderer renderer = DesktopRenderer::automatic;
+    ViewAspect aspect = ViewAspect::profile_default;
 };
 
 class SdlFlightHost final : public FlightHost {

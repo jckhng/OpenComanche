@@ -28,7 +28,7 @@ SDL_Texture* create_texture(SDL_Renderer* renderer, ImageScaling scaling) {
 
 class SdlPresenter::Impl {
 public:
-    Impl(SDL_Window* window, ImageScaling selected, DisplayPacing pacing) : scaling(selected) {
+    Impl(SDL_Window* window, ImageScaling selected, DisplayPacing pacing, ViewAspect selected_aspect) : scaling(selected), aspect(selected_aspect) {
         if (scaling == ImageScaling::profile_default) {
             throw std::invalid_argument("Resolve the presentation profile before creating its backend");
         }
@@ -48,15 +48,8 @@ public:
         if (SDL_GetRendererOutputSize(renderer.get(), &width, &height) != 0) {
             throw sdl_error("SDL2 output dimensions unavailable");
         }
-        width = std::max(1, std::min(width, height * int(cockpit_width) / int(cockpit_height)));
-        height = std::max(1, width * int(cockpit_height) / int(cockpit_width));
-        if (scaling == ImageScaling::integer && width >= int(cockpit_width)) {
-            const int factor = width / int(cockpit_width);
-            width = factor * cockpit_width;
-            height = factor * cockpit_height;
-        }
-        if (width > 3200) { width = 3200; height = 2400; }
-        return {unsigned(width), unsigned(height)};
+        const auto layout = desktop_layout(std::max(1, width), std::max(1, height), aspect, scaling);
+        return {layout.width, layout.height};
     }
 
     void present_spatial(const std::vector<std::uint32_t>& pixels, unsigned width, unsigned height) {
@@ -68,15 +61,26 @@ public:
             if (!spatial_texture) { throw sdl_error("SDL2 spatial texture creation failed"); }
             spatial_width = width; spatial_height = height;
         }
-        if (SDL_RenderSetIntegerScale(renderer.get(), scaling == ImageScaling::integer && width >= cockpit_width ? SDL_TRUE : SDL_FALSE) != 0 ||
+        int output_width = 0, output_height = 0;
+        if (SDL_GetRendererOutputSize(renderer.get(), &output_width, &output_height) != 0) {
+            throw sdl_error("SDL2 output dimensions unavailable");
+        }
+        const auto layout = desktop_layout(std::max(1, output_width), std::max(1, output_height), aspect, scaling);
+        const SDL_Rect destination{layout.viewport.x, layout.viewport.y,
+            int(layout.viewport.width), int(layout.viewport.height)};
+        if (SDL_RenderSetIntegerScale(renderer.get(), SDL_FALSE) != 0 ||
+                SDL_RenderSetLogicalSize(renderer.get(), 0, 0) != 0 ||
                 SDL_UpdateTexture(spatial_texture.get(), nullptr, pixels.data(), width * sizeof(std::uint32_t)) != 0 ||
-                SDL_RenderClear(renderer.get()) != 0 || SDL_RenderCopy(renderer.get(), spatial_texture.get(), nullptr, nullptr) != 0) {
+                SDL_RenderClear(renderer.get()) != 0 || SDL_RenderCopy(renderer.get(), spatial_texture.get(), nullptr, &destination) != 0) {
             throw sdl_error("SDL2 spatial presentation failed");
         }
         SDL_RenderPresent(renderer.get());
     }
 
     void present(const CockpitImage& image) {
+        if (SDL_RenderSetLogicalSize(renderer.get(), cockpit_width, cockpit_height) != 0) {
+            throw sdl_error("SDL2 native presentation dimensions failed");
+        }
         if (scaling == ImageScaling::integer) {
             int width = 0, height = 0;
             if (SDL_GetRendererOutputSize(renderer.get(), &width, &height) != 0 ||
@@ -103,13 +107,14 @@ private:
     std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> spatial_texture{nullptr, SDL_DestroyTexture};
     unsigned spatial_width = 0, spatial_height = 0;
     ImageScaling scaling;
+    ViewAspect aspect;
     std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> renderer{nullptr, SDL_DestroyRenderer};
     std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> texture{nullptr, SDL_DestroyTexture};
     std::array<std::uint32_t, cockpit_width * cockpit_height> pixels{};
 };
 
-SdlPresenter::SdlPresenter(SDL_Window* window, ImageScaling scaling, DisplayPacing pacing)
-    : impl_(std::make_unique<Impl>(window, scaling, pacing)) {}
+SdlPresenter::SdlPresenter(SDL_Window* window, ImageScaling scaling, DisplayPacing pacing, ViewAspect aspect)
+    : impl_(std::make_unique<Impl>(window, scaling, pacing, aspect)) {}
 SdlPresenter::~SdlPresenter() = default;
 void SdlPresenter::present(const CockpitImage& image) { impl_->present(image); }
 std::pair<unsigned, unsigned> SdlPresenter::spatial_size() const { return impl_->spatial_size(); }

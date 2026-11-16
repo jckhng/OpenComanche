@@ -107,9 +107,21 @@ and changed instrument/color tables across eyes and frames.
 `GlScene` belongs to the SDL2/OpenGL graphics driver. It renders per-eye mirrored
 water views at half resolution, clips submerged geometry, then renders native
 instruments and the surrounding cockpit in a separate metre-scaled depth pass.
-The final shader performs the XR format's color-space conversion. Rendering
-uses the immutable presentation mailbox. Canonical sources and device clocks
-have no dependency on this driver.
+`GraphicsTarget` describes SDK-independent texture and default-framebuffer
+destinations. The final shader performs texture-target color-space conversion
+or preserves encoded palette colors for the desktop backbuffer.
+`GlDesktopPresenter` owns the desktop SDL2 window/context and native-image
+presentation. OpenXR owns its context, swapchains and presentation mailbox.
+The shared `comanchecd_glscene` library builds independently of OpenXR headers.
+Canonical sources and device clocks have no dependency on this driver.
+
+`desktop_view.cpp` resolves drawable size, letterboxing, proportional render
+limits and fixed-vertical-field desktop cameras. Widescreen extends horizontal
+coverage. Native UI and flat instruments retain centered 4:3 framing.
+Enhanced `--renderer auto` attempts GPU construction before CPU fallback.
+The window title identifies the selected backend. Faithful input selects the
+existing indexed SDL presenter. Preferences store enhanced renderer and aspect
+selections alongside controls. GPU rendering consumes completed observations.
 
 `--xr-renderer gpu|cpu` selects the XR backend. `--xr-profile CSV` records pacing,
 image waits, CPU submission and end-frame durations through `OpenXrFrameTiming`.

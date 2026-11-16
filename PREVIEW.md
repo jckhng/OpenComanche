@@ -107,6 +107,8 @@ uses SDL2's GameController API. [SDL2 controller documentation](https://wiki.lib
 | `--stick-sensitivity 1..400` | 100 | Steering gain in percent, clamped to the recovered control range |
 | `--invert-y on\|off` | off | Invert gamepad pitch |
 | `--scale nearest\|linear\|integer` | integer | Image scaling and viewport policy |
+| `--renderer auto\|gpu\|cpu` | auto | Desktop GPU admission, required GPU or software world rendering |
+| `--aspect original\|widescreen` | widescreen | Desktop flight framing |
 | `--scene-renderer spatial\|native` | spatial | High-resolution world or recovered indexed presentation |
 | `--interpolation on\|off` | on | Presentation-only camera and entity interpolation |
 | `--cockpit-scale nearest\|sharp` | sharp | Flat overlay sampling or mask-aware Scale2x edges |
@@ -121,7 +123,8 @@ Enhanced launches load `host-preferences.cfg` from the native profile directory.
 Command-line values override saved values and persist after successful SDL2
 host initialization. An initial enhanced launch creates the file. It stores
 bindings, steering axes, stick tuning, mapping-file location, scaling, scene
-renderer and interpolation. Select `--mode enhanced` on each launch to use it.
+renderer, desktop backend, aspect and interpolation. Select `--mode enhanced`
+on each launch to use it.
 
 ```sh
 ./comanche_viewer /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile --mode enhanced --bind flight.a=target --bind flight.x=fire --steer-x rightx --steer-y righty
@@ -175,8 +178,8 @@ whole-number multiple of 320×240 that fits the output, with letterboxing.
 Outputs smaller than the native image use fractional downscaling to keep the
 whole cockpit visible. Nearest scaling fits the 4:3 image continuously. Linear
 filtering applies to indexed presentation through the selected SDL2 driver,
-including its software fallback behavior. Spatial output retains a
-nearest-scaled cockpit and HUD.
+including its software fallback behavior. Native menus, movies and debrief
+retain 4:3 framing in every window shape.
 [SDL2 integer scaling](https://wiki.libsdl.org/SDL2/SDL_RenderSetIntegerScale),
 [SDL2 texture filtering](https://wiki.libsdl.org/SDL2/SDL_HINT_RENDER_SCALE_QUALITY)
 
@@ -185,20 +188,26 @@ by the host presentation shortcut. F1–F12 retain their instrument bindings.
 The faithful launch profile keeps nearest scaling and its existing key route.
 
 Enhanced flight renders the 1024×1024 toroidal height/color maps into an
-output-sized color/depth buffer. The terrain mesh uses distance-dependent
-rings with stitched detail boundaries and bilinear vertex heights. The grid
-anchor follows the aircraft camera, so tracked eye movement keeps shared terrain
-topology across both eyes. Perspective
-texture sampling retains the original color-map density. Distance haze uses
+output-sized color/depth buffer. Desktop `--renderer auto` selects the shared
+OpenGL 3.2 renderer when available and falls back to CPU. `--renderer gpu`
+requires GPU support and reports initialization errors. `--renderer cpu`
+selects the software backend. The window title identifies the active backend.
+GPU terrain uses fixed world-aligned native-cell tiles and original height
+samples. CPU terrain uses stitched distance rings and bilinear vertex heights.
+Perspective texture sampling retains the original color-map density. Distance haze uses
 quarter/half RGB fog blends at the recovered distance-table boundaries.
 Panoramic and flat sky settings follow the selected scenery policy. SG models
 use depth-tested directional/animated billboards with their original frames,
 origins, transparency, mirroring, elevation tables and rotor layers.
 
-At the default window size, the world is 960×720. The selected 4:3 viewport
-sets the resolution after high-DPI and integer-scaling rules. The CPU renderer
-caps its output at 3200×2400. The cockpit artwork, HUD and instrument monitors
-retain native source resolution. A separate compositor uses the scene coverage
+The default enhanced window is 1280×720. Widescreen fills wide windows with
+an expanded horizontal field of view and unchanged vertical framing.
+`--aspect original` fits a 4:3 viewport. Portrait windows fit the reference view.
+Both backends cap internal rendering proportionally at 3200×2400 and scale
+to the physical drawable. Menus, movies, debrief and flat cockpit instruments
+retain 4:3 proportions. Flat cockpit overlays are centered over the wide world.
+Native artwork, HUD and instrument monitors retain their source resolution.
+A separate compositor uses the scene coverage
 mask, including HUD colors shared with terrain. Flat cockpit presentation
 defaults to mask-aware Scale2x edges at outputs of at least 640×480. Native-sized
 and smaller outputs use nearest sampling. `--cockpit-scale nearest` selects

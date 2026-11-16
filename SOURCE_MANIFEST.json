@@ -20,18 +20,18 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "bytes": 15520,
-      "sha256": "820096b23747c57ef2e5b0c6d09f9c6ad3ba4953277620467edd0f88d78be59b"
+      "bytes": 16386,
+      "sha256": "a4085f3ee94b7029c995cbe4c3c27309070f302b3ab3a00bce0223b68759d533"
     },
     {
       "path": "BUILDING.md",
-      "bytes": 3860,
-      "sha256": "ddf97fdf7cc7bd8d8aaf2f00b18a6e4f200fc6a33bd9ea41f29fefed7f105711"
+      "bytes": 4251,
+      "sha256": "ea9c5d4a018bcbdf406fde3ece8b20049c6111170156eb485c8c09434067845e"
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 5267,
-      "sha256": "e503cdd518b02e6eeafc442f177f62e03a4756d9f399750e704e413afd6e116b"
+      "bytes": 5669,
+      "sha256": "79c130ae77d1892224179ac1917e8bb0d07f3ef51c21e6cbc6e05212507f7bab"
     },
     {
       "path": "cmake/Diagnostics.cmake",
@@ -39,9 +39,14 @@
       "sha256": "11e80a9bc304ea2fb5809b62600c10add8d199a256901c7cc76f5ca20ce3f02f"
     },
     {
+      "path": "cmake/OpenGl.cmake",
+      "bytes": 614,
+      "sha256": "7145cc4b5e2e91675301ca027af8cff13b1591482cc327535eb7d14fc19aa8d1"
+    },
+    {
       "path": "cmake/OpenXr.cmake",
-      "bytes": 1840,
-      "sha256": "8c9707f3d1a853bef94989e20c27ff3cdf33e1e851a8bd49f3e24b87fc8f10c5"
+      "bytes": 1841,
+      "sha256": "3b4c4e57ad99b8aafdfc833f099568801737c8cb2dd37b4f6d8f9423cc5d07ce"
     },
     {
       "path": "cmake/Runtime.cmake",
@@ -50,8 +55,8 @@
     },
     {
       "path": "cmake/SdlHost.cmake",
-      "bytes": 6102,
-      "sha256": "5f342d2ee64d373ee9800d91c91a01141b184adde9ff1f7453fc2b6e1557ead3"
+      "bytes": 7147,
+      "sha256": "162596d9a22066c18991efb12ca1e169251d6bdf0badb4182cb511f60e7983b0"
     },
     {
       "path": "cmake/Tests.cmake",
@@ -60,8 +65,8 @@
     },
     {
       "path": "CMakeLists.txt",
-      "bytes": 863,
-      "sha256": "2213c904c30212b3a7bd6fc24719f7a66d2500cd872a3a5fe6914edc4b3c3428"
+      "bytes": 941,
+      "sha256": "e44529932d95e3b5a0a78b5b8f13c5436593d6ec367f57f08e2337bdce6ddf41"
     },
     {
       "path": "COPYING",
@@ -90,13 +95,13 @@
     },
     {
       "path": "host/cockpit_scaling.cpp",
-      "bytes": 2996,
-      "sha256": "0fab314826864c932f558ce5d131e2a8c7ea9a4f29f3355143fc89be8c7d88d8"
+      "bytes": 3831,
+      "sha256": "de75416917c844cee7e04ad7166823e7cd459af4f0a7dc692935f1b131d0dfea"
     },
     {
       "path": "host/cockpit_scaling.hpp",
-      "bytes": 323,
-      "sha256": "a926e73543db219917d7d8b39770d8522e86d3eb27e2e7a3d589968983be88b0"
+      "bytes": 437,
+      "sha256": "181b0418c8c51e48cf3026331b04bd80d1d0ee96a405354fecef54aaf15df11b"
     },
     {
       "path": "host/controller_bindings.cpp",
@@ -114,24 +119,54 @@
       "sha256": "d2952001dfcc9893229182a5ed626a1593354e4c05fac779a064ca8dfd587540"
     },
     {
+      "path": "host/desktop_view.cpp",
+      "bytes": 2149,
+      "sha256": "a413b4374c3abd64ed10375c89009dd038a9998eb486a0f1385f091f00ee2a99"
+    },
+    {
+      "path": "host/desktop_view.hpp",
+      "bytes": 701,
+      "sha256": "7ec3b7ba32d549f795a787b78177ff044ce723f5ee93b8f5d01ed0b79333bf27"
+    },
+    {
       "path": "host/flight_host.hpp",
       "bytes": 2031,
       "sha256": "2706beb6c31330ac7a18d035603a034415f672c2d7907386d95ed6cece1f3f10"
     },
     {
+      "path": "host/gl_attributes.hpp",
+      "bytes": 885,
+      "sha256": "7bbe0170abc4d04b113514c9ce4036ef7a14f99d133f1b4e146815665d81804e"
+    },
+    {
+      "path": "host/gl_desktop_presenter.cpp",
+      "bytes": 4435,
+      "sha256": "f457eef252f948c4760bee0990a5c2e9d10346cf2108c76acdb862730ffdf7c6"
+    },
+    {
+      "path": "host/gl_desktop_presenter.hpp",
+      "bytes": 846,
+      "sha256": "5d16d232fc925d5a495b64d452136f8df32c51ef6526e0ba0ff94846ccf354ed"
+    },
+    {
       "path": "host/gl_scene.cpp",
-      "bytes": 46799,
-      "sha256": "ee6f177c3af4227c6ae081ee379dbe39813b351dfff76762da0bed9c004bf199"
+      "bytes": 51696,
+      "sha256": "9ef22b63d8bea7c22296fb65f9b6c7cae16a00c93d596858005ab89bca904bdc"
     },
     {
       "path": "host/gl_scene.hpp",
-      "bytes": 520,
-      "sha256": "abf8335fcb9066e9243ab4b61b1a7e121e5bf5cc51ce59c1e4b2b3e891f9e4b7"
+      "bytes": 742,
+      "sha256": "c85d3a462bb67ca9f8adcad1ffaab0cc30f9c8979dc7c1770b8385ab39b51ec7"
+    },
+    {
+      "path": "host/graphics_target.hpp",
+      "bytes": 491,
+      "sha256": "5030284303c7fdc6bfb99e68266874c2b9fae1f22518cbb7129cbaedb5a5c0d2"
     },
     {
       "path": "host/host_preferences.cpp",
-      "bytes": 10423,
-      "sha256": "aa550cd1f75ba46279e81eb8bb00d585b125865f616c368b5ca85e26e21122a2"
+      "bytes": 11049,
+      "sha256": "62f00675b93d842f2f556050c7d3238cde3811e557a133d922498c155a47ab79"
     },
     {
       "path": "host/host_preferences.hpp",
@@ -145,8 +180,8 @@
     },
     {
       "path": "host/openxr_graphics.cpp",
-      "bytes": 9032,
-      "sha256": "9888089488d5bb2cf82ca96d90f08b6d088e01cebac544670a37aab612083d98"
+      "bytes": 8459,
+      "sha256": "e35e7fd39cbf8dc5c0651e8cb798a1d384485867295da06b23f0de88de1387eb"
     },
     {
       "path": "host/openxr_graphics.hpp",
@@ -155,8 +190,8 @@
     },
     {
       "path": "host/openxr_host.cpp",
-      "bytes": 10451,
-      "sha256": "a1525d13774496014e25532b760a488718e1893c4952620abed5d749d68c20c2"
+      "bytes": 10497,
+      "sha256": "646f283ae2be9a09421dd46d9d0b60f00ee2739a1a13730111455a703521500f"
     },
     {
       "path": "host/openxr_host.hpp",
@@ -190,8 +225,8 @@
     },
     {
       "path": "host/openxr_session.hpp",
-      "bytes": 1446,
-      "sha256": "9a167ecf8e5b76c0a0193d3d2b9878382880cc65818cdd10743e56b5330df733"
+      "bytes": 1373,
+      "sha256": "87652279f49848d04481c227cfcec70b5771d383ec353cf2acd738b7fef2e975"
     },
     {
       "path": "host/pending_input.hpp",
@@ -235,18 +270,18 @@
     },
     {
       "path": "host/sdl_host.cpp",
-      "bytes": 20955,
-      "sha256": "c1591163d194550909ec12db347a466bcbd5048c7192def3b98f60a8ba82400e"
+      "bytes": 23970,
+      "sha256": "1cc685e4333e72513bca39ccdfda4724593e03a4fd1c5ed840c7a8d2fb810206"
     },
     {
       "path": "host/sdl_host.hpp",
-      "bytes": 1924,
-      "sha256": "b0ff02c1bb0f6e0216a6890f1ad07ee18acd91a5be43aa951b72aa3723dab1ed"
+      "bytes": 2036,
+      "sha256": "e26d316b65ab2abc0e1a7c7567b345186aaf6586a746f7c079588cb836626413"
     },
     {
       "path": "host/sdl_options.cpp",
-      "bytes": 3374,
-      "sha256": "55e52dc4003c9998e357be5ec2323e844d868506b26467b60542c34969644243"
+      "bytes": 3823,
+      "sha256": "54bef3bdbc363fa34196d17bfe6483772fa176d1d7e284c8bb761a9a1242f208"
     },
     {
       "path": "host/sdl_options.hpp",
@@ -255,18 +290,18 @@
     },
     {
       "path": "host/sdl_presenter.cpp",
-      "bytes": 6276,
-      "sha256": "b6ee93f1c8090dfcd6f5826472a9d04fd38d811f9b3126a6db79d595e631fe40"
+      "bytes": 6660,
+      "sha256": "6f62b9d71a98cd952dd8fe74849f4bf971830d81c4427dc8df2ebcf23700c010"
     },
     {
       "path": "host/sdl_presenter.hpp",
-      "bytes": 777,
-      "sha256": "19bc86b5574fd86f22df694c511345bc3daca8beed0dd6f105ddc8f23f8a176f"
+      "bytes": 737,
+      "sha256": "06f71019265cd0bcedf16e2aae811b7df0b68cb9383da12f611d1b3114b7fb6f"
     },
     {
       "path": "host/session_main.cpp",
-      "bytes": 4742,
-      "sha256": "81136e0bb41b8348bacf697018a23a7308e2fa71fa74bb78abae6473bbbe4b72"
+      "bytes": 4799,
+      "sha256": "373f3b5cf7cebe1cb9d75e32febd658f315e095948a58a46bda9734ca13c4b31"
     },
     {
       "path": "host/settings_profile.hpp",
@@ -485,13 +520,13 @@
     },
     {
       "path": "PREVIEW.md",
-      "bytes": 21055,
-      "sha256": "9cee54e91a903abe70ee646eb8bf437edb8fb00979dd77a90f11a721836a3d54"
+      "bytes": 21746,
+      "sha256": "1c4f83ad55f903cdf84118fd519fa5f49aac3e2a341eafda21e7f36130ed9ad8"
     },
     {
       "path": "README.md",
-      "bytes": 6060,
-      "sha256": "e58d7cd0a464c4e1f177f6684cb2a5aa3a4d7d489024f2643b2a6d1bce6965d1"
+      "bytes": 6430,
+      "sha256": "e7df77624d52e06af0cf3a12c4b4a1d432f70cad79fa2f65eaa14dc9dfaeb905"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -1004,6 +1039,11 @@
       "sha256": "48acd417e58cd2c93769417db3b8699ab0230c21c9f7ce9e6b8749c46b8d0b33"
     },
     {
+      "path": "tests/desktop_view_tests.cpp",
+      "bytes": 3572,
+      "sha256": "e89900fa2db72b83e395c2b3eb12eda163db8f03d34ab7b8127a641444e25e0e"
+    },
+    {
       "path": "tests/effects_probe.cpp",
       "bytes": 4891,
       "sha256": "0819de195df70c2d2f631a8bc1aff56d4a9fa7884ba8069afd0f90d976da7529"
@@ -1015,8 +1055,8 @@
     },
     {
       "path": "tests/enhanced_host_tests.cpp",
-      "bytes": 12910,
-      "sha256": "4b565e9e3627c8dc47b08bcd9fe6cc492288823667e36ac1a6d5c4c09a393577"
+      "bytes": 14119,
+      "sha256": "c2c1f1b02eec9e7795a4af90b5e322af94f48e6447a8f1123ac86b06283c7a84"
     },
     {
       "path": "tests/entity_clock_tests.cpp",
@@ -1059,9 +1099,14 @@
       "sha256": "bb6bb00fbdda303eea0c293d7b981997c772b86b3ba5d0483ea03fb2561ed8ad"
     },
     {
+      "path": "tests/gl_desktop_tests.cpp",
+      "bytes": 8650,
+      "sha256": "6019997c8838facd3679639e8e5168d192e3fb11e3b6a8c24fa48d486e9b4d18"
+    },
+    {
       "path": "tests/host_preferences_tests.cpp",
-      "bytes": 9570,
-      "sha256": "4a67ba5256ec81376608b9dff7fe1e064914622a27fe1db62cf8cef6c6ccd3ad"
+      "bytes": 10266,
+      "sha256": "bf0c2d6828b3bcaea6e0abb0794efdb4a0e44866bfaa8bb5b9f901c6d01d6560"
     },
     {
       "path": "tests/irq7_wave_tests.cpp",
@@ -1255,8 +1300,8 @@
     },
     {
       "path": "tests/sdl_presenter_tests.cpp",
-      "bytes": 6908,
-      "sha256": "e81831d201b7b04ef7d0821bb14ff1b561cc34172e15ff960c65504f375f43d7"
+      "bytes": 8177,
+      "sha256": "cfd8a368b6f3050e5c69e088764c83b273a02cbf8aabac26523d239ee6f292d0"
     },
     {
       "path": "tests/session_tests.cpp",

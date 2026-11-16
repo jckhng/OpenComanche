@@ -50,7 +50,7 @@ int main() {
             "--bind", "flight.x=fire", "--bind", "flight.lefttrigger=settings", "--bind", "menu.b=accept",
             "--steer-x", "rightx", "--steer-y", "righty", "--stick-deadzone", "4000",
             "--stick-sensitivity", "150", "--invert-y", "on", "--scale", "linear",
-            "--scene-renderer", "native", "--interpolation", "off", "--cockpit-scale", "nearest", "--cockpit", "flat"});
+            "--scene-renderer", "native", "--interpolation", "off", "--cockpit-scale", "nearest", "--cockpit", "flat", "--renderer", "cpu", "--aspect", "original"});
         preferences.write(configured);
         const auto path = directory / "host-preferences.cfg";
         const auto original = text(path);
@@ -61,6 +61,7 @@ int main() {
                 loaded.bindings.triggers == configured.bindings.triggers && loaded.bindings.horizontal == ControllerAxis::rightx &&
                 loaded.bindings.vertical == ControllerAxis::righty && loaded.controller.deadzone == 4000 &&
                 loaded.controller.sensitivity == 150 && loaded.controller.pitch == PitchDirection::inverted &&
+                loaded.renderer == DesktopRenderer::cpu && loaded.aspect == ViewAspect::original &&
                 loaded.scaling == ImageScaling::linear && loaded.scene_rendering == SceneRendering::native &&
                 loaded.interpolation == CameraInterpolation::disabled && loaded.cockpit_scaling == CockpitScaling::nearest && loaded.cockpit == CockpitPresentation::flat,
                 "Restart must restore bindings, axes, tuning and presentation preferences");
@@ -98,6 +99,12 @@ int main() {
             require(rejected && text(path) == invalid && preferences.resolve({}).input == InputProfile::faithful,
                     "Malformed enhanced preferences must remain intact and preserve faithful startup");
         }
+        write(path, "version=1\nscale=integer\n");
+        const auto upgraded = preferences.read();
+        require(upgraded.renderer == DesktopRenderer::automatic && upgraded.aspect == ViewAspect::profile_default,
+                "Older preference files must acquire desktop defaults without losing existing controls");
+        require(preferences.resolve({"--mode", "enhanced", "--renderer", "gpu", "--aspect", "widescreen"}).renderer == DesktopRenderer::gpu,
+                "Explicit renderer and aspect must override older preferences");
         const std::string manual = "# Personal controls\r\nversion = 1\r\ncontroller-mappings = maps/gamepad.txt\r\nbind.flight.a = fire\r\n";
         write(path, manual);
         const auto relative = preferences.read();

@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
             " [--bind menu.CONTROL=ACTION|flight.CONTROL=ACTION]"
             " [--steer-x none|leftx|lefty|rightx|righty] [--steer-y none|leftx|lefty|rightx|righty]"
             " [--stick-deadzone 0..32766] [--stick-sensitivity 1..400]"
-            " [--invert-y on|off] [--scale nearest|linear|integer] [--scene-renderer native|spatial] [--interpolation on|off]"
+            " [--invert-y on|off] [--scale nearest|linear|integer] [--renderer auto|gpu|cpu] [--aspect original|widescreen] [--scene-renderer native|spatial] [--interpolation on|off]"
             " [--cockpit-scale nearest|sharp] [--cockpit flat|spatial]"
             " [--xr on|off] [--xr-world-scale CELLS_PER_METRE] [--xr-render-scale 0.1..1] [--xr-loader FILE] [--xr-renderer gpu|cpu] [--xr-profile CSV]";
         if (argc == 2 && std::string(argv[1]) == "--help") {

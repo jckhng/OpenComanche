@@ -99,7 +99,7 @@ void main() {
 const char* fragment_shader = R"GLSL(#version 150
 uniform usampler2D indexed, heights, waterMap, weatherMap;
 uniform sampler2D palette, reflected, backgroundImage, panel;
-uniform int kind, mirrored, hasSky, haze, reflectionPass, waterHeight, weatherSolid, weatherType, solidIndex, linearOutput, heightClip;
+uniform int kind, mirrored, hasSky, haze, reflectionPass, waterHeight, weatherSolid, weatherType, solidIndex, linearOutput, heightClip, flipOutput;
 uniform vec2 dimensions, spriteSize, fogDistance;
 uniform float minimumHeight, spriteBottom, spriteScale;
 uniform int reflectionPhase;
@@ -170,7 +170,9 @@ void main() {
         }
         c=mapped(index,false);
     } else {
-        c=texture(panel,gl_FragCoord.xy/dimensions);
+        vec2 at=vec2(vUv.x,flipOutput!=0?1.0-vUv.y:vUv.y);
+        c=texture(panel,at);
+        if(kind==8 && c.a<0.5) { discard; }
         if(linearOutput!=0) { c.rgb=decodeSrgb(c.rgb); }
     }
     outputColor=vec4(c.rgb,reflectionPass!=0?c.a:1.0);
@@ -183,7 +185,7 @@ struct Vertex {
 enum class PixelFormat { indices, rgba };
 enum class ScenePass { world, reflection };
 enum class ClearTarget { clear, retain };
-enum class ScreenPass { sky = 6, output = 7 };
+enum class ScreenPass { sky = 6, output = 7, overlay = 8 };
 struct Surface {
     GLuint framebuffer = 0, color = 0, depth = 0;
     unsigned width = 0, height = 0;
@@ -239,6 +241,7 @@ class GlScene::Impl final : public SpatialGeometry {
             water_map_ = texture();
             weather_map_ = texture();
             panel_ = texture();
+            overlay_ = texture();
             hud_ = texture();
             background_ = texture();
             gl_.GenFramebuffers(1, &target_framebuffer_);
@@ -261,16 +264,38 @@ class GlScene::Impl final : public SpatialGeometry {
     ~Impl() override {
         cleanup();
     }
-    void draw(const OpenXrTarget& target, const SpatialFrame& frame, const CameraView& supplied,
-              const EntityPoses& poses, const CockpitImage& source, const std::optional<CameraView>& body) {
-        if (!target.texture || !target.width || !target.height || !frame.resources ||
+    void draw(const GraphicsTarget& target, const SpatialFrame& frame, const CameraView& supplied,
+              const EntityPoses& poses, const CockpitImage& source, const std::optional<CameraView>& body, SceneOverlay overlay) {
+        if (!target.width || !target.height || !frame.resources ||
             frame.scene_mask.size() != source.pixels.size()) {
             throw std::invalid_argument("GPU scene requires complete eye and scene observations");
         }
         // An earlier failed frame may have left geometry that was never submitted.
         vertices_.clear();
         override_ = -1;
+        const bool overlay_changed = last_overlay_ != overlay || !palette_valid_ || last_palette_ != source.palette ||
+            last_mask_ != frame.scene_mask || last_pixels_.size() != source.pixels.size() ||
+            !std::equal(last_pixels_.begin(), last_pixels_.end(), source.pixels.begin());
         prepare(frame, source);
+        if (overlay != SceneOverlay::none && overlay_changed) {
+            const unsigned factor = overlay == SceneOverlay::sharp ? 2 : 1;
+            SpatialImage panel;
+            panel.width = cockpit_width * factor;
+            panel.height = cockpit_height * factor;
+            panel.pixels.resize(std::size_t(panel.width) * panel.height);
+            composite_cockpit(panel, source, frame.scene_mask,
+                overlay == SceneOverlay::sharp ? CockpitScaling::sharp : CockpitScaling::nearest);
+            std::vector<std::uint8_t> rgba(panel.pixels.size() * 4);
+            for (std::size_t i = 0; i < panel.pixels.size(); ++i) {
+                const auto pixel = panel.pixels[i];
+                rgba[i * 4] = pixel >> 16;
+                rgba[i * 4 + 1] = pixel >> 8;
+                rgba[i * 4 + 2] = pixel;
+                rgba[i * 4 + 3] = pixel >> 24;
+            }
+            upload(overlay_, panel.width, panel.height, rgba.data(), PixelFormat::rgba);
+        }
+        last_overlay_ = overlay;
         resize(scene_, target.width, target.height);
         resize(reflected_, std::max(1u, target.width / 2), std::max(1u, target.height / 2));
         auto view = supplied;
@@ -358,20 +383,20 @@ class GlScene::Impl final : public SpatialGeometry {
             cockpit_.draw(geometry, *body, source, frame);
             flush();
         }
-        gl_.BindFramebuffer(GL_FRAMEBUFFER, target_framebuffer_);
-        gl_.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target.texture, 0);
-        if (gl_.CheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            throw std::runtime_error("XR eye framebuffer incomplete");
-        }
-        glViewport(0, 0, target.width, target.height);
-        glDisable(GL_DEPTH_TEST);
-        if (target.color_space == OpenXrColorSpace::srgb) {
-            glEnable(GL_FRAMEBUFFER_SRGB);
-        }
-        integer("reflectionPass", 0);
-        integer("linearOutput", 1);
+        output(target);
+        integer("flipOutput", 0);
         bind(7, scene_.color);
-        screen(ScreenPass::output, CameraView{{}, {-1, 1, 1, -1, 0.1, 10}});
+        screen(ScreenPass::output, screen_view());
+        if (overlay != SceneOverlay::none) {
+            const auto width = target.viewport.width ? target.viewport.width : target.width;
+            const auto height = target.viewport.height ? target.viewport.height : target.height;
+            const auto layout = desktop_layout(width, height, ViewAspect::original, ImageScaling::nearest);
+            glViewport(target.viewport.x + layout.viewport.x, target.viewport.y + layout.viewport.y,
+                       layout.viewport.width, layout.viewport.height);
+            integer("flipOutput", 1);
+            bind(7, overlay_);
+            screen(ScreenPass::overlay, screen_view());
+        }
         glDisable(GL_FRAMEBUFFER_SRGB);
         gl_.BindFramebuffer(GL_FRAMEBUFFER, 0);
         gl_.BindVertexArray(0);
@@ -382,7 +407,68 @@ class GlScene::Impl final : public SpatialGeometry {
         }
     }
 
+    void image(const GraphicsTarget& target, const CockpitImage& source, ImageScaling scaling) {
+        if (!target.width || !target.height || scaling == ImageScaling::profile_default) {
+            throw std::invalid_argument("GPU image requires complete dimensions and resolved scaling");
+        }
+        std::vector<std::uint8_t> rgba(source.pixels.size() * 4);
+        for (std::size_t i = 0; i < source.pixels.size(); ++i) {
+            const auto& color = source.palette[source.pixels[i]];
+            for (unsigned component = 0; component < 3; ++component) {
+                rgba[i * 4 + component] = color[component] * 255u / 63u;
+            }
+            rgba[i * 4 + 3] = 255;
+        }
+        upload(panel_, cockpit_width, cockpit_height, rgba.data(), PixelFormat::rgba);
+        // The next spatial frame must restore its cached instrument texture.
+        last_pixels_.clear();
+        vertices_.clear();
+        override_ = -1;
+        gl_.UseProgram(program_);
+        gl_.BindVertexArray(vao_);
+        glDisable(GL_BLEND);
+        glDisable(GL_SCISSOR_TEST);
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_FRAMEBUFFER_SRGB);
+        output(target);
+        bind(7, panel_);
+        const auto filter = scaling == ImageScaling::linear ? GL_LINEAR : GL_NEAREST;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+        integer("flipOutput", 1);
+        screen(ScreenPass::output, screen_view());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glDisable(GL_FRAMEBUFFER_SRGB);
+        gl_.BindFramebuffer(GL_FRAMEBUFFER, 0);
+        gl_.BindVertexArray(0);
+        gl_.UseProgram(0);
+        glFlush();
+        if (glGetError() != GL_NO_ERROR) { throw std::runtime_error("OpenGL image presentation failed"); }
+    }
+
   private:
+    static CameraView screen_view() { return CameraView{{}, {-1, 1, 1, -1, 0.1, 10}}; }
+
+    void output(const GraphicsTarget& target) {
+        gl_.BindFramebuffer(GL_FRAMEBUFFER, target.texture ? target_framebuffer_ : 0);
+        if (target.texture) {
+            gl_.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target.texture, 0);
+            if (gl_.CheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+                throw std::runtime_error("GPU output framebuffer incomplete");
+            }
+        }
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_FRAMEBUFFER_SRGB);
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT);
+        const auto& v = target.viewport;
+        glViewport(v.x, v.y, v.width ? v.width : target.width, v.height ? v.height : target.height);
+        if (target.texture && target.color_space == GraphicsColorSpace::srgb) { glEnable(GL_FRAMEBUFFER_SRGB); }
+        integer("reflectionPass", 0);
+        integer("linearOutput", target.texture != 0);
+    }
+
     GLuint compile(GLenum type, const char* source) {
         const auto shader = gl_.CreateShader(type);
         gl_.ShaderSource(shader, 1, &source, nullptr);
@@ -876,8 +962,8 @@ class GlScene::Impl final : public SpatialGeometry {
         material_.color = 0xffffffffu;
         override_ = int(kind);
         const auto& f = view.frustum;
-        const GeometryVertex a{{f.left, f.up, -1}}, b{{f.right, f.up, -1}}, c{{f.right, f.down, -1}},
-            d{{f.left, f.down, -1}};
+        const GeometryVertex a{{f.left, f.up, -1}, 0, 1}, b{{f.right, f.up, -1}, 1, 1},
+            c{{f.right, f.down, -1}, 1, 0}, d{{f.left, f.down, -1}, 0, 0};
         triangle(f, a, b, c);
         triangle(f, a, c, d);
         flush();
@@ -891,7 +977,7 @@ class GlScene::Impl final : public SpatialGeometry {
     Gl gl_;
     GLuint program_ = 0, vao_ = 0, buffer_ = 0, target_framebuffer_ = 0;
     GLuint palette_ = 0, terrain_ = 0, heights_ = 0, sky_ = 0, water_map_ = 0, weather_map_ = 0, panel_ = 0,
-           hud_ = 0, background_ = 0;
+           hud_ = 0, background_ = 0, overlay_ = 0;
     std::vector<GLuint> textures_;
     std::unordered_map<GLuint, std::pair<unsigned, unsigned>> texture_sizes_;
     Surface scene_, reflected_;
@@ -910,6 +996,7 @@ class GlScene::Impl final : public SpatialGeometry {
     int override_ = -1;
     std::uint32_t phase_ = 0;
     SpatialCockpit cockpit_;
+    SceneOverlay last_overlay_ = SceneOverlay::none;
     Palette last_palette_{};
     bool palette_valid_ = false;
     std::vector<std::uint8_t> last_pixels_, last_mask_;
@@ -917,9 +1004,12 @@ class GlScene::Impl final : public SpatialGeometry {
 };
 GlScene::GlScene() : impl_(std::make_unique<Impl>()) {}
 GlScene::~GlScene() = default;
-void GlScene::draw(const OpenXrTarget& target, const SpatialFrame& frame, const CameraView& view,
+void GlScene::draw(const GraphicsTarget& target, const SpatialFrame& frame, const CameraView& view,
                    const EntityPoses& poses, const CockpitImage& source,
-                   const std::optional<CameraView>& cockpit) {
-    impl_->draw(target, frame, view, poses, source, cockpit);
+                   const std::optional<CameraView>& cockpit, SceneOverlay overlay) {
+    impl_->draw(target, frame, view, poses, source, cockpit, overlay);
+}
+void GlScene::image(const GraphicsTarget& target, const CockpitImage& image, ImageScaling scaling) {
+    impl_->image(target, image, scaling);
 }
 } // namespace comanchecd::host

@@ -36,6 +36,11 @@ SdlHostOptions parse_sdl_options(const std::vector<std::string>& arguments, SdlH
             options.controller.sensitivity = integer_option(value);
         } else if (option == "--invert-y" && (value == "on" || value == "off")) {
             options.controller.pitch = value == "on" ? PitchDirection::inverted : PitchDirection::normal;
+        } else if (option == "--renderer" && (value == "auto" || value == "gpu" || value == "cpu")) {
+            options.renderer = value == "auto" ? DesktopRenderer::automatic :
+                value == "gpu" ? DesktopRenderer::gpu : DesktopRenderer::cpu;
+        } else if (option == "--aspect" && (value == "original" || value == "widescreen")) {
+            options.aspect = value == "original" ? ViewAspect::original : ViewAspect::widescreen;
         } else if (option == "--scene-renderer" && (value == "native" || value == "spatial")) {
             options.scene_rendering = value == "native" ? SceneRendering::native : SceneRendering::spatial;
         } else if (option == "--interpolation" && (value == "on" || value == "off")) {

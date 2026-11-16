@@ -106,6 +106,22 @@ int main(int argc, char** argv) {
             require(pixel(renderer, 700, 360) == 0x0000ff, "Returning to native presentation must restore the completed indexed image");
             SDL_SetRenderTarget(renderer, nullptr);
         }
+        {
+            SdlPresenter presenter(window.get(), ImageScaling::integer, DisplayPacing::immediate, ViewAspect::widescreen);
+            auto* renderer = SDL_GetRenderer(window.get());
+            std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> wide(
+                SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 1280, 720), SDL_DestroyTexture);
+            require(wide && SDL_SetRenderTarget(renderer, wide.get()) == 0, "Widescreen CPU fixture must select its output");
+            const auto size = presenter.spatial_size();
+            require(size.first == 1280 && size.second == 720, "CPU fallback must retain the wide world viewport");
+            presenter.present_spatial(std::vector<std::uint32_t>(1280 * 720, 0xff00ff00u), 1280, 720);
+            require(pixel(renderer, 0, 360) == 0x00ff00u && pixel(renderer, 1279, 360) == 0x00ff00u,
+                    "CPU widescreen world must fill the full output");
+            presenter.present(image);
+            require(pixel(renderer, 0, 360) == 0u && pixel(renderer, 200, 360) == 0xff0000u,
+                    "Returning to native menus must restore 4:3 letterboxing after widescreen flight");
+            SDL_SetRenderTarget(renderer, nullptr);
+        }
         std::cout << "SDL2 palette, integer/fractional scaling and presentation ownership passed\n";
         return 0;
     } catch (const std::exception& error) {

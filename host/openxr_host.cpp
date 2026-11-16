@@ -14,6 +14,7 @@ namespace comanchecd::host {
 namespace {
 SdlHostOptions desktop_options(SdlHostOptions options) {
     options.pacing = DisplayPacing::immediate;
+    options.renderer = DesktopRenderer::cpu;
     options.cockpit = CockpitPresentation::flat;
     return options;
 }

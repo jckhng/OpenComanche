@@ -1,19 +1,17 @@
 #pragma once
 
 #include "camera_view.hpp"
+#include "graphics_target.hpp"
 #include <openxr/openxr.h>
 #include <functional>
 #include <cstdint>
 #include <memory>
 
 namespace comanchecd::host {
-enum class OpenXrColorSpace { srgb, linear };
+using OpenXrColorSpace = GraphicsColorSpace;
+using OpenXrTarget = GraphicsTarget;
 enum class OpenXrScene { panel, world, cockpit };
 
-struct OpenXrTarget {
-    std::uint32_t texture = 0, width = 0, height = 0;
-    OpenXrColorSpace color_space = OpenXrColorSpace::srgb;
-};
 struct OpenXrEye {
     OpenXrTarget target;
     CameraPose pose, head;

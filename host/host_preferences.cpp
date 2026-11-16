@@ -119,6 +119,17 @@ std::string serialize(const SdlHostOptions& options) {
         const auto path = std::filesystem::absolute(options.controller_mappings).lexically_normal().string();
         output << "controller-mappings=" << quote_mapping(path) << '\n';
     }
+    switch (options.renderer) {
+    case DesktopRenderer::automatic: output << "renderer=auto\n"; break;
+    case DesktopRenderer::gpu: output << "renderer=gpu\n"; break;
+    case DesktopRenderer::cpu: output << "renderer=cpu\n"; break;
+    default: throw std::invalid_argument("Invalid desktop renderer preference");
+    }
+    switch (options.aspect) {
+    case ViewAspect::profile_default: case ViewAspect::widescreen: output << "aspect=widescreen\n"; break;
+    case ViewAspect::original: output << "aspect=original\n"; break;
+    default: throw std::invalid_argument("Invalid desktop aspect preference");
+    }
     switch (options.scaling) {
     case ImageScaling::profile_default: case ImageScaling::integer: output << "scale=integer\n"; break;
     case ImageScaling::nearest: output << "scale=nearest\n"; break;

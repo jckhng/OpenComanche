@@ -2,6 +2,13 @@
 
 ## Enhanced SDL2 development
 
+- Add GPU desktop rendering through SDL2/OpenGL with automatic CPU fallback,
+  persistent renderer selection and SDK-independent graphics targets.
+- Add widescreen flight with fixed vertical framing, proportional render
+  limits and centered native UI/flat instruments. Preserve faithful defaults.
+- Keep desktop builds independent of OpenXR headers. Defer further VR work
+  pending physical testing.
+
 - Add an SDL2/OpenGL XR scene renderer for sky, terrain, SG models, weather,
   water reflections and cockpit geometry. Share the existing geometry emitters
   and cache indexed resources, palette maps and native instrument textures.

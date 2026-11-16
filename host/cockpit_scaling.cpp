@@ -6,10 +6,25 @@
 
 namespace comanchecd::host {
 void composite_cockpit(SpatialImage& image, const CockpitImage& overlay,
-                       const std::vector<std::uint8_t>& mask, CockpitScaling scaling) {
+                       const std::vector<std::uint8_t>& mask, CockpitScaling scaling, OverlayLayout layout) {
     if (!image.width || !image.height || image.pixels.size() != std::size_t(image.width) * image.height ||
             mask.size() != overlay.pixels.size() || (scaling != CockpitScaling::nearest && scaling != CockpitScaling::sharp)) {
         throw std::invalid_argument("Invalid cockpit composition dimensions or scaling");
+    }
+    if (layout == OverlayLayout::centered && std::uint64_t(image.width) * cockpit_height > std::uint64_t(image.height) * cockpit_width) {
+        SpatialImage panel;
+        panel.width = image.height * cockpit_width / cockpit_height;
+        panel.height = image.height;
+        panel.pixels.resize(std::size_t(panel.width) * panel.height);
+        composite_cockpit(panel, overlay, mask, scaling);
+        const auto left = (image.width - panel.width) / 2;
+        for (unsigned y = 0; y < panel.height; ++y) {
+            for (unsigned x = 0; x < panel.width; ++x) {
+                const auto color = panel.pixels[std::size_t(y) * panel.width + x];
+                if (color != 0) { image.pixels[std::size_t(y) * image.width + left + x] = color; }
+            }
+        }
+        return;
     }
     std::array<std::uint32_t, 256> palette{};
     for (std::size_t index = 0; index < palette.size(); ++index) {

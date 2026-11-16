@@ -3,6 +3,10 @@
 Use CMake 3.16+, a C++17 compiler and SDL2 2.0.10+ development files. Obtain
 dependencies separately through your toolchain or package manager.
 The source root contains CMakeLists.txt. CMake uses local dependencies.
+Enhanced desktop GPU rendering requires OpenGL 3.2 at runtime. CMake enables
+it when system OpenGL development files are available. Set
+`COMANCHECD_BUILD_OPENGL=OFF` for a CPU-only desktop build. OpenXR SDK headers
+are required only for `COMANCHECD_BUILD_OPENXR=ON`.
 
 ## Windows x64
 
@@ -33,7 +37,7 @@ shared SDL2 DLL beside the player.
 RC10 Linux qualification uses GCC 9.4 and SDL2 2.0.10 on Ubuntu 20.04 under WSL.
 Install your distribution's C++ toolchain, CMake, pkg-config and SDL2 development
 package. On Debian/Ubuntu, the package names are build-essential, cmake,
-pkg-config and libsdl2-dev.
+pkg-config, libsdl2-dev and libgl1-mesa-dev for GPU desktop rendering.
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
@@ -48,7 +52,8 @@ their uppercase filenames on case-sensitive filesystems.
 
 ## Tests and installation
 
-CTest runs the resource-free suites. This enhanced branch has 47 suites.
+CTest runs resource-free suites, including desktop layout, CPU fallback and
+real OpenGL checks. OpenGL checks skip under SDL dummy video.
 Linux retains an existing controller test skip on SDL2 versions lacking its virtual
 controller support.
 
@@ -78,10 +83,11 @@ tuning, high-resolution terrain/model presentation, camera interpolation,
 integer/filtered scaling and the fullscreen shortcut. Physical
 controller, fullscreen and high-DPI qualification remains open.
 
-OpenXR support currently covers loader/runtime admission queries. Headset frame
-submission and OpenXR gameplay remain planned. The optional build requires
-independently installed Khronos SDK headers. See PREVIEW.md for its CMake
-options and runtime query. The initial release defaults to SDL2 keyboard play.
+The optional OpenXR host supports tracked stereo rendering, frame submission
+and a spatial cockpit through SDL2/OpenGL. It requires independently installed
+Khronos SDK headers. VR development is deferred pending further physical
+testing. See PREVIEW.md for build options. The initial release defaults to
+SDL2 keyboard play.
 
 ## Source and redistribution
 

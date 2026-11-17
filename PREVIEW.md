@@ -1,7 +1,7 @@
-# Comanche CD native preview
+# OpenCommanche enhanced desktop candidate
 
-An experimental C++17/SDL2 reimplementation using your original Comanche CD
-installation and CD payloads. Start with Comanche Training, Oil Tank Holiday.
+Release candidate **0.2.0-preview1-rc1** is a C++17/SDL2 reimplementation
+using your original Comanche CD installation and CD payloads. Start with Comanche Training, Oil Tank Holiday.
 That mission has a retained DOSBox-X comparison through objectives, debrief
 and pilot save. Five additional completed routes cover Flying Werewolves,
 Deadman's Grotto, Wing Leader, Siberian Chill and The Kilauea Encounter, with
@@ -10,9 +10,10 @@ have bounded native checks. Other selectable missions remain experimental.
 
 ## Run
 
-Current source/install builds provide `comanche_faithful`,
-`comanche_enhanced` and optional `comanche_openxr`, with `.exe` on Windows.
-Choose the executable for the desired mode. It rejects cross-mode flags.
+Desktop candidate archives provide `comanche_faithful` and
+`comanche_enhanced`, with `.exe` on Windows. Extract the Windows x64 or Linux
+x86-64 ZIP fully. Choose the executable for the desired mode. Optional
+source builds also provide the experimental `comanche_openxr` player.
 The published RC10 archives retain the older `comanche_viewer` filename.
 
 Extract the entire archive. Windows needs its supplied SDL2.dll beside the
@@ -30,13 +31,15 @@ The supported COMANCHE.EXE is the 67,221-byte packed CD specimen with SHA-256
 From PowerShell in the extracted directory, use your own paths.
 
 ```powershell
-./comanche_faithful.exe "D:/Games/Comanche" "E:/COMANCHE" "./profile"
+./comanche_enhanced.exe "D:/Games/Comanche" "E:/COMANCHE" "./enhanced-profile"
+./comanche_faithful.exe "D:/Games/Comanche" "E:/COMANCHE" "./faithful-profile"
 ```
 
 On Linux, use the corresponding directories.
 
 ```sh
-./comanche_faithful /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./profile
+./comanche_enhanced /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./enhanced-profile
+./comanche_faithful /path/to/installed/COMANCHE /path/to/cd/COMANCHE ./faithful-profile
 ```
 
 The separate profile directory stores COMANCHE.NAM and COMANCHE.MNU. Existing
@@ -315,7 +318,7 @@ use depth-tested directional/animated billboards with their original frames,
 origins, transparency, mirroring, elevation tables and rotor layers.
 
 The default enhanced window is 1280×720. Widescreen fills wide windows with
-an expanded horizontal field of view and unchanged vertical framing.
+an expanded horizontal field of view while retaining vertical framing.
 `--aspect original` fits a 4:3 viewport. Portrait windows fit the reference view.
 Both backends cap internal rendering proportionally at 3200×2400 and scale
 to the physical drawable. Menus, movies, debrief and flat cockpit instruments
@@ -360,10 +363,11 @@ reduce CPU rendering work. Renderer performance depends on output resolution.
 Automated Windows and Linux checks cover spatial rendering, camera wrapping,
 compositor coverage and continuous indexed/spatial capture parity. SDL2 route
 checks cover pause, focus, settings, mission completion, debrief, save, restart
-and abort. Physical controller, fullscreen, high-DPI and interpolated-motion
-qualification for this development branch remain open. The scripted Windows
-pilot intermittently stalls acquiring an objective. Completed route witnesses
-cover the declared flows, while that automation remains timing-sensitive.
+and abort. Physical controller, fullscreen, high-DPI, interpolated-motion and new volume
+listening qualification remain open. The keyboard test pilot retains live
+objectives and brakes toward a stand-off range through target-lock loss.
+Completed threaded Windows GPU runs cover mission victory, controller/audio
+settings, debrief, save and restart. These runs use dummy audio.
 
 ## Spatial cockpit and look-around
 
@@ -388,6 +392,10 @@ extensions. `--cockpit flat` selects the original overlay compositor over the
 spatial world. The preference persists per native profile.
 
 ## Experimental OpenXR headset host
+
+OpenXR remains an experimental source-build option. Headset performance,
+terrain stability and comfort require further physical testing. VR development
+is deferred.
 
 Optional builds require OpenXR SDK headers, an OpenXR loader, OpenGL development
 libraries and SDL2. Linux also requires X11 development libraries and SDL2's
@@ -447,7 +455,8 @@ shaders fetch the original height map, avoiding a camera-dependent moving LOD
 mesh. Frustum-culling and instanced batches bound submission work. Sprite,
 particle and cockpit geometry share the software renderer's emission path. Native instrument pixels remain dynamic textures.
 `--xr-renderer cpu` selects the software diagnostic path. Both choices are
-launch-only. The desktop enhanced renderer continues using its CPU backend.
+launch-only. The desktop enhanced player shares the GPU renderer and offers
+its own automatic/GPU/CPU selection through `--renderer`.
 [Khronos frame submission](https://github.com/KhronosGroup/OpenXR-Guide/blob/main/chapters/frame_submission.md)
 
 ## Preview limits
@@ -477,12 +486,16 @@ pilot files local.
 
 ## Source and notices
 
-The archive includes matching source under source/. Build it with CMake 3.16+,
+Each desktop archive includes matching source under `source/`, a per-file
+manifest and license notices. Its `manifest.json` identifies the candidate
+version and source commit. `source/SOURCE_MANIFEST.json` records source hashes.
+Build with CMake 3.16+,
 a C++17 compiler and SDL2 development files.
 
 ```sh
-cmake -S source -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --target comanche_faithful
+cmake -S source -B build -DCMAKE_BUILD_TYPE=Release -DCOMANCHECD_BUILD_DIAGNOSTICS=OFF
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
 ```
 
 When SDL2 is outside CMake's search path, add
@@ -491,5 +504,5 @@ package matching your compiler and architecture.
 
 Original project code retains the MIT notice in LICENSE-MIT. The application
 links GPL-2.0-or-later DBOPL and adapted DOSBox-X audio code. COPYING and
-source/THIRD_PARTY.md describe those components. SDL2's notice is SDL2-LICENSE.txt.
+`source/THIRD_PARTY.md` describe those components. SDL2's notice is SDL2-LICENSE.txt.
 Source includes the retained third-party notices and build files.

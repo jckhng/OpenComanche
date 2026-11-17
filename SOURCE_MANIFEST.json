@@ -1,8 +1,8 @@
 {
-  "version": "enhanced-sdl2-dev",
+  "version": "0.2.0-preview1-rc1",
   "branch": "enhanced-sdl2",
   "baseline_release": "v0.1.0-preview1-rc10",
-  "qualification": "Enhanced SDL2 spatial rendering development snapshot. See PREVIEW.md for presentation, interpolation and hardware qualification limits.",
+  "qualification": "Feature-frozen enhanced desktop release candidate. Faithful compatibility regressions retained. Experimental OpenXR source build. See PREVIEW.md for qualification limits.",
   "baseline_runtime_archives": {
     "comanche-preview1-rc10-windows.zip": "7d91b5b68cc54fc40919e0068a4a40612d924e9435d5cc4e0e7ef2fd5fb9a9d2",
     "comanche-preview1-rc10-linux.zip": "58c6268be1b70364bf1162fa774a486bc1cdc714c8b7c4fa37917e585bc67a9d"
@@ -25,13 +25,13 @@
     },
     {
       "path": "BUILDING.md",
-      "bytes": 6208,
-      "sha256": "df59b3afa6c500c37da5b5c94ad84ce981edb03a8937cf7f7bc7c27eb6a999ac"
+      "bytes": 6614,
+      "sha256": "67fbf17f71bc969345951579fce52628cb8d7f3774688c0eccd74d6194ee4103"
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 6029,
-      "sha256": "0c5d234c1150b2cd626a2a05ec344fc85b0662ea1d6a872bf3e97c4b8c811278"
+      "bytes": 8124,
+      "sha256": "c136b11c07b1a6611f06b04901b0fd87244cdd8c7dffebe75d8836d3b31097d4"
     },
     {
       "path": "cmake/Diagnostics.cmake",
@@ -660,13 +660,13 @@
     },
     {
       "path": "PREVIEW.md",
-      "bytes": 28082,
-      "sha256": "01880757bb23bd138d95a111ec2a19bd19c27372935cde96074a46235475080f"
+      "bytes": 28917,
+      "sha256": "2440fa262034ab49de6f2c6dde68fd114d3b910f61ff0b21ff48576cef840327"
     },
     {
       "path": "README.md",
-      "bytes": 8557,
-      "sha256": "1f42d457cc12aca153719cc51f1a34a0bc66b71b8c083c377551dbcf5d357320"
+      "bytes": 5504,
+      "sha256": "3a69e3f72d4a9481e44895938f08d988bacee019da617284bf18e906acc8c8d1"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -1713,5 +1713,6 @@
       "bytes": 2210,
       "sha256": "558a96cb9f7c0b587208c6640b101547018d7c5a44cffd40ceaa5a39ce0f2554"
     }
-  ]
+  ],
+  "frozen_features_commit": "cdd4428a6624341d68b5febdfcbc50cde2df05a6"
 }

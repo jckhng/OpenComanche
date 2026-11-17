@@ -1,6 +1,39 @@
 # Changelog
 
-## Enhanced SDL2 development
+## 0.2.0-preview1-rc1 — 2026-11-17
+
+Feature-frozen enhanced desktop candidate for Windows x64 and Linux x86-64.
+The desktop archives provide faithful and enhanced players with matching
+source. OpenXR remains experimental and available through a source build.
+
+- Add a paused Ctrl+F4 audio page with per-profile master, FM music and
+  sampled-effects/voice levels. Apply publishes gains after successful saving.
+  Unity gain returns canonical PCM exactly. Saved levels cover startup audio.
+- Add a paused Ctrl+F3 controller editor with context-specific bindings,
+  calibration, response tuning and prompts. Preserve input ownership and
+  pause/focus/save-retry behavior across both host settings pages.
+- Fix the keyboard test pilot's objective retention and stand-off braking.
+  Cover lost-lock and pursuit changes across independently paced presentation.
+- Decouple enhanced presentation from the simulation worker. Add persistent
+  FPS/vsync controls, fullscreen and window restoration. Fit the cockpit panel
+  within sloping dashboard shoulders while retaining live native instruments.
+
+The frozen code passes 64 Windows suites and 63 Linux suites, with the existing
+SDL2 2.0.10 virtual-controller skip on Linux. Six asset integrations per platform
+include a 1,502-frame completed mission comparison of CPU/IRQ/RNG, indexed
+images, combat and mixed PCM. A cold-start-to-victory/debrief capture preserves
+4,326,864 native PCM samples at default/unity gain. Muted/source-balanced runs
+preserve recorded clock, RNG, images, flight state and pilot save. Threaded
+Windows SDL2/GPU keyboard checks cover settings Apply, victory, debrief, save
+and restart with restored audio levels. These audio runs use the dummy device.
+
+Physical listening for new volume controls, physical controllers,
+fullscreen/high-DPI and Linux desktop hardware remain open. OpenXR session/frame
+and SDL2/OpenGL tests pass. Headset performance, terrain stability and comfort
+require further physical testing. Broader mission/progression and cold-entry
+DOS timing/audio qualification retain the limits in PREVIEW.md.
+
+### Additional changes since RC10
 
 - Split fixed-mode faithful, enhanced desktop and optional OpenXR players.
   Give faithful a separate indexed SDL2 host and link graph. Support a

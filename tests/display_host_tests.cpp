@@ -31,7 +31,7 @@ class TemporaryProfile {
   public:
     TemporaryProfile()
         : path(std::filesystem::temp_directory_path() /
-               ("opencommanche-display-" +
+               ("opencomanche-display-" +
                 std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()))) {
         require(std::filesystem::create_directory(path), "Fixture must own its profile");
     }

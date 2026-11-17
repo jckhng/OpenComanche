@@ -738,7 +738,7 @@ void SdlFlightHost::present_snapshot(std::shared_ptr<const SessionPresentation> 
 
 void SdlFlightHost::update_title(const FlightState& state, const std::string& status) {
     std::ostringstream title;
-    title << (impl_->profile == InputProfile::enhanced ? (impl_->gpu_available() ? "OpenCommanche enhanced GPU | " : "OpenCommanche enhanced CPU | ") : "Comanche CD | ")
+    title << (impl_->profile == InputProfile::enhanced ? (impl_->gpu_available() ? "OpenComanche enhanced GPU | " : "OpenComanche enhanced CPU | ") : "Comanche CD | ")
           << status;
     if (impl_->display) {
         title << " | FPS " << impl_->display->limit_label()

@@ -25,8 +25,8 @@
     },
     {
       "path": "BUILDING.md",
-      "bytes": 6614,
-      "sha256": "67fbf17f71bc969345951579fce52628cb8d7f3774688c0eccd74d6194ee4103"
+      "bytes": 6612,
+      "sha256": "4d57e33248b1aa9f0d9af6c290990b0b3c9ff1d799c4fc5a33445792ab8adb9e"
     },
     {
       "path": "CHANGELOG.md",
@@ -210,8 +210,8 @@
     },
     {
       "path": "host/gl_desktop_presenter.cpp",
-      "bytes": 4757,
-      "sha256": "2e73b4ff09d36432c8431bc9ba4da9448d248c6dc9b09ca6ea0773c53193764e"
+      "bytes": 4756,
+      "sha256": "a511ca98306e97d7cce248b6fcbf17805c6e3bf47465e04e52310963da74802e"
     },
     {
       "path": "host/gl_desktop_presenter.hpp",
@@ -270,8 +270,8 @@
     },
     {
       "path": "host/openxr_graphics.cpp",
-      "bytes": 8459,
-      "sha256": "e35e7fd39cbf8dc5c0651e8cb798a1d384485867295da06b23f0de88de1387eb"
+      "bytes": 8458,
+      "sha256": "f845b1718c6e3e49656230e7100b819bf7b3c2d496d82f92d81e604699375c3c"
     },
     {
       "path": "host/openxr_graphics.hpp",
@@ -385,8 +385,8 @@
     },
     {
       "path": "host/sdl_host.cpp",
-      "bytes": 40215,
-      "sha256": "9e4e342b6896885dcbc019c5a6020edc40702dc6cdb60227334c7e5cf4910fa4"
+      "bytes": 40213,
+      "sha256": "323a5cc7569aa8a16a4d64df6b2d67f01e4a16c0a0d01dcfb9351eca3680de4b"
     },
     {
       "path": "host/sdl_host.hpp",
@@ -660,13 +660,13 @@
     },
     {
       "path": "PREVIEW.md",
-      "bytes": 28917,
-      "sha256": "2440fa262034ab49de6f2c6dde68fd114d3b910f61ff0b21ff48576cef840327"
+      "bytes": 28916,
+      "sha256": "9fd7e4b6c2afc4fcb50847786f6452b6b572cb3ea354e320e98258434b657598"
     },
     {
       "path": "README.md",
-      "bytes": 7061,
-      "sha256": "fc74590baee7d37933d56bbdc7baf897f9aa54a1d08c7a9c2e11413f2ac0e9b9"
+      "bytes": 7052,
+      "sha256": "047eab14852f1a07c9c9324d2727dfbbce7713fe75c390e9360213a39d96dbc9"
     },
     {
       "path": "SDL2-LICENSE.txt",
@@ -1200,8 +1200,8 @@
     },
     {
       "path": "tests/display_host_tests.cpp",
-      "bytes": 8118,
-      "sha256": "62e9a325f29105e26cd2c05ca72c2a1aa4740713689d0b2eb52ffe1f9469a4f4"
+      "bytes": 8117,
+      "sha256": "9ddab01cbdaa5c1a2497724bfe2c672dee8d91d5dc67d9cffc01c26458d68b6f"
     },
     {
       "path": "tests/display_settings_tests.cpp",
@@ -1270,8 +1270,8 @@
     },
     {
       "path": "tests/host_preferences_tests.cpp",
-      "bytes": 11508,
-      "sha256": "66e01444632811acdad31bd1810fe7b70c550cfe0242f7ed625eb81422d4c176"
+      "bytes": 11507,
+      "sha256": "903df95a15fbfc22148db96c15be0415463eafbfcd76644f5d551f174b04ba6a"
     },
     {
       "path": "tests/irq7_wave_tests.cpp",

@@ -1,4 +1,4 @@
-# OpenCommanche enhanced desktop candidate
+# OpenComanche enhanced desktop candidate
 
 Release candidate **0.2.0-preview1-rc1** is a C++17/SDL2 reimplementation
 using your original Comanche CD installation and CD payloads. Start with Comanche Training, Oil Tank Holiday.

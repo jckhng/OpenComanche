@@ -32,7 +32,7 @@ public:
                 SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, profile) != 0) {
             throw sdl_error("XR OpenGL attributes failed");
         }
-        window_.reset(SDL_CreateWindow("OpenCommanche XR graphics", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        window_.reset(SDL_CreateWindow("OpenComanche XR graphics", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
             64, 64, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN));
         if (!window_) { throw sdl_error("XR SDL2 OpenGL window failed"); }
         context_.reset(SDL_GL_CreateContext(window_.get()));

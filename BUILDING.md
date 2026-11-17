@@ -1,4 +1,4 @@
-# Building OpenCommanche
+# Building OpenComanche
 
 Use CMake 3.16+, a C++17 compiler and SDL2 2.0.10+ development files. Obtain
 dependencies separately through your toolchain or package manager.
@@ -63,7 +63,7 @@ repository root, substituting your directories. Use `.exe` on Windows.
 Installation produces the player, notices and matching source.
 
 ```sh
-cmake --install build --prefix dist/OpenCommanche
+cmake --install build --prefix dist/OpenComanche
 ```
 
 Use `-DBUILD_TESTING=OFF` for a player-only build. Set

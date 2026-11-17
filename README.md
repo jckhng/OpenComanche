@@ -1,4 +1,4 @@
-# OpenCommanche
+# OpenComanche
 
 A portable C++17/SDL2 reimplementation of Comanche CD using player-supplied
 original installation and CD data. The enhanced desktop prerelease targets
@@ -13,37 +13,37 @@ Other selectable missions remain experimental.
 with widescreen GPU rendering, interpolated presentation, a look-around
 cockpit, controller configuration and saved display/audio preferences.
 Both platform ZIPs contain matching source and license notices.
-[Download the Windows or Linux candidate](https://github.com/jckhng/OpenCommanche/releases/tag/v0.2.0-preview1-rc1)
+[Download the Windows or Linux candidate](https://github.com/jckhng/OpenComanche/releases/tag/v0.2.0-preview1-rc1)
 
 Current enhanced source and build instructions are on the `enhanced-sdl2`
 branch. The default `main` branch contains the RC10 keyboard-preview source.
-[Enhanced source](https://github.com/jckhng/OpenCommanche/tree/enhanced-sdl2) · [Enhanced build instructions](https://github.com/jckhng/OpenCommanche/blob/enhanced-sdl2/BUILDING.md)
+[Enhanced source](https://github.com/jckhng/OpenComanche/tree/enhanced-sdl2) · [Enhanced build instructions](https://github.com/jckhng/OpenComanche/blob/enhanced-sdl2/BUILDING.md)
 
 OpenXR remains an experimental source-build option. Full physical headset
 testing, terrain stability, performance and comfort remain open.
 
 ## Gameplay footage
 
-[![DOSBox-X original and enhanced desktop comparison](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/DOS-vs-Enhanced-preview.jpg)](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-DOS-vs-Enhanced.mp4)
+[![DOSBox-X original and enhanced desktop comparison](https://github.com/jckhng/OpenComanche/releases/download/v0.2.0-preview1-rc1/DOS-vs-Enhanced-preview.jpg)](https://github.com/jckhng/OpenComanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-DOS-vs-Enhanced.mp4)
 
 **DOS vs enhanced · 25 seconds.** Original DOSBox-X footage alongside the same
 recorded flight replayed through the RC1 enhanced GPU renderer. Widescreen,
 terrain, cockpit and interpolation differences share recorded scene states and
-original DOS audio. [Watch or download the MP4](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-DOS-vs-Enhanced.mp4)
+original DOS audio. [Watch or download the MP4](https://github.com/jckhng/OpenComanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-DOS-vs-Enhanced.mp4)
 
-[![Experimental OpenXR scripted stereo preview](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenXR-Stereo-preview.jpg)](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-OpenXR-Stereo-Preview.mp4)
+[![Experimental OpenXR scripted stereo preview](https://github.com/jckhng/OpenComanche/releases/download/v0.2.0-preview1-rc1/OpenXR-Stereo-preview.jpg)](https://github.com/jckhng/OpenComanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-OpenXR-Stereo-Preview.mp4)
 
 **Experimental OpenXR · 36 seconds.** Scripted stereo head tracking through the
 GPU eye renderer shows the surrounding cockpit and rear crew station. Both
 clips are offline 60 fps captures with checked audio alignment. Full physical
 headset testing, terrain stability, performance and comfort remain open.
-[Watch or download the stereo MP4](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-OpenXR-Stereo-Preview.mp4)
+[Watch or download the stereo MP4](https://github.com/jckhng/OpenComanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-OpenXR-Stereo-Preview.mp4)
 
 ## RC10 download and play
 
 Download the Windows or Linux ZIP from the RC10 release and extract it fully.
 Both archives include matching source and third-party notices.
-[RC10 downloads](https://github.com/jckhng/OpenCommanche/releases/tag/v0.1.0-preview1-rc10)
+[RC10 downloads](https://github.com/jckhng/OpenComanche/releases/tag/v0.1.0-preview1-rc10)
 
 Provide the installed DOS directory containing `COMANCHE.EXE`, `COMANCHE.NAM`
 and campaign MIS files, plus the `COMANCHE` payload directory from your CD.

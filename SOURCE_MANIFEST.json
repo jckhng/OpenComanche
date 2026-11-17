@@ -18,8 +18,8 @@
     },
     {
       "path": "BUILDING.md",
-      "bytes": 3556,
-      "sha256": "73198e7cc86f8c8c2929eb71aa040cd52cf214a717dff60a6a26c2aa39bb4f74"
+      "bytes": 3554,
+      "sha256": "45474af205c13beed1b05b0dc11f868af602c894ee2f19cca0b5dd63ab1ee4cd"
     },
     {
       "path": "CHANGELOG.md",
@@ -288,8 +288,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 6250,
-      "sha256": "a8ee74857912989f541eab7a608d6cc986557c74bde26b817d72dbd471afb537"
+      "bytes": 6239,
+      "sha256": "b1b82c5e1d0cabc150075bff593c89d76a41f1c371ea89b974b7507b077d0c36"
     },
     {
       "path": "SDL2-LICENSE.txt",

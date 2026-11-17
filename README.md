@@ -7,6 +7,25 @@ desktop release candidate for Windows x64 and Linux x86-64.
 Start with **Begin a Mission → Comanche Training → Oil Tank Holiday**.
 Other selectable missions remain experimental.
 
+[Download the enhanced desktop RC1](https://github.com/jckhng/OpenCommanche/releases/tag/v0.2.0-preview1-rc1)
+
+## Gameplay footage
+
+[![DOSBox-X original and enhanced desktop comparison](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/DOS-vs-Enhanced-preview.jpg)](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-DOS-vs-Enhanced.mp4)
+
+**DOS vs enhanced · 25 seconds.** Original DOSBox-X footage alongside the same
+recorded flight replayed through the RC1 enhanced GPU renderer. Widescreen,
+terrain, cockpit and interpolation differences share recorded scene states and
+original DOS audio. [Watch or download the MP4](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-DOS-vs-Enhanced.mp4)
+
+[![Experimental OpenXR scripted stereo preview](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenXR-Stereo-preview.jpg)](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-OpenXR-Stereo-Preview.mp4)
+
+**Experimental OpenXR · 36 seconds.** Scripted stereo head tracking through the
+GPU eye renderer shows the surrounding cockpit and rear crew station. Both
+clips are offline 60 fps captures with checked audio alignment. Full physical
+headset testing, terrain stability, performance and comfort remain open.
+[Watch or download the stereo MP4](https://github.com/jckhng/OpenCommanche/releases/download/v0.2.0-preview1-rc1/OpenCommanche-RC1-OpenXR-Stereo-Preview.mp4)
+
 ## Choose a player
 
 | Executable | Role |
